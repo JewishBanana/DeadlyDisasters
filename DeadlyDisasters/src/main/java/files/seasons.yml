@@ -1,0 +1,46 @@
+general:
+    # Toggle if realistic seasons should take any affect on the plugin
+    enabled: true
+    # The minimum temperature players must be at for blizzards to affect them
+    min_blizzard_temperature: 0
+disasters:
+    # Set what seasons each disaster can occur on
+    SINKHOLE:
+    - ALL
+    CAVEIN:
+    - ALL
+    EARTHQUAKE:
+    - ALL
+    GEYSER:
+    - ALL
+    TORNADO:
+    - SPRING
+    - SUMMER
+    TSUNAMI:
+    - ALL
+    PLAGUE:
+    - ALL
+    ACIDSTORM:
+    - SPRING
+    - SUMMER
+    - FALL
+    BLIZZARD:
+    - WINTER
+    EXTREMEWINDS:
+    - SPRING
+    - FALL
+    SANDSTORM:
+    - SPRING
+    - SUMMER
+    METEORSHOWERS:
+    - SUMMER
+    - FALL
+    SUPERNOVA:
+    - ALL
+    HURRICANE:
+    - SPRING
+    - SUMMER
+    - FALL
+    PURGE:
+    - FALL
+    - WINTER

@@ -1,0 +1,422 @@
+general:
+    # 如果此项设为true，则服务器管理在进入游戏时可以接收到插件更新消息
+    update_notify: true
+    # 如果此项设为true，则服务器管理在自定义天灾有新内容时可以接收到更新消息
+    catalog_notify: true
+    # 是否允许自动创建新世界
+    auto_enable_on_generation: true
+    # 调试信息
+    debug_messages: true
+messages:
+    # 自定义插件的信息提示,请不要留空否则无法使用。如果不想接收任何提示，请在world.yml的general中关闭event_broadcast
+    console_error_message: '&c无法从控制台执行命令！'
+    permission_error: '&c你没有权限进行该操作！'
+    # 是否开启天灾的相关信息提示，默认为true
+    disaster_tips: true
+    destructive:
+        level 1: '&a等级: 1 %disaster% &6在: &a%location% &e(玩家: %player%)&6周围产生'
+        level 2: '&2等级: 2 %disaster% &6在: &a%location% &e(玩家: %player%)&6周围产生'
+        level 3: '&b等级: 3 %disaster% &6在: &a%location% &e(玩家: %player%)&6周围产生'
+        level 4: '&e等级: 4 %disaster% &6在: &a%location% &e(玩家: %player%)&6周围产生'
+        level 5: '&c等级: 5 %disaster% &6在: &a%location% &e(玩家: %player%)&6周围产生'
+        level 6: '&4&l等级: 6 %disaster% &6在: &a%location% &e(玩家: %player%)&6周围产生'
+    weather:
+        level 1: '&6一场&2极短时间的%disaster%&6即将开始'
+        level 2: '&6一场&a短时间的%disaster%&6即将开始'
+        level 3: '&6一场&b长时间的%disaster%&6即将开始'
+        level 4: '&6一场&e很长时间的%disaster%&6即将开始'
+        level 5: '&6一场&c非常长时间的%disaster%&6即将开始'
+        winds:
+            level 1: '&a轻&f风&6降临'
+            level 2: '&b微&f风&6降临'
+            level 3: '&9强&f风&6降临'
+            level 4: '&e劲&f风&6降临'
+            level 5: '&c烈&f风&6降临'
+            level 6: '&4&l暴&f风&6降临'
+    misc:
+        plague:
+            started: '&e有生物患上了&0黑死病'
+        purge:
+            started: '等级: %level% &c怪物潮正在集结, &6%player% &c将会被消灭...'
+            ended: '&e怪物潮结束...'
+        world_messages:
+            # 是否在玩家切换世界时提示天灾信息，默认为true
+            allow_world_messages: true
+            # 是否向所有人显示世界的天灾信息，默认为false
+            show_world_messages_to_not_opped: false
+            message: '&d%world% &b世界 的&b难度被设置为 %difficulty%  '
+# 天灾独立设定
+sinkhole:
+    # 天灾发生后多久进行通知（秒）
+    start_delay: 0
+    # 天坑下降的速度，此项会影响服务器性能
+    speed: 5
+    # 规模大小
+    size: 1.0
+    # 天灾最高生成高度
+    min_height: 50
+    # 天灾能达到的最高级别（最高6）
+    max_level: 6
+    # 天灾发生的几率，0为不可能，1为必定
+    frequency: 1.0
+    # 天灾声音倍数
+    volume: 1.0
+    # 此项会在游戏内更改天灾名称
+    name: '&e天坑'
+earthquake:
+    start_delay: 0
+    # 地震移动的速度，此项会影响服务器性能
+    tick_speed: 5
+    size: 1.0
+    # 地震可以偏离其路径的程度。数字越大，自然生成的地震就越多，但会有更多的区块被略过
+    tilt: 0.3
+    # force为能把周围的生物摔得多重的程度
+    force: 1.0
+    min_height: 50
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    name: '&8地震'
+cavein:
+    start_delay: 0
+    size: 1.0
+    # Damage done by cave-in roof blocks
+    damage: 7.0
+    # 在塌方时最多同时存在的落沙数量（数量越少天灾持续时间越长）
+    max_falling_blocks: 800
+    # 塌方能生成的最高坐标
+    min_height: 50
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    name: '&7塌方'
+tornado:
+    start_delay: 0
+    # 在龙卷风时生成粒子的倍率（1.0为上限）
+    particleAmount: 0.5
+    size: 1.0
+    # 龙卷风持续的时间倍数
+    time_multiplier: 1.0
+    # 实体在龙卷风中移动的速率，并非龙卷风的移动速率
+    speed: 1.0
+    # 龙卷风的宽度，越高的数值代表越少的龙卷风
+    width: 150
+    # 龙卷风能使卷起方块移动的最大距离
+    block_pickup_range: 1.0
+    # 能被卷入龙卷风的最大实体数量，活着的实体优先
+    max_entities:
+        level 1: 300
+        level 2: 600
+        level 3: 800
+        level 4: 1200
+        level 5: 1800
+        level 6: 3000
+    min_height: 60
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    name: '&f龙卷风'
+geyser:
+    start_delay: 0
+    # 间歇泉每tick对生物造成的伤害，火焰抗性可免疫
+    water_damage: 1.5
+    min_height: 5
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    name: '&9间歇泉喷发/&c间歇泉喷发——岩浆'
+tsunami:
+    start_delay: 0
+    # 能产生海啸的最低坐标，仅海洋生物群系
+    minimum_depth: 15
+    size: 1.0
+    # 在海啸内生物每tick受到的伤害
+    damage: 3.0
+    # 海啸后短时间会清除水，默认为true，个人建议改为false
+    remove_water: true
+    min_height: 50
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    name: '&1海啸'
+supernova:
+    start_delay: 0
+    size: 1.0
+    # 生成的粒子数量
+    particle_multiplier: 1.0
+    # 闪光显示
+    flash: true
+    # 火焰显示
+    place_fire: true
+    # 远处的玩家是否能看见超新星爆炸时的粒子特效（消耗性能）
+    far_particles: true
+    min_height: 55
+    max_level: 6
+    frequency: 0.3
+    volume: 1.0
+    name: '&3超新星爆发'
+hurricane:
+    start_delay: 0
+    size: 1.0
+    # 飓风持续的时间（秒）
+    time: 180
+    # 玩家被闪电击中的概率，数值越高概率越低
+    lightning_frequency: 1.0
+    # 风摧毁玩家附近的方块所需力的最小值
+    block_break_force: 0.04
+    min_height: 60
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    name: '&7飓风'
+purge:
+    start_delay: 10
+    # 每个等级生成的生物数量
+    horde_size:
+        level 1: 8
+        level 2: 13
+        level 3: 20
+        level 4: 25
+        level 5: 35
+        level 6: 50
+    # 是否给目标玩家展示boss栏，且会产生多雾的效果，默认为true
+    boss_bar: true
+    # boss栏名字设置
+    bar_title: 'Horde'
+    # 天灾结束后怪物的消失速率，单位tick(s)
+    despawn_speed: 40
+    # 怪物生成的最大距离
+    spawn_distance: 25
+    min_height: 0
+    max_level: 6
+    frequency: 0.3
+    volume: 1.0
+plague:
+    start_delay: 0
+    # 能免疫黑死病的生物 生物列表：https://hub.spigotmc.org/javadocs/spigot/org/bukkit/entity/EntityType.html
+    blacklisted_mobs:
+    - ender_dragon
+    - wither
+    - elder_guardian
+    - armor_stand
+    - warden
+    # 最大感染数量
+    max_infected_mobs: 50
+    max_level: 6
+    frequency: 0.3
+    name: '&0黑死病'
+sandstorm:
+    # 天灾发生后多久进行通知（秒）
+    start_delay: 5
+    time:
+        # 每个等级天灾会持续的时间
+        level 1: 30
+        level 2: 60
+        level 3: 120
+        level 4: 200
+        level 5: 300
+    # 生物在沙尘暴中消失后会有几率变成骷髅头，默认为true
+    mobs_drop_skulls: true
+    # 沙尘暴中的生物会受到凋零效果，默认为true
+    wither_effect: true
+    # 沙尘暴时自定义生物会在玩家周围生成，默认为true
+    # Mob spawn rate is the chance of a custom mob spawning per sandstorm spawn tick
+    mob_spawn_rate: 25.0
+    # Particle max distance means the radius in blocks players can see sand particles on the X and Z axis
+    particle_max_distance: 6
+    # Particle Y range is the Y level range that sand particles can be displayed at, so higher the number means the further away you can see sand on the Y axis
+    particle_Y_range: 10
+    # Particle multiplier of sand particles
+    particle_multiplier: 1.0
+    min_height: 50
+    max_level: 5
+    frequency: 1.0
+    volume: 1.0
+    name: '&e沙尘暴'
+blizzard:
+    start_delay: 5
+    time:
+        level 1: 30
+        level 2: 60
+        level 3: 120
+        level 4: 200
+        level 5: 300
+    # 生物会在暴风雪时被冻成冰雕，默认为true
+    freeze_entities: true
+    # 暴风雪时玩家不会在穿满皮革套的情况下损失生命，默认为true
+    leather_armor_protection: true
+    # 每tick对生物造成的伤害
+    damage: 0.75
+    # 生物会被冻僵的最低高度，低于此高度的生物会被直接杀死
+    min_freezing_height: 60
+    # Particle max distance means the radius in blocks players can see blizzard particles on the X and Z axis
+    particle_max_distance: 10
+    # Particle Y range is the Y level range that blizzard particles can be displayed at, so higher the number means the further away you can see snow on the Y axis
+    particle_Y_range: 10
+    # Particle multiplier of snow particles
+    particle_multiplier: 1.0
+    min_height: 50
+    max_level: 5
+    frequency: 1.0
+    volume: 1.0
+    name: '&9暴风雪'
+acidstorm:
+    start_delay: 5
+    time:
+        level 1: 30
+        level 2: 60
+        level 3: 120
+        level 4: 200
+        level 5: 300
+    # 酸雨对实体造成的伤害
+    damage: 1.0
+    # 金属制物品会在酸雨中耐久度下降，默认为true
+    melt_dropped_items: true
+    # 盔甲装备等会在酸雨中额外受损，默认为true
+    melt_armor: true
+    # Particle max distance means the radius in blocks players can see acid rain particles on the X and Z axis
+    particle_max_distance: 7
+    # Particle Y range is the Y level range that acid rain particles can be displayed at, so higher the number means the further away you can see acid rain on the Y axis
+    particle_Y_range: 10
+    # Particle multiplier of acid rain particles
+    particle_multiplier: 1.0
+    # The range from players that blocks are affected by acidic rainfall (Some blocks change, some are destroyed, ex. metals, crops, etc.)
+    block_damage_range: 50
+    # The rate multiplier of how many blocks around players change
+    block_change_rate: 1.0
+    # Multiplier for how often slimes can spawn near players
+    slime_spawn_rate: 1.0
+    # Toggle if crops can get poisoned in acid rain or not
+    poison_crops: true
+    # Control what effects are given to entities in acid storms (remove and add, potions must be the vanilla name in game and formatted as follows: POTION_NAME: GAME_TICKS)
+    effects:
+        blindness: 20
+        poison: 10
+    # Control what blocks are changed to what in acid rain (remove and add, format is as follows: VANILLA_BLOCK_NAME: NEW_VANILLA_BLOCK_NAME)
+    block_changes:
+        iron_block: air
+        iron_bars: air
+        iron_trapdoor: air
+        gold_block: air
+        rail: air
+        powered_rail: air
+        activator_rail: air
+        detector_rail: air
+        hopper: air
+        cauldron: air
+        heavy_weighted_pressure_plate: air
+        light_weighted_pressure_plate: air
+        stone: cobblestone
+        cobblestone: air
+        stone_bricks: cracked_stone_bricks
+        iron_ore: cobblestone
+        deepslate_iron_ore: deepslate
+        gold_ore: cobblestone
+        deepslate_gold_ore: deepslate
+        copper_ore: cobblestone
+        deepslate_copper_ore: deepslate
+    min_height: 50
+    max_level: 5
+    frequency: 0.6
+    volume: 1.0
+    name: '&a酸雨'
+soulstorm:
+    start_delay: 5
+    time:
+        level 1: 30
+        level 2: 60
+        level 3: 120
+        level 4: 200
+        level 5: 300
+    # 迷途的灵魂会在灵魂风暴期间在玩家身边生成，默认为true
+    spawn_souls: true
+    min_height: 0
+    max_level: 5
+    frequency: 0.6
+    volume: 1.0
+    name: '&3灵魂风暴'
+extremewinds:
+    start_delay: 5
+    time:
+        level 1: 30
+        level 2: 60
+        level 3: 80
+        level 4: 100
+        level 5: 120
+        level 6: 120
+    force:
+        # 每一级的风力强度，该选项对服务器性能有巨大影响！
+        level 1: 0.03
+        level 2: 0.06
+        level 3: 0.01
+        level 4: 0.14
+        level 5: 0.18
+        level 6: 0.3
+    # 向每位玩家展示的最大粒子数量
+    max_particles: 150
+    # 风识别屋顶格数的算法，越高的值对大服务器的负担就越重
+    interior_height_distance: 6
+    # 摧毁建筑需要的最低风力等级
+    block_break_force: 0.1
+    min_height: 60
+    max_level: 6
+    frequency: 0.6
+    volume: 1.0
+    name: '&f狂风'
+meteorshowers:
+    start_delay: 5
+    time:
+        level 1: 30
+        level 2: 60
+        level 3: 80
+        level 4: 100
+        level 5: 120
+    # 陨石雨会暂时将时间调至夜晚，默认为true
+    set_night: true
+    # 最多可同时存在的陨石数量，此项会影响服务器性能
+    max_meteors: 20
+    # 陨石更新频率，此项会影响服务器性能
+    tick_speed: 1
+    # 被陨石击中的区域的烟雾粒子会持续的时长
+    smoke_time: 15
+    min_height: 60
+    max_level: 5
+    frequency: 0.6
+    volume: 1.0
+    name: '&5陨石雨'
+endstorm:
+    start_delay: 5
+    time:
+      level 1: 60
+      level 2: 90
+      level 3: 120
+      level 4: 150
+      level 5: 200
+    # 末影风暴中生物可以最远传送的距离
+    max_tp_range: 10
+    # 末影风暴中虚空生物可以同时存在的最高数量
+    max_rift_entities: 15
+    min_height: 0
+    max_level: 5
+    frequency: 1.0
+    volume: 1.0
+    name: '&5末影风暴'
+custom:
+    # 自定义天灾的产生几率，1.0意味着只会发生自定义天灾而不会发生官方天灾
+    frequency: 0.2
+customentities:
+    # 控制自定义生物是否可以生成，默认为true
+    allow_custom_mobs: true
+    # 是否开启自定义掉落
+    allow_custom_drops: true
+customitems:
+    # 控制某物品是否可以合成，默认均为true
+    recipes:
+        plague_cure: true
+        ancient_blade: true
+    items:
+        void_wrath:
+            # 不稳定的裂缝是否会在保护区域生成
+            allow_in_regions: true
+            # 被放入不稳定的裂缝中的物品是否会消失
+            remove_items: true

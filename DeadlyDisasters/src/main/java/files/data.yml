@@ -1,0 +1,10 @@
+data:
+    version: 0.0
+    timerValueMemory: 120
+    entries: 0
+    notify: false
+    firstStart: true
+    lang: 0
+    catalogFetchCooldown: 0
+    currentConfig: 'DEFAULT'
+customentities: {}
