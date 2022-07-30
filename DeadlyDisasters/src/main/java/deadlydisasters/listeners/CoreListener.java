@@ -9,6 +9,9 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.UUID;
 
+import com.palmergames.bukkit.towny.event.NewTownEvent;
+import com.palmergames.bukkit.towny.event.PreNewTownEvent;
+import com.palmergames.bukkit.towny.object.metadata.BooleanDataField;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
@@ -673,6 +676,10 @@ public class CoreListener implements Listener {
 					e.getPlayer().playSound(e.getPlayer().getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3F, 1);
 				}
 			}, 10);
+	}
+	@EventHandler
+	public void onTownCreate(NewTownEvent event){
+		event.getTown().addMetaData(new BooleanDataField("DeadlyDisasters", true));
 	}
 	@EventHandler
 	public void onKick(PlayerKickEvent e) {
