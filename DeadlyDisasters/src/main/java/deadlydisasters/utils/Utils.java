@@ -193,11 +193,11 @@ public class Utils {
 		return (p.getGameMode() == GameMode.CREATIVE || p.getGameMode() == GameMode.SPECTATOR);
 	}
 	public static boolean isZoneProtected(Location loc) {
-		return (WorldObject.findWorldObject(loc.getWorld()).protectRegions && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null && townyapi.getTownBlock(loc).hasTown() && townyapi.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true))
+		return (WorldObject.findWorldObject(loc.getWorld()).protectRegions && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null && townyapi.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true))
 				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.isClaimed(loc)) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
 	}
 	public static boolean isWeatherDisabled(Location loc, WeatherDisaster instance) {
-		return (instance.RegionWeather && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null)
+		return (instance.RegionWeather && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null && townyapi.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true))
 				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.isClaimed(loc)) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
 	}
 	public static Block getBlockAbove(Location location) {
