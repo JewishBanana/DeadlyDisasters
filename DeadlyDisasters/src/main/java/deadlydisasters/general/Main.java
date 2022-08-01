@@ -16,6 +16,12 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.TownyCommandAddonAPI;
+import com.palmergames.bukkit.towny.object.AddonCommand;
+import com.palmergames.bukkit.towny.object.Town;
+import com.palmergames.bukkit.towny.object.metadata.BooleanDataField;
+import deadlydisasters.commands.Towny;
 import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -149,6 +155,14 @@ public class Main extends JavaPlugin {
 		if (pm.getPlugin("Towny") != null) {
 			Utils.TownyB = true;
 			getLogger().info("Successfully hooked into Towny");
+			AddonCommand townyCommand = new AddonCommand(TownyCommandAddonAPI.CommandType.TOWN_TOGGLE, "DisasterProtection", new Towny());
+			townyCommand.setTabCompletion(0, Arrays.asList("off", "on"));
+			TownyCommandAddonAPI.addSubCommand(townyCommand);
+			for(Town town: TownyAPI.getInstance().getTowns()){
+				if(!town.hasMeta("DeadlyDisasters")){
+					town.addMetaData(new BooleanDataField("DeadlyDisasters", true));
+				}
+			}
 		}
 		if (pm.getPlugin("GriefPrevention") != null) {
 			Utils.GriefB = true;
