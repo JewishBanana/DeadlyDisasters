@@ -15,14 +15,17 @@ public class Towny implements CommandExecutor {
 
         Resident resident = TownyAPI.getInstance().getResident(sender.getName());
         if (resident.hasTown()) {
-            if (args[0].equalsIgnoreCase("on") || args.length == 0) {
-                resident.getTownOrNull().addMetaData(new BooleanDataField("DeadlyDisasters", true));
-                TownyMessaging.sendPrefixedTownMessage(resident.getTownOrNull(), "Disaster Protection has been Enabled.");
-            } else if (args[0].equalsIgnoreCase("off")) {
-                resident.getTownOrNull().addMetaData(new BooleanDataField("DeadlyDisasters", false));
-                TownyMessaging.sendPrefixedTownMessage(resident.getTownOrNull(), "Disaster Protection has been Disabled.");
+            if (sender.hasPermission("towny.command.town.toggle.disasterprotection") || resident.isMayor()) {
+                if (args[0].equalsIgnoreCase("on") || args.length == 0) {
+                    resident.getTownOrNull().addMetaData(new BooleanDataField("DeadlyDisasters", true));
+                    TownyMessaging.sendPrefixedTownMessage(resident.getTownOrNull(), "Disaster Protection has been Enabled.");
+                } else if (args[0].equalsIgnoreCase("off")) {
+                    resident.getTownOrNull().addMetaData(new BooleanDataField("DeadlyDisasters", false));
+                    TownyMessaging.sendPrefixedTownMessage(resident.getTownOrNull(), "Disaster Protection has been Disabled.");
+                }
+                return true;
             }
             return true;
         }
-    return true;}
+   return true; }
 }
