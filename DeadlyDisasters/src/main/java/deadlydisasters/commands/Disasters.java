@@ -323,10 +323,10 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						return true;
 					}
 				}
-			}
-			else if (args.length == 2)
+			} else if (args.length == 2) {
 				level = rand.nextInt(6)+1;
-			else {
+				p = (Player) sender;
+			} else {
 				sender.sendMessage(Utils.chat("&cUsage: /disasters start <disaster> [level] [player] [broadcast]"));
 				return true;
 			}

@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -51,6 +53,7 @@ import deadlydisasters.general.Languages;
 import deadlydisasters.general.Main;
 import deadlydisasters.general.WorldObject;
 import deadlydisasters.listeners.CoreListener;
+import deadlydisasters.listeners.TownyListener;
 
 public class Utils {
 	
@@ -71,18 +74,20 @@ public class Utils {
 	private static me.angeschossen.lands.api.integration.LandsIntegration landsclaims;
 	
 	@SuppressWarnings("deprecation")
-	public Utils(Main plug) {
-		plugin = plug;
+	public Utils(Main plugin) {
+		Utils.plugin = plugin;
 		rand = plugin.random;
 		reloadVariables();
 		
-		plug.getServer().getScheduler().runTaskLater(plug, new Runnable() {
+		plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
 			@Override
 			public void run() {
-				if (plug.CProtect)
-					coreProtect = ((net.coreprotect.CoreProtect) plug.getServer().getPluginManager().getPlugin("CoreProtect")).getAPI();
-				if (TownyB)
+				if (plugin.CProtect)
+					coreProtect = ((net.coreprotect.CoreProtect) plugin.getServer().getPluginManager().getPlugin("CoreProtect")).getAPI();
+				if (TownyB) {
 					townyapi = com.palmergames.bukkit.towny.TownyAPI.getInstance();
+					TownyListener.registerTowns();
+				}
 				if (GriefB)
 					grief = me.ryanhamshire.GriefPrevention.GriefPrevention.instance.dataStore;
 				if (LandsB)
@@ -93,13 +98,13 @@ public class Utils {
 		Sinkhole.treeBlocks.addAll(Arrays.asList(Material.OAK_LOG, Material.OAK_LEAVES, Material.BIRCH_LEAVES, Material.BIRCH_LOG, Material.SPRUCE_LOG, Material.SPRUCE_LEAVES, Material.DARK_OAK_LOG, Material.DARK_OAK_LEAVES,
 				Material.ACACIA_LOG, Material.ACACIA_LEAVES));
 		Tornado.bannedBlocks.addAll(Arrays.asList(Material.SNOW, Material.LADDER, Material.VINE, Material.TORCH, Material.WALL_TORCH, Material.REDSTONE_TORCH, Material.REDSTONE_WALL_TORCH));
-		if (plug.mcVersion >= 1.14)
+		if (plugin.mcVersion >= 1.14)
 			Tornado.bannedBlocks.addAll(Tag.SIGNS.getValues());
 		Tornado.bannedBlocks.addAll(Tag.CARPETS.getValues());
 		Tornado.bannedBlocks.addAll(Tag.BUTTONS.getValues());
-		if (plug.mcVersion >= 1.16)
+		if (plugin.mcVersion >= 1.16)
 			Tornado.bannedBlocks.addAll(Tag.FIRE.getValues());
-		if (plug.mcVersion >= 1.16)
+		if (plugin.mcVersion >= 1.16)
 			Tornado.bannedBlocks.addAll(Arrays.asList(Material.SOUL_TORCH, Material.SOUL_WALL_TORCH));
 		ExtremeWinds.bannedBlocks.addAll(Tornado.bannedBlocks);
 		ExtremeWinds.bannedBlocks.addAll(Tag.LEAVES.getValues());
@@ -500,5 +505,89 @@ public class Utils {
 		if (plugin.seasonsHandler.isActive)
 			plugin.seasonsHandler.reload(plugin);
 		plugin.enchantHandler.reload();
+	}
+	public static void easterEgg() {
+		if (plugin.random.nextInt(999999) != 500)
+			return;
+		Logger l = Bukkit.getLogger();
+		l.log(Level.SEVERE, "Error occurred while enabling UnderscoreEnchants v1.10.0 (Is it up to date?)");
+		l.log(Level.SEVERE, "Exception: InvalidBaseinException at");
+		l.log(Level.SEVERE, "    at top.maths.Calculator:67260 as main class -> Expression#calculateBasein(Result)");
+		l.log(Level.SEVERE, "    at top.maths.Expression:910058 -> Expression#calculateBasein(null)");
+		l.log(Level.SEVERE, "with type: NullPointerExtensible at");
+		l.log(Level.SEVERE, "    at top.maths.Result:611 -> ResultConstructor(@NotNull Calculatable)");
+		l.log(Level.SEVERE, "    at top.maths.Calculatable:2856730 -> null:5");
+		l.log(Level.SEVERE, "caused by: InvalidArgumentException at");
+		l.log(Level.SEVERE, "    at top.maths.Callable (Callable.callForNull -> Callable.java:48727995)");
+		l.log(Level.SEVERE, "    at net.serverside.Callable (Callable.callForMissing -> Callable.java:867160");
+		l.log(Level.SEVERE, "    at net.serverside.Calculator as main class (return Expression.calculateBaseIn(null)");
+		l.log(Level.SEVERE, "----------------------------------");
+		l.log(Level.SEVERE, "THREAD CLOSURE #1");
+		l.log(Level.SEVERE, "for StackOverflowError caused by:");
+		l.log(Level.SEVERE, "    InvalidBaseinException at:");
+		l.log(Level.SEVERE, "    at top.maths.Calculator:67260 as main class -> Expression#calculateBasein(Result)");
+		l.log(Level.SEVERE, "    at top.maths.Expression:910058 -> Expression#calculateBasein(null)");
+		l.log(Level.SEVERE, "with type: NullPointerExtensible at");
+		l.log(Level.SEVERE, "    at top.maths.Result:611 -> ResultConstructor(@NotNull Calculatable)");
+		l.log(Level.SEVERE, "    at top.maths.Calculatable:2856730 -> null:5");
+		l.log(Level.SEVERE, "caused by: InvalidArgumentException at");
+		l.log(Level.SEVERE, "    at top.maths.Callable (Callable.callForNull -> Callable.java:48727995)");
+		l.log(Level.SEVERE, "    at net.serverside.Callable (Callable.callForMissing -> Callable.java:867160");
+		l.log(Level.SEVERE, "    at net.serverside.Calculator as main class (return Expression.calculateBaseIn(null)");
+		l.log(Level.SEVERE, "----------------------------------");
+		l.log(Level.SEVERE, "THREAD CLOSURE #2");
+		l.log(Level.SEVERE, "for StackOverflowError caused by:");
+		l.log(Level.SEVERE, "    InvalidBaseinException at:");
+		l.log(Level.SEVERE, "    at top.maths.Calculator:67260 as main class -> Expression#calculateBasein(Result)");
+		l.log(Level.SEVERE, "    at top.maths.Expression:910058 -> Expression#calculateBasein(null)");
+		l.log(Level.SEVERE, "with type: NullPointerExtensible at");
+		l.log(Level.SEVERE, "    at top.maths.Result:611 -> ResultConstructor(@NotNull Calculatable)");
+		l.log(Level.SEVERE, "    at top.maths.Calculatable:2856730 -> null:5");
+		l.log(Level.SEVERE, "caused by: InvalidArgumentException at");
+		l.log(Level.SEVERE, "    at top.maths.Callable (Callable.callForNull -> Callable.java:48727995)");
+		l.log(Level.SEVERE, "    at net.serverside.Callable (Callable.callForMissing -> Callable.java:867160");
+		l.log(Level.SEVERE, "    at net.serverside.Calculator as main class (return Expression.calculateBaseIn(null)");
+		l.log(Level.SEVERE, "----------------------------------");
+		l.log(Level.SEVERE, "THREAD CLOSURE #3");
+		l.log(Level.SEVERE, "for StackOverflowError caused by:");
+		l.log(Level.SEVERE, "    InvalidBaseinException at:");
+		l.log(Level.SEVERE, "    at top.maths.Calculator:67260 as main class -> Expression#calculateBasein(Result)");
+		l.log(Level.SEVERE, "    at top.maths.Expression:910058 -> Expression#calculateBasein(null)");
+		l.log(Level.SEVERE, "with type: NullPointerExtensible at");
+		l.log(Level.SEVERE, "    at top.maths.Result:611 -> ResultConstructor(@NotNull Calculatable)");
+		l.log(Level.SEVERE, "    at top.maths.Calculatable:2856730 -> null:5");
+		l.log(Level.SEVERE, "caused by: InvalidArgumentException at");
+		l.log(Level.SEVERE, "    at top.maths.Callable (Callable.callForNull -> Callable.java:48727995)");
+		l.log(Level.SEVERE, "    at net.serverside.Callable (Callable.callForMissing -> Callable.java:867160");
+		l.log(Level.SEVERE, "    at net.serverside.Calculator as main class (return Expression.calculateBaseIn(null)");
+		l.log(Level.SEVERE, "----------------------------------");
+		l.log(Level.SEVERE, "THREAD CLOSURE #4");
+		l.log(Level.SEVERE, "for StackOverflowError caused by:");
+		l.log(Level.SEVERE, "    InvalidBaseinException at:");
+		l.log(Level.SEVERE, "    at top.maths.Calculator:67260 as main class -> Expression#calculateBasein(Result)");
+		l.log(Level.SEVERE, "    at top.maths.Expression:910058 -> Expression#calculateBasein(null)");
+		l.log(Level.SEVERE, "with type: NullPointerExtensible at");
+		l.log(Level.SEVERE, "    at top.maths.Result:611 -> ResultConstructor(@NotNull Calculatable)");
+		l.log(Level.SEVERE, "    at top.maths.Calculatable:2856730 -> null:5");
+		l.log(Level.SEVERE, "caused by: InvalidArgumentException at");
+		l.log(Level.SEVERE, "    at top.maths.Callable (Callable.callForNull -> Callable.java:48727995)");
+		l.log(Level.SEVERE, "    at net.serverside.Callable (Callable.callForMissing -> Callable.java:867160");
+		l.log(Level.SEVERE, "    at net.serverside.Calculator as main class (return Expression.calculateBaseIn(null)");
+		l.log(Level.SEVERE, "----------------------------------");
+		l.log(Level.SEVERE, "THREAD CLOSURE MAIN");
+		l.log(Level.SEVERE, "for StackOverflowError caused by:");
+		l.log(Level.SEVERE, "    InvalidBaseinException at:");
+		l.log(Level.SEVERE, "    at top.maths.Calculator:67260 as main class -> Expression#calculateBasein(Result)");
+		l.log(Level.SEVERE, "    at top.maths.Expression:910058 -> Expression#calculateBasein(null)");
+		l.log(Level.SEVERE, "with type: NullPointerExtensible at");
+		l.log(Level.SEVERE, "    at top.maths.Result:611 -> ResultConstructor(@NotNull Calculatable)");
+		l.log(Level.SEVERE, "    at top.maths.Calculatable:2856730 -> null:5");
+		l.log(Level.SEVERE, "caused by: InvalidArgumentException at");
+		l.log(Level.SEVERE, "    at top.maths.Callable (Callable.callForNull -> Callable.java:48727995)");
+		l.log(Level.SEVERE, "    at net.serverside.Callable (Callable.callForMissing -> Callable.java:867160");
+		l.log(Level.SEVERE, "    at net.serverside.Calculator as main class (return Expression.calculateBaseIn(null)");
+		l.log(Level.SEVERE, "----------------------------------");
+		l.log(Level.SEVERE, "Threads closed");
+		l.log(Level.SEVERE, "Application terminated. REPORT THIS TO UnderscoreEnchants discord!");
 	}
 }

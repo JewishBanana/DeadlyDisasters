@@ -29,8 +29,6 @@ import org.bukkit.entity.Skeleton;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
 import deadlydisasters.disasters.events.DestructionDisaster;
 import deadlydisasters.entities.purgeentities.DarkMage;
@@ -280,7 +278,7 @@ public class Purge extends DestructionDisaster {
 				entity.getAttribute(Attribute.GENERIC_FOLLOW_RANGE).setBaseValue(50);
 				entity.setTarget(player);
 				entity.setMetadata("dd-purgemob", fixdata);
-				entity.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 10000, 0, true));
+//				entity.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 10000, 0, true));
 				entities.add(entity.getUniqueId());
 			}
 		};

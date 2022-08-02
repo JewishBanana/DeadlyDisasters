@@ -30,6 +30,7 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import deadlydisasters.commands.Disasters;
+import deadlydisasters.commands.TownyDisasters;
 import deadlydisasters.disasters.BlackPlague;
 import deadlydisasters.disasters.Blizzard;
 import deadlydisasters.disasters.Disaster;
@@ -39,6 +40,7 @@ import deadlydisasters.entities.EntityHandler;
 import deadlydisasters.listeners.CoreListener;
 import deadlydisasters.listeners.CustomEnchantHandler;
 import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.listeners.TownyListener;
 import deadlydisasters.listeners.unloaders.Loader_ver_14;
 import deadlydisasters.listeners.unloaders.Loader_ver_17;
 import deadlydisasters.utils.ConfigUpdater;
@@ -148,6 +150,8 @@ public class Main extends JavaPlugin {
 		}
 		if (pm.getPlugin("Towny") != null) {
 			Utils.TownyB = true;
+			new TownyListener(this);
+			this.getCommand("towndisasters").setTabCompleter(new TownyDisasters(this));
 			getLogger().info("Successfully hooked into Towny");
 		}
 		if (pm.getPlugin("GriefPrevention") != null) {
@@ -179,6 +183,7 @@ public class Main extends JavaPlugin {
 		new DeathMessages(this);
 		new Utils(this);
 		
+		Utils.easterEgg();
 		checkForUpdates();
 		
 		ItemsHandler.createRecipes(this);
@@ -259,18 +264,18 @@ public class Main extends JavaPlugin {
 					Main plugin = Main.getInstance();
 					if (plugin.getConfig().getInt("purge.spawn_distance") >= 45)
 						plugin.getConfig().set("purge.spawn_distance", 25);
-					if (plugin.getConfig().getInt("tornado.max_entities.level 1") == 100)
-						plugin.getConfig().set("tornado.max_entities.level 1", 300);
-					if (plugin.getConfig().getInt("tornado.max_entities.level 2") == 300)
-						plugin.getConfig().set("tornado.max_entities.level 2", 600);
-					if (plugin.getConfig().getInt("tornado.max_entities.level 3") == 600)
-						plugin.getConfig().set("tornado.max_entities.level 3", 800);
-					if (plugin.getConfig().getInt("tornado.max_entities.level 4") == 900)
-						plugin.getConfig().set("tornado.max_entities.level 4", 1200);
-					if (plugin.getConfig().getInt("tornado.max_entities.level 5") == 1200)
-						plugin.getConfig().set("tornado.max_entities.level 5", 1800);
-					if (plugin.getConfig().getInt("tornado.max_entities.level 6") == 2000)
-						plugin.getConfig().set("tornado.max_entities.level 6", 3000);
+					if (plugin.getConfig().getInt("tornado.max_entities.level 1") == 300)
+						plugin.getConfig().set("tornado.max_entities.level 1", 200);
+					if (plugin.getConfig().getInt("tornado.max_entities.level 2") == 600)
+						plugin.getConfig().set("tornado.max_entities.level 2", 300);
+					if (plugin.getConfig().getInt("tornado.max_entities.level 3") == 800)
+						plugin.getConfig().set("tornado.max_entities.level 3", 500);
+					if (plugin.getConfig().getInt("tornado.max_entities.level 4") == 1200)
+						plugin.getConfig().set("tornado.max_entities.level 4", 800);
+					if (plugin.getConfig().getInt("tornado.max_entities.level 5") == 1800)
+						plugin.getConfig().set("tornado.max_entities.level 5", 1000);
+					if (plugin.getConfig().getInt("tornado.max_entities.level 6") == 3000)
+						plugin.getConfig().set("tornado.max_entities.level 6", 2000);
 					plugin.saveConfig();
 					ConfigUpdater.update(plugin, Languages.fetchNewConfig(plugin, null), new File(getDataFolder().getAbsolutePath(), "config.yml"), Arrays.asList(""));
 					plugin.reloadConfig();

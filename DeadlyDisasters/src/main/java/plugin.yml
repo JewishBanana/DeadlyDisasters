@@ -1,5 +1,5 @@
 name: DeadlyDisasters
-version: 10.0
+version: 10.1
 author: davidclue
 main: deadlydisasters.general.Main
 description: Adds deadly disasters to the game.
@@ -10,6 +10,9 @@ commands:
     disasters:
         usage: /disasters <enable|disable|start|mintimer|reload|help|summon|give|difficulty|language|catalog|whitelist|listplayer|config>...
         description: Universal command for the plugin. Use /disasters help, for more information.
+    towndisasters:
+        usage: /towndisasters <on|off> [player]
+        description: Turn on or off disasters for residents town
         
 permissions:
     deadlydisasters.*:
@@ -22,6 +25,7 @@ permissions:
             deadlydisasters.listplayer: true
             deadlydisasters.summon: true
             deadlydisasters.give: true
+            deadlydisasters.towny: true
     deadlydisasters.start:
         description: Allows you to start disasters via command.
     deadlydisasters.help:
@@ -36,3 +40,5 @@ permissions:
         description: Allows the use of the summon command.
     deadlydisasters.give:
         description: Allows the use of the give command.
+    deadlydisasters.towny:
+        description: Allows the use of the townydisasters command.

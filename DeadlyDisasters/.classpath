@@ -42,7 +42,7 @@
 	<classpathentry kind="lib" path="C:/Users/david/Desktop/Minecraft Servers/Minecraft Server 1.18/plugins/RealisticSeasons/RealisticSeasons-7.6.jar"/>
 	<classpathentry kind="lib" path="C:/Users/david/Desktop/Minecraft Servers/Minecraft Server 1.17/plugins/GriefPreventionData/GriefPrevention.jar"/>
 	<classpathentry kind="lib" path="C:/Users/david/Desktop/Minecraft Servers/Minecraft Server 1.17/plugins/CoreProtect/CoreProtect-19.5.jar"/>
-	<classpathentry kind="lib" path="C:/Users/david/Desktop/Minecraft Servers/Minecraft Server 1.17/plugins/Towny/Towny-0.97.2.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/david/Desktop/Minecraft Servers/Minecraft Server 1.18 (Purpur)/plugins/Kingdoms/Kingdoms-1.13.5.jar"/>
+	<classpathentry kind="lib" path="C:/Users/david/Desktop/Minecraft Servers/Minecraft Server 1.19 (Paper)/plugins/DeadlyDisastersPro/Towny-0.98.3.0.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
