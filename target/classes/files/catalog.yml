@@ -1,0 +1,63 @@
+version: 1
+featured:
+- 0
+- 1
+- 2
+- 3
+- 4
+disasters:
+    doomsday:
+        name: '&4&lDoomsday'
+        file: 'doomsday'
+        author: 'davidclue'
+        item: ender_eye
+        description: '&bTest description'
+        version: 1.0
+        game_version: 1.14
+        plugin_version: 9.0
+        link: 'https://docs.google.com/uc?export=download&id=1y48gi3Q_CLP75lo1Scd62O8e-9FEa7KW'
+        id: 0
+    lavatsunami:
+        name: '&c&lLava Tsunamis'
+        file: 'lavatsunami'
+        author: 'davidclue'
+        item: lava_bucket
+        description: '&bAdds very big lava tsunamis to the nether'
+        version: 1.0
+        game_version: 1.14
+        plugin_version: 9.0
+        link: 'https://docs.google.com/uc?export=download&id=16mmktmhbiUE6TtCOUdXgmVV3y6DC1Idm'
+        id: 1
+    minimeteors:
+        name: '&d&lMini Meteors'
+        file: 'minimeteors'
+        author: 'davidclue'
+        item: magma_block
+        description: '&bAdds deadly mini meteor showers'
+        version: 1.0
+        game_version: 1.17
+        plugin_version: 9.0
+        link: 'https://docs.google.com/uc?export=download&id=1INp5HOeOuWBDjPTfvVFm8lMiUwvBefo9'
+        id: 2
+    firetornado:
+        name: '&c&lFire Tornado'
+        file: 'firetornado'
+        author: 'davidclue'
+        item: hopper
+        description: '&bAdds fire tornados to the overworld and nether'
+        version: 1.0
+        game_version: 1.16
+        plugin_version: 9.0
+        link: 'https://docs.google.com/uc?export=download&id=1ICV8kyKvKpzfQpja3S8zN3-CInCX_Jo0'
+        id: 3
+    obsidianspikes:
+        name: '&8&lObsidian Spikes'
+        file: 'obsidianspikes'
+        author: 'davidclue'
+        item: obsidian
+        description: '&bObsidian spikes pierce underground players hiding in caves'
+        version: 1.0
+        game_version: 1.17
+        plugin_version: 9.0
+        link: 'https://docs.google.com/uc?export=download&id=1crlb6Z0bbqpaXHRE0R4LThEZNOGdZV03'
+        id: 4

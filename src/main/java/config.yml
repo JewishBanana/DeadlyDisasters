@@ -1,0 +1,858 @@
+general:
+    # If set to true then admins will receive a message about updates for the plugin upon joining if any are available
+    update_notify: true
+    # If set to true then admins will be alerted when new content is added to the custom disaster catalog
+    catalog_notify: true
+    # The max amount of blocks that can be naturally regenerated per tick
+    max_regen_blocks_per_tick: 300
+    # The amount of blocks regenerated per tick for the forceRegeneration command
+    force_regen_blocks_per_tick: 10000
+    # If set to true then disasters will be automatically enabled on new world creations
+    auto_enable_on_generation: true
+    # If set to true then custom mobs naturally spawning will automatically be enabled on new world creations
+    auto_enable_natural_spawning: true
+    # Debug messages will send some error info to the console for some errors
+    debug_messages: true
+messages:
+    # Modify messages sent by the plugin. Do not set this to be empty it will not work, if you do not want any messages then turn off event_broadcast in general
+    console_error_message: '&cUnable to execute command from console!'
+    permission_error: '&cYou do not have permission to use that!'
+    # If disaster tips is set to true then disaster broadcasts will include the disasters tip
+    disaster_tips: true
+    destructive:
+        level 1: '&aLevel: 1 %disaster% &6event starting at: &a%location% &e(%player%)'
+        level 2: '&2Level: 2 %disaster% &6event starting at: &a%location% &e(%player%)'
+        level 3: '&bLevel: 3 %disaster% &6event starting at: &a%location% &e(%player%)'
+        level 4: '&eLevel: 4 %disaster% &6event starting at: &a%location% &e(%player%)'
+        level 5: '&cLevel: 5 %disaster% &6event starting at: &a%location% &e(%player%)'
+        level 6: '&4&lLevel: 6 %disaster% &6event starting at: &a%location% &e(%player%)'
+    weather:
+        level 1: '&6A &2very short %disaster% &6is about to begin'
+        level 2: '&6A &ashort %disaster% &6is about to begin'
+        level 3: '&6A &blong %disaster% &6is about to begin'
+        level 4: '&6A &every long %disaster% &6is about to begin'
+        level 5: '&6An &cextremely long %disaster% &6is about to begin'
+        winds:
+            level 1: '&aVery light &fWinds &6are approaching'
+            level 2: '&bLight &fWinds &6are approaching'
+            level 3: '&9Strong &fWinds &6are approaching'
+            level 4: '&eVery strong &fWinds &6are approaching'
+            level 5: '&cExtremely strong &fWinds &6are approaching'
+            level 6: '&4&lSeverely strong &fWinds &6are approaching'
+    misc:
+        plague:
+            started: '&eA mob has contracted the &0Black Plague'
+        purge:
+            started: 'Level: %level% &cHorde is assembling, &6%player% &cwill be purged...'
+            ended: '&eThe horde is clearing up..'
+        world_messages:
+            # Allows disaster difficulty messages to be sent when a player switches or joins worlds
+            allow_world_messages: true
+            # Shows difficulty messages to everyone
+            show_world_messages_to_not_opped: false
+            message: '&bDifficulty is set to %difficulty% &bon &d%world%'
+# Individual settings for disasters (Universal settings such as 'volume' and 'time' are only described in sinkholes and sandstorms)
+sinkhole:
+    # Delay in seconds before the disaster occurs after it has been broadcasted
+    start_delay: 0
+    # How fast sinkholes fall. This effects performance
+    speed: 5
+    # Size multiplier
+    size: 1.0
+    # The minimum height the disaster can spawn at
+    min_height: 50
+    # Max level this specific disaster can reach
+    max_level: 6
+    # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen
+    frequency: 1.0
+    # Volume multiplier for sounds related to this disaster
+    volume: 1.0
+    # The regen rate is the multiplier for how fast the world will regenerate the damage from the disaster
+    regen_rate: 1.0
+    # This will change the name of the disaster in game
+    name: '&eSinkHole'
+earthquake:
+    start_delay: 0
+    # How fast earthquakes move. This effects performance
+    tick_speed: 5
+    size: 1.0
+    # Tilt is how much earthquakes can fall off their path. The higher the number the more natural earthquakes will be but more blocks will be missed
+    tilt: 0.3
+    # Force multiplier for how strong earthquakes can throw nearby entities
+    force: 1.0
+    min_height: 50
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&8Earthquake'
+cavein:
+    start_delay: 0
+    size: 1.0
+    # Damage done by cave-in roof blocks
+    damage: 7.0
+    # The max amount of falling blocks that can exist at once for a cavein, lower values means caveins will take longer to finish
+    max_falling_blocks: 800
+    # For caveins only this will be the max height at which caveins can spawn at
+    min_height: 50
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&7Cave In'
+tornado:
+    start_delay: 0
+    # The multiplier for the amount of particles that spawn in tornados (By default 1.0 is the max)
+    particleAmount: 0.5
+    size: 1.0
+    # Multiplier for how long tornados last
+    time_multiplier: 1.0
+    # The speed at which entities move in tornados, NOT how fast tornados move!
+    speed: 1.0
+    # The width of the tornado, higher number means skinnier tornados
+    width: 150
+    # Block pickup range is the multiplier for how far blocks from the tornado can be picked up
+    block_pickup_range: 1.0
+    # Max entities that can be involved in tornados, alive entities always take priority
+    max_entities:
+        level 1: 200
+        level 2: 300
+        level 3: 500
+        level 4: 800
+        level 5: 1000
+        level 6: 2000
+    min_height: 60
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&fTornado'
+geyser:
+    start_delay: 0
+    # How much damage water geysers do to entities per disaster tick. Entities with fire resistance will not be burned
+    water_damage: 1.5
+    min_height: 5
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&9Water Geyser/&cLava Geyser'
+tsunami:
+    start_delay: 0
+    # The minimum depth of water needed for a tsunami to occur above. Tsunamis can only occur in ocean biomes
+    minimum_depth: 15
+    size: 1.0
+    # Damage to entities inside the tsunami every disaster tick
+    damage: 3.0
+    # If set to true then tsunamis will clear the water shortly after
+    remove_water: true
+    min_height: 50
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&1Tsunami'
+supernova:
+    start_delay: 0
+    size: 1.0
+    # This changes how many particles spawn in supernovas (Higher number means less particles)
+    particle_multiplier: 1.0
+    # Flash toggles the flashing of the supernova
+    flash: true
+    # Place fire toggles whether fire can be placed by the supernova or not
+    place_fire: true
+    # If set to true then explosion particles can be seen from very far away by players but this drastically affects performance
+    far_particles: true
+    min_height: 55
+    max_level: 6
+    frequency: 0.3
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&3Supernova'
+hurricane:
+    start_delay: 0
+    size: 1.0
+    # How long hurricanes last in seconds
+    time: 180
+    # Chance of lightning striking a player, every higher level will have a 10 fold higher chance to strike, the higher this value means the less likely lightning will strike
+    lightning_frequency: 1.0
+    # The minimum force of wind required to break blocks near players
+    block_break_force: 0.04
+    min_height: 60
+    max_level: 6
+    frequency: 1.0
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&7Hurricane'
+purge:
+    start_delay: 10
+    # How many mobs spawn for each level
+    horde_size:
+        level 1: 8
+        level 2: 13
+        level 3: 20
+        level 4: 25
+        level 5: 35
+        level 6: 50
+    # Will give the targeted player a progress boss bar and foggy world effects
+    boss_bar: true
+    # Change the name of the bossbar
+    bar_title: 'Horde'
+    # The despawn speed is how fast mobs from the horde clear up in ticks
+    despawn_speed: 40
+    # Spawn distance is how far away the horde mobs spawn from the player, don't set this too high or the mobs will just despawn
+    spawn_distance: 25
+    min_height: 0
+    max_level: 6
+    frequency: 0.3
+    volume: 1.0
+plague:
+    start_delay: 0
+    # Control which types of mobs are immune to the plague, list of entity type names are available here https://hub.spigotmc.org/javadocs/spigot/org/bukkit/entity/EntityType.html
+    blacklisted_mobs:
+    - ender_dragon
+    - wither
+    - elder_guardian
+    - armor_stand
+    - warden
+    # Max number of entities that can be infected
+    max_infected_mobs: 50
+    max_level: 6
+    frequency: 0.3
+    name: '&0Black Plague'
+sandstorm:
+    # Delay in seconds for disaster to begin after the event message is broadcast
+    start_delay: 5
+    time:
+        # How long the disaster will last in seconds for each level
+        level 1: 30
+        level 2: 60
+        level 3: 120
+        level 4: 200
+        level 5: 300
+    # If set to true then after sandstorms end all mobs related will have a chance of placing a skeleton skull down before despawning
+    mobs_drop_skulls: true
+    # If set to true then entities inside sandstorms will suffer from wither
+    wither_effect: true
+    # Mob spawn rate is the chance of a custom mob spawning per sandstorm spawn tick
+    mob_spawn_rate: 25.0
+    # Particle max distance means the radius in blocks players can see sand particles on the X and Z axis
+    particle_max_distance: 6
+    # Particle Y range is the Y level range that sand particles can be displayed at, so higher the number means the further away you can see sand on the Y axis
+    particle_Y_range: 10
+    # Particle multiplier of sand particles
+    particle_multiplier: 1.0
+    min_height: 50
+    max_level: 5
+    frequency: 1.0
+    volume: 1.0
+    name: '&eSandstorm'
+blizzard:
+    start_delay: 5
+    time:
+        level 1: 30
+        level 2: 60
+        level 3: 120
+        level 4: 200
+        level 5: 300
+    # If set to true then entites can freeze into solid ice during blizzards
+    freeze_entities: true
+    # If set to true then players wearing leather armor set pieces will take reduced damage in blizzards
+    leather_armor_protection: true
+    # The damage done to mobs every storm tick
+    damage: 0.75
+    # Mob spawn rate is the chance of a custom mob spawning per blizzard spawn tick
+    mob_spawn_rate: 13.0
+    # The min freezing height is the minimum Y level entities must be to freeze solid, all entities below this will just die instead
+    min_freezing_height: 60
+    # Particle max distance means the radius in blocks players can see blizzard particles on the X and Z axis
+    particle_max_distance: 10
+    # Particle Y range is the Y level range that blizzard particles can be displayed at, so higher the number means the further away you can see snow on the Y axis
+    particle_Y_range: 10
+    # Particle multiplier of snow particles
+    particle_multiplier: 1.0
+    min_height: 50
+    max_level: 5
+    frequency: 1.0
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&9Blizzard'
+acidstorm:
+    start_delay: 5
+    time:
+        level 1: 30
+        level 2: 60
+        level 3: 120
+        level 4: 200
+        level 5: 300
+    # Damage done to entities in acid rain
+    damage: 1.0
+    # If set to true then metal items will melt if left in acid rain such as iron, gold, and chainmail
+    melt_dropped_items: true
+    # If set to true then entities wearing metal armor such as iron, gold, or chainmail will take extra damage to their armor
+    melt_armor: true
+    # Particle max distance means the radius in blocks players can see acid rain particles on the X and Z axis
+    particle_max_distance: 7
+    # Particle Y range is the Y level range that acid rain particles can be displayed at, so higher the number means the further away you can see acid rain on the Y axis
+    particle_Y_range: 10
+    # Particle multiplier of acid rain particles
+    particle_multiplier: 1.0
+    # The range from players that blocks are affected by acidic rainfall (Some blocks change, some are destroyed, ex. metals, crops, etc.)
+    block_damage_range: 50
+    # The rate multiplier of how many blocks around players change
+    block_change_rate: 1.0
+    # Multiplier for how often slimes can spawn near players
+    slime_spawn_rate: 1.0
+    # Toggle if crops can get poisoned in acid rain or not
+    poison_crops: true
+    # Control what effects are given to entities in acid storms (remove and add, potions must be the vanilla name in game and formatted as follows: POTION_NAME: GAME_TICKS)
+    effects:
+        blindness: 20
+        poison: 10
+    # Control what blocks are changed to what in acid rain (remove and add, format is as follows: VANILLA_BLOCK_NAME: NEW_VANILLA_BLOCK_NAME)
+    block_changes:
+        iron_block: air
+        iron_bars: air
+        iron_trapdoor: air
+        gold_block: air
+        rail: air
+        powered_rail: air
+        activator_rail: air
+        detector_rail: air
+        hopper: air
+        cauldron: air
+        heavy_weighted_pressure_plate: air
+        light_weighted_pressure_plate: air
+        stone: cobblestone
+        cobblestone: air
+        stone_bricks: cracked_stone_bricks
+        iron_ore: cobblestone
+        deepslate_iron_ore: deepslate
+        gold_ore: cobblestone
+        deepslate_gold_ore: deepslate
+        copper_ore: cobblestone
+        deepslate_copper_ore: deepslate
+    min_height: 50
+    max_level: 5
+    frequency: 0.6
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&aAcid Storm'
+soulstorm:
+    start_delay: 5
+    time:
+        level 1: 30
+        level 2: 60
+        level 3: 120
+        level 4: 200
+        level 5: 300
+    # If set to true then lost souls will spawn around players in soulstorms
+    spawn_souls: true
+    min_height: 0
+    max_level: 5
+    frequency: 0.6
+    volume: 1.0
+    name: '&3Soul Storm'
+extremewinds:
+    start_delay: 5
+    time:
+        level 1: 60
+        level 2: 60
+        level 3: 80
+        level 4: 100
+        level 5: 120
+        level 6: 120
+    force:
+        # The force of the wind for each level. This will have a big impact on performance
+        level 1: 0.03
+        level 2: 0.06
+        level 3: 0.1
+        level 4: 0.14
+        level 5: 0.18
+        level 6: 0.3
+    # Max particles displayed for each player
+    max_particles: 150
+    # Winds have a smart algorithm to determine if you are in a building or not, this value is how many blocks it should check for a roof, the higher a number the more performance heavy it will be especially for big servers
+    interior_height_distance: 6
+    # How strong winds need to be to rip blocks from buildings
+    block_break_force: 0.1
+    min_height: 60
+    max_level: 6
+    frequency: 0.6
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&fExtreme Winds'
+meteorshowers:
+    start_delay: 5
+    time:
+        level 1: 30
+        level 2: 60
+        level 3: 80
+        level 4: 100
+        level 5: 120
+    # If set to true then when a meteor storm begins it will temporarily set the time to night
+    set_night: true
+    # Maximum amount of meteors that can exist at a time. This will impact performance
+    max_meteors: 20
+    # How often meteors update. This will effect performance
+    tick_speed: 1
+    # How long in seconds smoke particles remain from meteor impact zones
+    smoke_time: 15
+    min_height: 60
+    max_level: 5
+    frequency: 0.6
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&5Meteor Shower'
+endstorm:
+    start_delay: 5
+    time:
+        level 1: 60
+        level 2: 90
+        level 3: 120
+        level 4: 150
+        level 5: 200
+    # The furthest amount of blocks entities can randomly teleport away from in an end storm
+    max_tp_range: 10
+    # Max number of void mobs that can exist during an end storm
+    max_rift_entities: 15
+    min_height: 0
+    max_level: 5
+    frequency: 1.0
+    volume: 1.0
+    name: '&5End Storm'
+solarstorm:
+    start_delay: 5
+    time:
+        level 1: 60
+        level 2: 90
+        level 3: 120
+        level 4: 150
+        level 5: 200
+    # Will change the time to sunset if set to true
+    set_sunset: true
+    # Chance of catching fire every storm tick for entities near heat sources
+    fire_catch_chance: 30.0
+    # Rate of how much fire spawns near players
+    fire_spawn_rate: 1.0
+    # Control the size of fireball explosions
+    fireball_explosion_size: 3.0
+    min_height: 60
+    max_level: 5
+    frequency: 1.0
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&eSolar Storm'
+monsoon:
+    start_delay: 5
+    time:
+        level 1: 60
+        level 2: 90
+        level 3: 120
+        level 4: 150
+        level 5: 200
+    # Particle max distance means the radius in blocks players can see heavy rain particles on the X and Z axis
+    particle_max_distance: 7
+    # Particle Y range is the Y level range that heavy rain particles can be displayed at, so higher the number means the further away you can see rain on the Y axis
+    particle_Y_range: 10
+    # Particle multiplier of rain particles
+    particle_multiplier: 1.0
+    # Puddle spawn rate is the multiplier of puddles spawning near players during monsoons
+    puddle_spawn_rate: 1.0
+    # The rate at which puddles dry up after monsoons
+    puddle_dry_rate: 0.1
+    # Rate at how fast entities in rain lose air ticks, this does not affect how fast they take damage from drowning
+    entity_drowning_rate: 1.0
+    # The range from players that blocks are affected by heavy rainfall (Some blocks change, some are destroyed, ex. crops, dirt, leaves)
+    block_damage_range: 50
+    # The rate multiplier of how many blocks around players change
+    block_change_rate: 1.0
+    # Multiplier for how many particles spawn when leaking through blocks (ex. planks, leaves, etc.)
+    water_leak_particles: 1.0
+    # Multiplier for how often drowned can spawn near players
+    drowned_spawn_rate: 1.0
+    # Control what blocks are changed to what in heavy rain (remove and add, format is as follows: VANILLA_BLOCK_NAME: NEW_VANILLA_BLOCK_NAME)
+    block_changes:
+        oak_leaves: air
+        spruce_leaves: air
+        birch_leaves: air
+        jungle_leaves: air
+        acacia_leaves: air
+        dark_oak_leaves: air
+        azalea_leaves: air
+        flowering_azalea_leaves: air
+        dirt: dirt_path
+        grass_block: dirt_path
+        coarse_dirt: dirt_path
+        podzol: dirt_path
+        rooted_dirt: dirt_path
+        wheat: air
+        carrots: air
+        potatoes: air
+        beetroots: air
+        pumpkin_stem: air
+        attached_pumpkin_stem: air
+        melon_stem: air
+        attached_melon_stem: air
+        nether_wart: air
+    min_height: 60
+    max_level: 5
+    frequency: 0.6
+    volume: 1.0
+    regen_rate: 1.0
+    name: '&9Monsoon'
+infestedcaves:
+    start_delay: 0
+    time:
+        level 1: 30
+        level 2: 45
+        level 3: 60
+        level 4: 90
+        level 5: 120
+        level 6: 180
+    size: 1.0
+    # Multiplier for infested mobs spawning
+    mob_spawn_multiplier: 1.0
+    # Threads that will be allocated to perform calculations, the more threads you use the less of a delay there will be when starting an infestation. This is purely dependent on the hardware running the server, allocating more threads then cores of the CPU will not speed it up any faster
+    threads_for_operation: 4
+    # The maximum Y level that the infestation can reach
+    max_height: 25
+    max_level: 6
+    frequency: 0.5
+    volume: 1.0
+    name: '(hex:#0b5248)Infested Caves'
+custom:
+    # This frequency setting is an overall chance of a custom disaster occurring, 1.0 means only custom disasters can happen
+    frequency: 0.2
+customentities:
+    # If set to true then custom mobs can spawn, setting this to false will keep the plugin more vanilla
+    allow_custom_mobs: true
+    # Toggle off all custom drops from custom mobs. If set to true then custom items can be dropped from custom mobs, else if set to false then custom mobs will drop nothing
+    allow_custom_drops: true
+    # Endstorm mobs can only spawn in the end
+    endstorm_mobs:
+        endtotem:
+            # If the mob can ever spawn or not basically enable or disable, if disabled then the mob won't even appear in its associated disaster
+            spawning: true
+            # Natural spawn rate of the mob, if set to 0 then they will never naturally spawn, spawning must be enabled
+            spawnrate: 0.5
+            health: 30.0
+            damage: 6.0
+            # List of custom drops for the entity. Order is [- ITEM_NAME | CHANCE | MINIMUM-MAXIMUM]
+            # ITEM_NAME is the name of the item (custom items from the plugin can be named). List of item names here https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Material.html
+            # CHANCE is the double for each piece dropping so if you have 0-3 for you min-max and 80.0 for your chance, it will be 3x 80% chance to drop the item
+            # MINIMUM-MAXIMUM is the minimum amount of items dropped and maximum is the max amount dropped. You must always format it this way so if you want only 1 item to always drop then either set min-max to 1-1 or set min-max to 0-1 and chance to 100.0
+            drops:
+            - chorus_fruit | 80.0 | 0-2
+            - obsidian | 50.0 | 0-1
+            - voidshard | 12.5 | 0-1
+        endworm:
+            spawning: true
+            spawnrate: 1.0
+            health: 30.0
+            drops:
+            - chorus_fruit | 80.0 | 0-1
+            - crying_obsidian | 50.0 | 0-1
+            - bone | 50.0 | 1-3
+        voidarcher:
+            spawning: true
+            spawnrate: 1.25
+            health: 20.0
+            drops:
+            - voidswrath | 5.0 | 0-1
+            - bone | 50.0 | 1-2
+            - arrow | 25.0 | 0-2
+        voidguardian:
+            spawning: true
+            spawnrate: 2.0
+            health: 40.0
+            drops:
+            - voidsedge | 5.0 | 0-1
+            - voidshield | 7.5 | 0-1
+            - rotten_flesh | 60.0 | 0-4
+        voidstalker:
+            spawning: true
+            spawnrate: 2.5
+            health: 20.0
+            damage: 8.0
+            drops:
+            - ender_eye | 20.0 | 0-1
+    # Sandstorm mobs can only spawn naturally in desert biomes
+    sandstorm_mobs:
+        ancientmummy:
+            spawning: true
+            spawnrate: 1.5
+            health: 40.0
+            damage: 10.0
+            drops:
+            - ancientcloth | 15.0 | 0-1
+            - bone | 25.0 | 0-2
+            - rotten_flesh | 60.0 | 0-3
+        ancientskeleton:
+            spawning: true
+            spawnrate: 1.0
+            health: 30.0
+            damage: 7.0
+            drops:
+            - ancientbone | 10.0 | 0-1
+            - gold_nugget | 20.0 | 0-3
+    # Soul storm mobs can only spawn naturally in soul sand valley biomes
+    soulstorm_mobs:
+        lostsoul:
+            spawning: true
+            spawnrate: 7.5
+            health: 14.0
+            damage: 5.0
+            drops: []
+        soulreaper:
+            spawning: true
+            spawnrate: 0.5
+            health: 40.0
+            damage: 25.0
+            # If set to true then soul reapers will only attack players who are hostile, if set to false then soul reapers will attack whenever a player is in sight
+            neutral_to_players: true
+            drops:
+            - soulripper | 10.0 | 0-1
+    # Purge mobs can naturally spawn anywhere in the overworld only
+    purge_mobs:
+        darkmage:
+            spawning: true
+            spawnrate: 0.5
+            health: 20.0
+            drops:
+            - magewand | 3.0 | 0-1
+            - bone | 30.0 | 0-2
+            - rotten_flesh | 50.0 | 0-3
+        primedcreeper:
+            spawning: true
+            spawnrate: 5.0
+            health: 20.0
+            drops:
+            - gunpowder | 20.0 | 0-8
+        skeletonknight:
+            spawning: true
+            spawnrate: 0.75
+            health: 20.0
+            drops:
+            - bone | 40.0 | 1-3
+            - iron_sword | 5.0 | 0-1
+        tunneller:
+            spawning: true
+            # Tunnellers can only spawn underground naturally
+            spawnrate: 1.0
+            health: 30.0
+            damage: 6.0
+            drops:
+            - rotten_flesh | 40.0 | 1-3
+            - cobblestone | 20.0 | 0-5
+            - iron_ore | 10.0 | 0-2
+            - gold_ore | 5.0 | 0-2
+            - water_bucket | 3.0 | 0-1
+            - diamond_pickaxe | 0.25 | 0-1
+        swampbeast:
+            spawning: true
+            spawnrate: 1.0
+            health: 40.0
+            damage: 10.0
+            mud_patch_radius: 8
+            drops:
+            - rotten_flesh | 40.0 | 1-3
+            - dirt | 10.0 | 0-4
+        zombieknight:
+            spawning: true
+            spawnrate: 0.25
+            health: 30.0
+            drops:
+            - rotten_flesh | 40.0 | 1-3
+            - stone_sword | 10.0 | 0-1
+        shadowleech:
+            spawning: true
+            spawnrate: 0.5
+            health: 8.0
+            damage: 2.0
+            # Chance of converting to blood leech (multiplies damage, health, and speed)
+            blood_leech_conversion: 12.5
+            drops: []
+    # Snowstorm mobs can only spawn in cold places like snow biomes (If RealisticSeasons is enabled then snowstorm mobs can spawn anywhere in the overworld during winter)
+    snowstorm_mobs:
+        yeti:
+            spawning: true
+            spawnrate: 1.0
+            health: 60.0
+            damage: 12.0
+            # How many ticks the corpses remain for after death
+            corpse_life_ticks: 160
+            drops:
+            - beef | 40.0 | 1-6
+            - yetifur | 10.0 | 0-1
+    # Solarstorm mobs can only spawn in warm places like savannas or deserts (If RealisticSeasons is enabled then solarstorm mobs can only spawn during the summer)
+    solarstorm_mobs:
+        firephantom:
+            spawning: true
+            spawnrate: 1.0
+            health: 20.0
+            damage: 8.0
+            # Chance to ignite nearby blocks every second
+            ignite_chance: 20.0
+            # How many ticks the fire items live after being dropped
+            death_flames_life_ticks: 160
+            drops:
+            - fire_charge | 80.0 | 0-1
+    monsoon_mobs:
+        cursed_diver:
+            spawning: true
+            spawnrate: 2.0
+            health: 30.0
+            damage: 8.0
+            drops:
+            - poseidonstrident | 2.5 | 0-1
+            - rotten_flesh | 60.0 | 0-3
+    # Infested caves mobs can only spawn in deep dark biomes
+    infestedcaves_mobs:
+        infested_skeleton:
+            spawning: true
+            spawnrate: 7.0
+            health: 30.0
+            damage: 12.0
+            drops:
+            - bone | 40.0 | 0-3
+            - sculk | 33.3 | 0-2
+        infested_zombie:
+            spawning: true
+            spawnrate: 10.0
+            health: 25.0
+            damage: 8.0
+            drops:
+            - rotten_flesh | 40.0 | 0-3
+            - sculk | 33.3 | 0-2
+        infested_creeper:
+            spawning: true
+            spawnrate: 7.0
+            health: 25.0
+            damage: 8.0
+            drops:
+            - gunpowder | 20.0 | 0-4
+            - sculk | 33.3 | 0-2
+        infested_enderman:
+            spawning: true
+            spawnrate: 6.0
+            health: 30.0
+            damage: 10.0
+            drops:
+            - sculk | 33.3 | 0-2
+        infested_spirit:
+            spawning: true
+            spawnrate: 2.0
+            health: 10.0
+            damage: 7.0
+            drops:
+            - sculk | 33.3 | 0-2
+        infested_tribesman:
+            spawning: true
+            spawnrate: 8.0
+            health: 12.0
+            damage: 6.0
+            archer_spawn_chance: 20.0
+            drops:
+            - sculk | 33.3 | 0-2
+            - bone | 25.0 | 0-2
+            - rotten_flesh | 40.0 | 0-2
+            - bow | 5.0 | 0-1
+            - stone_sword | 7.0 | 0-1
+        infested_devourer:
+            spawning: true
+            spawnrate: 5.0
+            health: 8.0
+            damage: 4.0
+            # Chance of alpha devourer spawning
+            alpha_spawn_chance: 20.0
+            drops:
+            - bone | 30.0 | 0-2
+            - sculk | 33.3 | 0-2
+        infested_howler:
+            spawning: true
+            spawnrate: 5.0
+            health: 15.0
+            damage: 5.0
+            # Chance of a howl notifying warden from a cave infestation
+            warden_notify_chance: 80.0
+            drops:
+            - sculk | 33.3 | 0-2
+        infested_worm:
+            spawning: true
+            spawnrate: 8.0
+            damage: 2.5
+    pets:
+        baby_endtotem:
+            spawning: true
+            spawnrate: 0.0
+            health: 20
+            damage: 4.0
+            drops:
+            - chorus_fruit | 50.0 | 0-2
+            - obsidian | 33.3 | 0-1
+        tamed_lostsoul:
+            spawning: true
+            health: 14.0
+            damage: 5.0
+            drops: []
+customitems:
+    # Control which custom recipes are enabled
+    recipes:
+        plague_cure: true
+        ancient_blade: true
+        yetis_blessing: true
+        basic_coating: true
+    items:
+        void_wrath:
+            ability_cooldown: 10
+            # How many ticks unstable rifts live for
+            portal_ticks: 80
+            # If set to true then unstable rifts can be created in protected regions
+            allow_in_regions: true
+            # If set to true then items that are pulled into rifts will get removed
+            remove_items: true
+        ancient_blade:
+            ability_cooldown: 8
+        dark_mage_wand:
+            ability_cooldown: 10
+        soul_ripper:
+            ability_cooldown: 25
+            # Number of souls that are spawned
+            spawned_souls: 3
+            # How many ticks souls spawned live for
+            souls_life_ticks: 260
+        basic_coating_book:
+            chest_spawn_rate: 1.0
+            # Chance of librarian acquiring this item as a trade
+            librarian_trade_chance: 7.0
+        poseidons_trident:
+            ability_cooldown: 10
+        plague_cure:
+            # Chance of cleric acquiring this item as a trade
+            cleric_trade_chance: 5.0
+    enchants:
+        ancient_curse:
+            # How many ticks entities hit by a fire spell are on fire for
+            fire_ticks: 80
+            # How many ticks the spell travels for
+            spell_life_ticks: 20
+            # Amount of flame particles spawned per spell tick
+            particle_count: 10
+        yetis_blessing:
+            # Modify each level of the enchant
+            level 1:
+                # The radius of the yetis roar when activated
+                range: 4
+                # The chance of the enchant activating a roar when physically hit
+                chance: 8.0
+            level 2:
+                range: 6
+                chance: 11.0
+            level 3:
+                range: 8
+                chance: 15.0
+        tidal_wave:
+            level 1:
+                # Modify the range that the wave travels in blocks
+                range: 15
