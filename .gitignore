@@ -1,0 +1,8 @@
+/.settings/
+/.idea/
+/target/
+buildNumber.properties
+**.iml
+.project
+.classpath
+dependency-reduced-pom.xml
