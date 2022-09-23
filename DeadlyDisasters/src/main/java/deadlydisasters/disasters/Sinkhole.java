@@ -22,6 +22,7 @@ import org.bukkit.util.Vector;
 import deadlydisasters.disasters.events.DestructionDisaster;
 import deadlydisasters.disasters.events.DestructionDisasterEvent;
 import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -31,7 +32,7 @@ public class Sinkhole extends DestructionDisaster {
 	
 	private Location memory;
 	private int tick=0,speed;
-	public int maxD;
+	public int maxD,blocksDestroyed;
 	private double radius = 0, size;
 	public Random rand;
 	
@@ -142,6 +143,7 @@ public class Sinkhole extends DestructionDisaster {
 									}
 								}, 200L);
 								cancel();
+								Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 							}
 						}
 					};
@@ -213,6 +215,7 @@ class Places {
 				if (!Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
 					if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 					b.setType(Material.AIR);
+					classInstance.blocksDestroyed++;
 				}
 				it.remove();
 				return;
@@ -229,6 +232,7 @@ class Places {
 					if (b2.getState() instanceof InventoryHolder)
 						((InventoryHolder) b.getState()).getInventory().setContents(((InventoryHolder) b2.getState()).getInventory().getContents());
 					b2.setType(Material.AIR);
+					classInstance.blocksDestroyed++;
 				}
 				//new Location(b.getWorld(), b.getX(), b.getY()+2, b.getZ()).getBlock().setType(Material.AIR);
 			} else {
@@ -238,7 +242,10 @@ class Places {
 		}
 		depth-=r;
 		if (depth <= 0) {
-			if (loc.getBlockY() < (classInstance.maxD + 15)) b.setType(Material.LAVA);
+			if (loc.getBlockY() < (classInstance.maxD + 15)) {
+				b.setType(Material.LAVA);
+				classInstance.blocksDestroyed++;
+			}
 			it.remove();
 		}
 	}

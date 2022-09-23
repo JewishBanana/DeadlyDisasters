@@ -14,6 +14,7 @@ import org.bukkit.util.Vector;
 import deadlydisasters.disasters.Disaster;
 import deadlydisasters.general.Main;
 import deadlydisasters.general.WorldObject;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.Utils;
 
 public abstract class DestructionDisaster extends DisasterEvent {
@@ -73,6 +74,7 @@ public abstract class DestructionDisaster extends DisasterEvent {
 				plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
 					public void run() {
 						start(temp, p);
+						Metrics.incrementValue(Metrics.disasterOccurredMap, type.getMetricsLabel());
 					}
 				}, type.getDelayTicks());
 			}

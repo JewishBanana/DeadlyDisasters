@@ -51,6 +51,7 @@ import deadlydisasters.general.ItemsHandler;
 import deadlydisasters.general.Languages;
 import deadlydisasters.general.Main;
 import deadlydisasters.general.WorldObject;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -175,6 +176,7 @@ public class CustomDisaster {
 				plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
 					public void run() {
 						start(temp, p);
+						Metrics.incrementValue(Metrics.disasterOccurredMap, Disaster.CUSTOM.getMetricsLabel());
 					}
 				}, 0);
 			}
@@ -521,7 +523,7 @@ public class CustomDisaster {
 						if (yaml.contains(path+"size"))
 							supernova.setSizeMultiplier(yaml.getDouble(path+"size"));
 						if (yaml.contains(path+"particleChance"))
-							supernova.setParticles(yaml.getInt(path+"particleChance"));
+							supernova.setParticles(yaml.getDouble(path+"particleChance"));
 						if (yaml.contains(path+"particleType"))
 							supernova.setParticle(Particle.valueOf(yaml.getString(path+"particleType").toUpperCase()));
 						if (yaml.contains(path+"flash"))

@@ -3,6 +3,7 @@ general:
     update_notify: true
     # If set to true then admins will be alerted when new content is added to the custom disaster catalog
     catalog_notify: true
+    # If set to true then disasters will be automatically enabled on new world creations
     auto_enable_on_generation: true
     # Debug messages will send some error info to the console for some errors
     debug_messages: true
@@ -39,6 +40,11 @@ messages:
             level 4: '&eVery strong &fWinds &6are approaching'
             level 5: '&cExtremely strong &fWinds &6are approaching'
             level 6: '&4&lSeverely strong &fWinds &6are approaching'
+    # Make a sound play when a disaster message is broadcasted as an extra indicator, set to NONE for no sound. All sounds can be found here https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html
+    start_sound:
+        sound: 'NONE'
+        volume: 1.0
+        pitch: 1.0
     misc:
         plague:
             started: '&eA mob has contracted the &0Black Plague'

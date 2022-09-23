@@ -176,7 +176,7 @@ public class SandStorm extends WeatherDisaster {
 					if (all.getLocation().getY() < 50 || !sandStormBiomes.contains(all.getLocation().getBlock().getBiome()) || Utils.isWeatherDisabled(all.getLocation(), obj)
 							|| all instanceof Husk || all instanceof Stray || all instanceof Skeleton || all instanceof Zombie) continue;
 					if (wither && spawnTick[0] >= 60 && rand.nextInt(4) == 0 && world.getHighestBlockYAt(all.getLocation()) <= all.getLocation().getBlockY()+1)
-						all.damage(1D);
+						Utils.pureDamageEntity(all, 1D, "dd-sandstormdeath", false);
 					if (all instanceof Player && !Utils.isPlayerImmune((Player) all)) {
 						if (world.getHighestBlockYAt(all.getLocation()) <= all.getLocation().getBlockY()+1) {
 							if (wither) {
@@ -197,22 +197,26 @@ public class SandStorm extends WeatherDisaster {
 								mobs.add(skel.getUniqueId());
 								skel.setTarget(all);
 								targets.put(skel.getUniqueId(), all.getUniqueId());
+								skel.setMetadata("dd-sandstormmob", plugin.fixedData);
 							} else if (r == 1) {
 								Husk husk = (Husk) world.spawnEntity(loc, EntityType.HUSK);
 								plugin.handler.addEntity(new AncientMummy(husk, plugin, rand));
 								mobs.add(husk.getUniqueId());
 								husk.setTarget(all);
 								targets.put(husk.getUniqueId(), all.getUniqueId());
+								husk.setMetadata("dd-sandstormmob", plugin.fixedData);
 							} else if (r <= 3) {
 								Husk husk = (Husk) world.spawnEntity(loc, EntityType.HUSK);
 								husk.setTarget(all);
 								mobs.add(husk.getUniqueId());
 								targets.put(husk.getUniqueId(), all.getUniqueId());
+								husk.setMetadata("dd-sandstormmob", plugin.fixedData);
 							} else {
 								Skeleton skell = (Skeleton) world.spawnEntity(loc, EntityType.SKELETON);
 								skell.setTarget(all);
 								targets.put(skell.getUniqueId(), all.getUniqueId());
 								mobs.add(skell.getUniqueId());
+								skell.setMetadata("dd-sandstormmob", plugin.fixedData);
 								plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
 									@Override
 									public void run() {

@@ -10,6 +10,7 @@ import deadlydisasters.disasters.Disaster;
 import deadlydisasters.disasters.ExtremeWinds;
 import deadlydisasters.general.Main;
 import deadlydisasters.general.WorldObject;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.Utils;
 
 public abstract class WeatherDisaster extends DisasterEvent {
@@ -76,6 +77,7 @@ public abstract class WeatherDisaster extends DisasterEvent {
 				if (Utils.isPlayerImmune(p) || !wo.naturalAllowed ||!wo.allowed.contains(type))
 					return;
 				start(world, p, true);
+				Metrics.incrementValue(Metrics.disasterOccurredMap, type.getMetricsLabel());
 			}
 		}, (delaySeconds * 20) - delay);
 	}

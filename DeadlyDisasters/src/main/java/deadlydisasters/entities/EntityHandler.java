@@ -180,6 +180,10 @@ public class EntityHandler {
 		};
 	}
 	public void addEntity(CustomEntity e) {
+		if (findEntity(e.getEntity()) != null) {
+//			plugin.getLogger().info("Entity entry already exists for "+e.getEntity().getType());
+			return;
+		}
 		e.entity.setMetadata("dd-customentity", new FixedMetadataValue(plugin, "protected"));
 		e.entity.getPersistentDataContainer().set(globalKey, PersistentDataType.BYTE, (byte) 0);
 		list.add(e);

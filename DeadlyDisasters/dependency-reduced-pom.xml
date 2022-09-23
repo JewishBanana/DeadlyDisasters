@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>net.davidclue</groupId>
   <artifactId>deadlydisasters</artifactId>
-  <version>10.1</version>
+  <version>10.2</version>
   <build>
     <plugins>
       <plugin>
@@ -39,12 +39,6 @@
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
       <version>1.19-R0.1-SNAPSHOT</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>8.0.26</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

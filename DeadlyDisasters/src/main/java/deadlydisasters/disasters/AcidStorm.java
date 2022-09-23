@@ -43,6 +43,7 @@ import deadlydisasters.disasters.events.WeatherDisasterEvent;
 import deadlydisasters.general.Main;
 import deadlydisasters.general.WorldObject;
 import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -51,6 +52,7 @@ public class AcidStorm extends WeatherDisaster {
 	private int particleRange,particleYRange,blockDamageRange;
 	private boolean meltItems,meltArmor,poisonCrops;
 	private double damage,slimeRate,blockChangeRate,particleMultiplier;
+	private int blocksDestroyed;
 	
 	private Queue<UUID> slimes = new ArrayDeque<>();
 	private Map<PotionEffectType, Integer> potionEffects =  new HashMap<>();
@@ -132,7 +134,7 @@ public class AcidStorm extends WeatherDisaster {
 						if (temp.getBlock().getTemperature() <= 0.15 || temp.getBlock().getTemperature() > 0.95) continue;
 						if (Utils.isWeatherDisabled(temp, instance)) continue;
 						if (all instanceof LivingEntity) {
-							if (all instanceof Slime)
+							if (all instanceof Slime || all.isDead())
 								continue;
 							LivingEntity e = (LivingEntity) all;
 							if (all instanceof Player) {
@@ -142,8 +144,7 @@ public class AcidStorm extends WeatherDisaster {
 							}
 							for (Map.Entry<PotionEffectType, Integer> entry : potionEffects.entrySet())
 								e.addPotionEffect(new PotionEffect(entry.getKey(), entry.getValue(), 1, true, false, false));
-							if (!e.isDead())
-								e.damage(damage);
+							Utils.pureDamageEntity(e, damage, "dd-acidstormdeath", false);
 							if (!meltArmor) continue;
 							ItemStack helmet = e.getEquipment().getHelmet(),chest = e.getEquipment().getChestplate(),boots = e.getEquipment().getBoots(),pants = e.getEquipment().getLeggings();
 							if (helmet != null && (helmet.getType() == Material.IRON_HELMET || helmet.getType() == Material.GOLDEN_HELMET || helmet.getType() == Material.CHAINMAIL_HELMET)) {
@@ -208,6 +209,7 @@ public class AcidStorm extends WeatherDisaster {
 					ongoingDisasters.remove(instance);
 					clearEntities();
 					cancel();
+					Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 				}
 			}
 		};
@@ -221,6 +223,8 @@ public class AcidStorm extends WeatherDisaster {
 					return;
 				}
 				for (Player p : world.getPlayers()) {
+					if (!p.getWorld().equals(world))
+						continue;
 					for (int x=-particleRange; x <= particleRange; x++)
 						for (int z=-particleRange; z <= particleRange; z++) {
 							if (rand.nextDouble() >= particleMultiplier)
@@ -277,6 +281,7 @@ public class AcidStorm extends WeatherDisaster {
 					public void run() {
 						for (Map.Entry<Block, Material> entry : changes.entrySet())
 							entry.getKey().setType(entry.getValue());
+						blocksDestroyed += changes.size();
 					}
 				});
 			}

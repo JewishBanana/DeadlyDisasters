@@ -32,8 +32,6 @@ import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -190,7 +188,7 @@ public class EndStorm extends WeatherDisaster {
 				world.playSound(loc, Sound.BLOCK_PORTAL_AMBIENT, SoundCategory.AMBIENT, .7f, 1);
 				for (Entity e : world.getNearbyEntities(loc, .5, .5, .5))
 					if (e instanceof Player && (((Player) e).getGameMode() == GameMode.SURVIVAL || ((Player) e).getGameMode() == GameMode.ADVENTURE))
-						((Player) e).damage(1);
+						Utils.pureDamageEntity((LivingEntity) e, 1, "dd-unstablerift", true);
 				if (var[0] > 0)
 					var[0]-=5;
 				else {
@@ -267,12 +265,9 @@ public class EndStorm extends WeatherDisaster {
 							continue;
 						Location temp = e.getLocation();
 						e.setVelocity(new Vector(temp.getX() - loc.getX(), temp.getY() - loc.getY(), temp.getZ() - loc.getZ()).normalize().multiply(-1).multiply(0.3));
-						if (e instanceof LivingEntity && !e.isDead() && temp.distance(loc) < 1 && !(e instanceof ItemFrame)) {
-							((LivingEntity) e).damage(0.01);
-							e.setLastDamageCause(new EntityDamageEvent(e, DamageCause.CUSTOM, 1));
-							if (((LivingEntity) e).getHealth() <= 1) e.setMetadata("dd-unstablerift", new FixedMetadataValue(plugin, "protected"));
-							((LivingEntity) e).setHealth(Math.max(((LivingEntity) e).getHealth()-1, 0));
-						} else if (!(e instanceof LivingEntity) && temp.distanceSquared(loc) < 4 && !(e instanceof Item && !removeItems))
+						if (e instanceof LivingEntity && !e.isDead() && temp.distance(loc) < 1 && !(e instanceof ItemFrame))
+							Utils.pureDamageEntity((LivingEntity) e, 1, "dd-unstablerift", true);
+						else if (!(e instanceof LivingEntity) && temp.distanceSquared(loc) < 4 && !(e instanceof Item && !removeItems))
 							e.remove();
 					}
 				Block b = world.getBlockAt(loc.getBlockX()+(rand.nextInt(8)-4), (int) (loc.getBlockY()-var[1]), loc.getBlockZ()+(rand.nextInt(8)-4));
@@ -310,7 +305,7 @@ public class EndStorm extends WeatherDisaster {
 				world.playSound(loc, Sound.BLOCK_PORTAL_AMBIENT, SoundCategory.AMBIENT, .7f, 1);
 				for (Entity e : world.getNearbyEntities(loc, .5, .5, .5))
 					if (e instanceof Player && (((Player) e).getGameMode() == GameMode.SURVIVAL || ((Player) e).getGameMode() == GameMode.ADVENTURE))
-						((Player) e).damage(1);
+						Utils.pureDamageEntity((LivingEntity) e, 1, "dd-unstablerift", true);
 				if (var[0] > 0)
 					var[0]-=5;
 				else {

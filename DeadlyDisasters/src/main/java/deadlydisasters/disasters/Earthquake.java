@@ -24,6 +24,7 @@ import org.bukkit.util.Vector;
 import deadlydisasters.disasters.events.DestructionDisaster;
 import deadlydisasters.disasters.events.DestructionDisasterEvent;
 import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -37,6 +38,7 @@ public class Earthquake extends DestructionDisaster {
 	private int len,wid,radius;
 	private World world;
 	private double size,tilt,force;
+	public int blocksDestroyed;
 
 	public Earthquake(int level) {
 		super(level);
@@ -99,6 +101,8 @@ public class Earthquake extends DestructionDisaster {
 			public void run() {
 				if (len <= 0) {
 					cancel();
+					ongoingDisasters.remove(instance);
+					Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 					plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
 						@Override
 						public void run() {
@@ -221,9 +225,11 @@ class Place {
 	private Location loc;
 	private boolean CP;
 	private Random rand;
+	private Earthquake classInstance;
 	Place(Location loc, int depth, Earthquake classInstance) {
 		this.loc = loc;
 		this.depth = depth;
+		this.classInstance = classInstance;
 		rand = classInstance.rand;
 		CP = classInstance.plugin.CProtect;
 	}
@@ -245,6 +251,7 @@ class Place {
 					if (b2.getState() instanceof InventoryHolder)
 						((InventoryHolder) b.getState()).getInventory().setContents(((InventoryHolder) b2.getState()).getInventory().getContents());
 					b2.setType(Material.AIR);
+					classInstance.blocksDestroyed++;
 				}
 				//new Location(b.getWorld(), b.getX(), b.getY()+2, b.getZ()).getBlock().setType(Material.AIR);
 			} else {
@@ -253,7 +260,10 @@ class Place {
 			}
 		}
 		if (depth <= 0) {
-			if (loc.getBlockY() < 15) b.setType(Material.LAVA);
+			if (loc.getBlockY() < 15) {
+				b.setType(Material.LAVA);
+				classInstance.blocksDestroyed++;
+			}
 			it.remove();
 		}
 	}

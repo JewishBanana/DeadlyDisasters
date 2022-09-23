@@ -34,6 +34,7 @@ import deadlydisasters.disasters.events.DestructionDisasterEvent;
 import deadlydisasters.disasters.events.DisasterEvent;
 import deadlydisasters.listeners.CoreListener;
 import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -43,6 +44,7 @@ public class Hurricane extends DestructionDisaster {
 	private int time,size,lightning;
 	private double lvl,blockForce,minForce,maxForce;
 	private Particle particle;
+	private int blocksDestroyed;
 	
 	public static Set<Biome> oceans = new HashSet<>();
 	
@@ -153,6 +155,7 @@ public class Hurricane extends DestructionDisaster {
 						return;
 					}
 					DisasterEvent.ongoingDisasters.remove(obj);
+					Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 					id[0].cancel();
 					windTask.cancel();
 					DeathMessages.hurricanes.remove(obj);
@@ -200,6 +203,7 @@ public class Hurricane extends DestructionDisaster {
 										if (b.getState() instanceof InventoryHolder)
 											CoreListener.addBlockInventory(fb, ((InventoryHolder) b.getState()).getInventory().getContents());
 										b.setType(Material.AIR);
+										blocksDestroyed++;
 									}
 									temp.add(move.clone().multiply(-6)).add(0,2,0);
 									int radius = 12-level;
@@ -216,6 +220,7 @@ public class Hurricane extends DestructionDisaster {
 										if (b.getState() instanceof InventoryHolder)
 											CoreListener.addBlockInventory(fb, ((InventoryHolder) b.getState()).getInventory().getContents());
 										b.setType(Material.AIR);
+										blocksDestroyed++;
 									}
 								}
 							});

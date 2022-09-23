@@ -29,6 +29,8 @@ import org.bukkit.util.Vector;
 import deadlydisasters.disasters.events.DestructionDisaster;
 import deadlydisasters.disasters.events.DestructionDisasterEvent;
 import deadlydisasters.listeners.CoreListener;
+import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -36,6 +38,7 @@ public class Tornado extends DestructionDisaster {
 	
 	private double speed,size,pullForce,height,particles,yVelocity = 0.35;
 	private int max_blocks,time,width,pickupRange,particleCount;
+	private int blocksDestroyed;
 	private World world;
 	private boolean CP;
 	private Particle particleType;
@@ -98,6 +101,7 @@ public class Tornado extends DestructionDisaster {
 		Bukkit.getPluginManager().callEvent(event);
 		if (event.isCancelled()) return;
 		ongoingDisasters.add(this);
+		DeathMessages.tornados.add(this);
 		this.p = p;
 		this.loc = loc.clone().subtract(0,level*2+(6-level),0);
 		world = loc.getWorld();
@@ -107,10 +111,11 @@ public class Tornado extends DestructionDisaster {
 		Random rand = plugin.random;
 		Vector vec = new Vector(rand.nextDouble()-0.5, 0, rand.nextDouble()-0.5).normalize().multiply(0.05);
 		Vector velocity = new Vector(0, ((double) (level)) / 20, 0);
-		Vector entityVel = velocity.clone().multiply(((double) (level))/8);
+		Vector entityVel = velocity.clone().multiply(((double) (level))/5);
 		FixedMetadataValue fixdata = new FixedMetadataValue(plugin, "protected");
 		int cooldownTicks = 180 - (level*15);
 		int holdTicks = 80 + (level*40);
+		double growth = 1.0 / size;
 		
 		Set<UUID> entities = ConcurrentHashMap.newKeySet();
 		
@@ -144,11 +149,13 @@ public class Tornado extends DestructionDisaster {
 				}
 			}
 		}, 0, 1);
+		Tornado instance = this;
 		new RepeatingTask(plugin, 0, 1) {
 			@Override
 			public void run() {
 				if (time <= 0) {
 					cancel();
+					plugin.getServer().getScheduler().runTaskLater(plugin, () -> DeathMessages.tornados.remove(instance), 100);
 					return;
 				}
 				time--;
@@ -182,9 +189,9 @@ public class Tornado extends DestructionDisaster {
 					} else {
 						if (e instanceof LivingEntity) {
 							if (e.getVelocity().getY() > 0.4)
-								e.setVelocity(e.getVelocity().add(new Vector(temp.getX() - loc.getX(), 0, temp.getZ() - loc.getZ()).normalize().multiply(pullForce)));
+								e.setVelocity(e.getVelocity().add(new Vector(temp.getX() - loc.getX(), 0, temp.getZ() - loc.getZ()).normalize().multiply(pullForce).multiply((size+1-temp.distance(loc))*growth)));
 							else
-								e.setVelocity(e.getVelocity().add(new Vector(temp.getX() - loc.getX(), 0, temp.getZ() - loc.getZ()).normalize().multiply(pullForce)).add(entityVel));
+								e.setVelocity(e.getVelocity().add(new Vector(temp.getX() - loc.getX(), 0, temp.getZ() - loc.getZ()).normalize().multiply(pullForce).add(entityVel).multiply((size+1-temp.distance(loc))*growth)));
 							Location area = e.getLocation().clone().add(e.getVelocity().clone().setY(0.3));
 							if (!pickedUp.contains(area.getBlock()) && area.getBlock().getType().isSolid() && !Utils.isBlockBlacklisted(area.getBlock().getType()) && !Utils.isZoneProtected(area))
 								tempList.add(addBlock(area.getBlock(), fixdata, pullForce, rand));
@@ -211,7 +218,6 @@ public class Tornado extends DestructionDisaster {
 				}
 			}
 		};
-		Tornado instance = this;
 		new RepeatingTask(plugin, 0, 10) {
 			@Override
 			public void run() {
@@ -219,6 +225,7 @@ public class Tornado extends DestructionDisaster {
 					time = 0;
 					ongoingDisasters.remove(instance);
 					cancel();
+					Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 					return;
 				}
 				entities.clear();
@@ -274,6 +281,7 @@ public class Tornado extends DestructionDisaster {
 		if (b.getState() instanceof InventoryHolder)
 			CoreListener.addBlockInventory(fb, ((InventoryHolder) b.getState()).getInventory().getContents());
 		b.setType(Material.AIR);
+		blocksDestroyed++;
 		velocityMap.put(fb.getUniqueId(), rand.nextDouble()/2);
 		pickedUp.add(b);
 		return fb.getUniqueId();
@@ -286,6 +294,9 @@ public class Tornado extends DestructionDisaster {
 	}
 	public void startAdjustment(Location loc, Player p) {
 		start(Utils.getBlockBelow(loc).getLocation(), p);
+	}
+	public boolean isEntityInvolved(UUID uuid) {
+		return (cooldownEntities.containsKey(uuid) || holdEntities.containsKey(uuid));
 	}
 	public double getSpeed() {
 		return speed;

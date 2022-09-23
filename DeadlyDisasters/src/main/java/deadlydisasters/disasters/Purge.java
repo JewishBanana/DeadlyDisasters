@@ -13,6 +13,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockFace;
 import org.bukkit.boss.BarColor;
@@ -57,10 +58,11 @@ public class Purge extends DestructionDisaster {
 	private String endMessage;
 	private int[] mobProbabilities;
 	private int sum;
+	private World world;
 	
 	private Queue<UUID> entities = new ArrayDeque<>();
 	
-	public static Set<Player> targetedPlayers = new HashSet<>();
+	public static Set<UUID> targetedPlayers = new HashSet<>();
 
 	public Purge(int level) {
 		super(level);
@@ -103,9 +105,10 @@ public class Purge extends DestructionDisaster {
 	}
 	@Override
 	public void start(Location loc, Player p) {
+		this.world = p.getWorld();
 		this.playerUUID = p.getUniqueId();
-		if (!targetedPlayers.contains(p))
-			targetedPlayers.add(p);
+		if (!targetedPlayers.contains(playerUUID))
+			targetedPlayers.add(playerUUID);
 		if (showBar) {
 			bar = Bukkit.createBossBar(Utils.chat(barTitle), barColor, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
 			bar.addPlayer(p);
@@ -133,10 +136,9 @@ public class Purge extends DestructionDisaster {
 						it.remove();
 					}
 				}
-				if (max <= 0 || !targetedPlayers.contains(player)) {
+				if (max <= 0 || !targetedPlayers.contains(playerUUID) || !world.equals(player.getWorld())) {
 					bar.removeAll();
-					if (targetedPlayers.contains(player))
-						targetedPlayers.remove(player);
+					targetedPlayers.remove(playerUUID);
 					DeathMessages.purges.remove(instance);
 					player.sendMessage(Utils.chat(endMessage));
 					for (Entity e : player.getNearbyEntities(30, 30, 30))

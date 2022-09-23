@@ -345,8 +345,9 @@ public class TimerCheck {
 		WorldObject worldObj = WorldObject.findWorldObject(world);
 		for (Player p : world.getPlayers())
 			timer.get(world.getUID()).put(p.getUniqueId(), rand.nextInt(worldObj.timer/2)+worldObj.timer);
-		for (String uuid : dataFile.getConfigurationSection("timers."+world.getUID()).getKeys(false))
-			dataFile.set("timers."+world.getUID()+"."+uuid, rand.nextInt(worldObj.timer/2)+worldObj.timer);
+		if (dataFile.contains("timers."+world.getUID()))
+			for (String uuid : dataFile.getConfigurationSection("timers."+world.getUID()).getKeys(false))
+				dataFile.set("timers."+world.getUID()+"."+uuid, rand.nextInt(worldObj.timer/2)+worldObj.timer);
 		plugin.saveDataFile();
 	}
 	public void saveTimerValues() {

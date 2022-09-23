@@ -2,11 +2,13 @@ package deadlydisasters.listeners;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -101,6 +103,7 @@ public class CoreListener implements Listener {
 	private EntityHandler handler;
 	private Random rand;
 	private NamespacedKey key;
+	private boolean favoredDisaster,dislikedDisaster;
 	
 	private static boolean worldSwap;
 	private static boolean nonOpMsg;
@@ -115,7 +118,8 @@ public class CoreListener implements Listener {
 	private Map<UUID,Integer> mageWandCooldownMap = new HashMap<UUID,Integer>();
 	private Map<UUID,Integer> voidBowCooldownMap = new HashMap<UUID,Integer>();
 	
-	public static Queue<UUID> catalogNotify = new ArrayDeque<>();
+	public static Set<UUID> joinedServer = new HashSet<>();
+	public static Set<UUID> catalogNotify = new HashSet<>();
 	public static boolean catalogNotifyBool;
 	
 	public static Map<UUID,DisasterEvent> fallingBlocks = new HashMap<>();
@@ -153,6 +157,11 @@ public class CoreListener implements Listener {
 				}
 			}
 		}, 0, 20);
+		
+		if (plugin.dataFile.contains("data.favored") && !plugin.dataFile.getString("data.favored").equals("null"))
+			favoredDisaster = true;
+		if (plugin.dataFile.contains("data.disliked") && !plugin.dataFile.getString("data.disliked").equals("null"))
+			dislikedDisaster = true;
 	}
 	@EventHandler
 	public void onJoin(PlayerJoinEvent e) {
@@ -193,6 +202,13 @@ public class CoreListener implements Listener {
 				if (catalogNotifyBool && e.getPlayer().isOp() && !catalogNotify.contains(uuid)) {
 					e.getPlayer().sendMessage(Languages.prefix+ChatColor.GREEN+Languages.langFile.getString("internal.catalogUpdate")+Utils.chat(" &3(/disasters catalog)"));
 					catalogNotify.add(uuid);
+				}
+				if (e.getPlayer().isOp() && !joinedServer.contains(uuid)) {
+					if (!favoredDisaster)
+						e.getPlayer().sendMessage(Languages.prefix+ChatColor.AQUA+Languages.langFile.getString("internal.favorDisaster")+Utils.chat(" &3(/disasters favor <disaster>)"));
+					if (!dislikedDisaster)
+						e.getPlayer().sendMessage(Languages.prefix+ChatColor.AQUA+Languages.langFile.getString("internal.dislikeDisaster")+Utils.chat(" &3(/disasters dislike <disaster>)"));
+					joinedServer.add(uuid);
 				}
 			}
 		}, 10);
@@ -402,20 +418,22 @@ public class CoreListener implements Listener {
 				e.setDamage(14 - (entity.getHealth() / 4));
 			else if (entity.hasMetadata("dd-voidstalker") && e.getEntity() instanceof LivingEntity)
 				((LivingEntity) e.getEntity()).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0, true));
-			else if (entity.hasMetadata("dd-ancientmummy") && e.getEntity() instanceof LivingEntity) {
+			else if (entity.hasMetadata("dd-ancientmummy") && e.getEntity() instanceof LivingEntity)
 				((LivingEntity) e.getEntity()).addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 60, 4, true));
-				if (e.getFinalDamage() >= ((LivingEntity) e.getEntity()).getHealth())
-					e.getEntity().setMetadata("dd-sandstormdeath", fixdata);
-			} else if (entity.hasMetadata("dd-ancientskeleton") && e.getEntity() instanceof Player && e.getFinalDamage() >= ((LivingEntity) e.getEntity()).getHealth())
-				e.getEntity().setMetadata("dd-sandstormdeath", fixdata);
-			else if (entity.hasMetadata("dd-lostsoul") && e.getEntity() instanceof Player && e.getFinalDamage() >= ((Player) e.getEntity()).getHealth()) {
-				entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_VEX_CHARGE, SoundCategory.HOSTILE, 2f, .5f);
-				entity.remove();
-				e.getEntity().setMetadata("dd-lostsouldeath", fixdata);
-			} else if (entity.hasMetadata("dd-purgemob") && e.getEntity() instanceof Player && e.getFinalDamage() >= ((LivingEntity) e.getEntity()).getHealth())
-				e.getEntity().setMetadata("dd-purgedeath", fixdata);
 			else if (entity.hasMetadata("dd-endworm"))
 				((EndWorm) plugin.handler.findEntity(entity)).triggerAnimation();
+			
+			if (e.getEntity() instanceof Player && e.getFinalDamage() >= ((LivingEntity) e.getEntity()).getHealth()) {
+				if (entity.hasMetadata("dd-sandstormmob"))
+					e.getEntity().setMetadata("dd-sandstormdeath", fixdata);
+				else if (entity.hasMetadata("dd-purgemob"))
+					e.getEntity().setMetadata("dd-purgedeath", fixdata);
+				else if (entity.hasMetadata("dd-lostsoul")) {
+					entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_VEX_CHARGE, SoundCategory.HOSTILE, 2f, .5f);
+					entity.remove();
+					e.getEntity().setMetadata("dd-lostsouldeath", fixdata);
+				}
+			}
 		}
 		if (e.getEntity().hasMetadata("dd-darkmage") && !e.getEntity().isDead()) {
 			LivingEntity damaged = (LivingEntity) e.getEntity();
@@ -436,10 +454,6 @@ public class CoreListener implements Listener {
 		Entity entity = e.getEntity();
 		if (entity.hasMetadata("dd-soulreaper") && e.getCause() != DamageCause.ENTITY_ATTACK)
 			e.setCancelled(true);
-		else if (entity.hasMetadata("dd-firephantom") && (e.getCause() == DamageCause.FIRE_TICK || e.getCause() == DamageCause.FIRE))
-			e.setCancelled(true);
-		else if (entity.hasMetadata("dd-infesteddevourer") && e.getCause() == DamageCause.FALL)
-				e.setCancelled(true);
 	}
 	@EventHandler
 	public void onDeath(EntityDeathEvent e) {

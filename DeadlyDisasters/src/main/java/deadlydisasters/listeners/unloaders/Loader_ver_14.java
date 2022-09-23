@@ -16,19 +16,16 @@ import deadlydisasters.entities.CustomEntity;
 import deadlydisasters.entities.CustomEntityType;
 import deadlydisasters.entities.EntityHandler;
 import deadlydisasters.general.Main;
-import deadlydisasters.utils.Utils;
 
 public class Loader_ver_14 implements Listener {
 	
 	private Main plugin;
 	private EntityHandler handler;
 	private Set<Chunk> chunks = new HashSet<>();
-	private boolean debug;
 	
 	public Loader_ver_14(Main plugin, EntityHandler handler) {
 		this.plugin = plugin;
 		this.handler = handler;
-		this.debug = plugin.getConfig().getBoolean("general.debug_messages");
 		
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 	}
@@ -54,11 +51,8 @@ public class Loader_ver_14 implements Listener {
 		for (Entity entity : e.getChunk().getEntities())
 			if (entity.getPersistentDataContainer().has(handler.globalKey, PersistentDataType.BYTE)) {
 				CustomEntity customEntity = handler.findEntity((LivingEntity) entity);
-				if (customEntity == null) {
-					if (debug)
-						Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Failed to unload custom entity of a "+entity.getType()));
+				if (customEntity == null)
 					return;
-				}
 				customEntity.clean();
 				handler.removeEntity(customEntity);
 			}

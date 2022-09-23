@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -76,6 +77,7 @@ import deadlydisasters.general.Main;
 import deadlydisasters.general.TimerCheck;
 import deadlydisasters.general.WorldObject;
 import deadlydisasters.listeners.CoreListener;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.Utils;
 
 public class Disasters implements CommandExecutor,TabCompleter {
@@ -88,7 +90,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 	
 	public static List<String> disasterNames = new ArrayList<>();
 	
-	private String globalUsage = Utils.chat("&cUsage: /disasters <enable|disable|start|mintimer|reload|help|summon|give|difficulty|language|catalog|whitelist|listplayer|config>...");
+	private String globalUsage = Utils.chat("&cUsage: /disasters <enable|disable|start|mintimer|reload|help|summon|give|difficulty|language|catalog|whitelist|listplayer|config|favor|dislike>...");
 
 	public Disasters(Main plugin, TimerCheck tc, EntityHandler handler, Random rand, Catalog catalog) {
 		this.plugin = plugin;
@@ -343,6 +345,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				}
 				AcidStorm storm = new AcidStorm(level);
 				storm.start(p.getWorld(), p, broadcast);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.ACIDSTORM.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("blizzard")) {
 				if (p.getWorld().getEnvironment() != Environment.NORMAL) {
@@ -351,6 +354,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				}
 				Blizzard blizz = new Blizzard(level);
 				blizz.start(p.getWorld(), p, broadcast);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.BLIZZARD.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("cavein")) {
 				Location loc = p.getLocation().clone();
@@ -361,6 +365,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						if (broadcast)
 							cavein.broadcastMessage(loc, p);
 						cavein.start(loc, p);
+						Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.CAVEIN.getMetricsLabel());
 						return true;
 					}
 				}
@@ -375,6 +380,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						if (broadcast)
 							earthquake.broadcastMessage(loc, p);
 						earthquake.start(loc, p);
+						Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.EARTHQUAKE.getMetricsLabel());
 						return true;
 					}
 				}
@@ -383,6 +389,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			} else if (args[1].equalsIgnoreCase("extremewinds")) {
 				ExtremeWinds winds = new ExtremeWinds(level);
 				winds.start(p.getWorld(), p, broadcast);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.EXTREMEWINDS.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("geyser")) {
 				if (p.getWorld().getEnvironment() == Environment.THE_END) {
@@ -393,6 +400,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				if (broadcast)
 					geyser.broadcastMessage(p.getLocation(), p);
 				geyser.start(p.getLocation(), p);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.GEYSER.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("sinkhole")) {
 				Location loc = p.getLocation().clone();
@@ -403,6 +411,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						if (broadcast)
 							s.broadcastMessage(loc, p);
 						s.start(loc, p);
+						Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.SINKHOLE.getMetricsLabel());
 						return true;
 					}
 				}
@@ -415,6 +424,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				}
 				SoulStorm storm = new SoulStorm(level);
 				storm.start(p.getWorld(), p, broadcast);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.SOULSTORM.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("tornado")) {
 				Location loc = p.getLocation().clone();
@@ -425,6 +435,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						if (broadcast)
 							tornado.broadcastMessage(loc.clone().add(0,1,0), p);
 						tornado.start(loc.clone().add(0,1,0), p);
+						Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.TORNADO.getMetricsLabel());
 						return true;
 					}
 				}
@@ -437,11 +448,13 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				}
 				SandStorm storm = new SandStorm(level);
 				storm.start(p.getWorld(), p, broadcast);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.SANDSTORM.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("plague")) {
 				BlackPlague plague = new BlackPlague(level);
 				if (plague.isMobAvailable(p.getWorld())) {
 					plague.start(p.getWorld(), p, broadcast);
+					Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.PLAGUE.getMetricsLabel());
 					return true;
 				}
 				sender.sendMessage(Utils.chat("&cCould not find available mob nearby!"));
@@ -453,6 +466,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					if (broadcast)
 						tsu.broadcastMessage(test, p);
 					tsu.start(test, p);
+					Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.TSUNAMI.getMetricsLabel());
 					return true;
 				}
 				sender.sendMessage(Utils.chat("&cCould not find pool nearby!"));
@@ -464,6 +478,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				}
 				MeteorShower shower = new MeteorShower(level);
 				shower.start(p.getWorld(), p, broadcast);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.METEORSHOWERS.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("endstorm")) {
 				if (plugin.mcVersion < 1.16) {
@@ -476,24 +491,32 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				}
 				EndStorm storm = new EndStorm(level);
 				storm.start(p.getWorld(), p, broadcast);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.ENDSTORM.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("supernova")) {
 				Supernova nova = new Supernova(level);
 				if (broadcast)
 					nova.broadcastMessage(p.getLocation().clone().add(0,10,0), p);
 				nova.start(p.getLocation().clone().add(0,10,0), p);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.SUPERNOVA.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("hurricane")) {
 				Hurricane storm = new Hurricane(level);
 				if (broadcast)
 					storm.broadcastMessage(p.getLocation().clone().add(0,7,0), p);
 				storm.start(p.getLocation().clone().add(0,7,0), p);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.HURRICANE.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("purge")) {
+				if (Purge.targetedPlayers.contains(p.getUniqueId())) {
+					sender.sendMessage(Utils.chat("&cCannot start a purge because player is already being targeted"));
+					return true;
+				}
 				Purge purge = new Purge(level);
 				if (broadcast)
 					purge.broadcastMessage(p.getLocation(), p);
 				purge.start(p.getLocation(), p);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.PURGE.getMetricsLabel());
 				return true;
 			} else if (disasterNames.contains(args[1])) {
 				YamlConfiguration yaml = CustomDisaster.disasterFiles.get(args[1]);
@@ -653,10 +676,6 @@ public class Disasters implements CommandExecutor,TabCompleter {
 		} else if (args[0].equalsIgnoreCase("summon")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.summon"))) {
 				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
-				return true;
-			}
-			if (plugin.mcVersion < 1.16) {
-				sender.sendMessage(Utils.chat("&cThis command is only available on version 1.16 or higher!"));
 				return true;
 			}
 			Location loc = null;
@@ -1013,10 +1032,10 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						Languages.changeConfigLang(plugin);
 						plugin.dataFile.set("data.lang", 2);
 						plugin.saveDataFile();
-						sender.sendMessage(Languages.prefix+Utils.chat("&bПереводы были установлены на русский. Имейте в виду, что не все будет переведено!"
-								+ "\n&3- Перевод плагина был осуществлён командой &dRelaxTime!"));
-						Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&bПереводы были установлены на русский. Имейте в виду, что не все будет переведено!"
-								+ "\n&3- Перевод плагина был осуществлён командой &dRelaxTime!"));
+						sender.sendMessage(Languages.prefix+Utils.chat("&bЯзык был изменен на русский. Обратите внимание на то, что не всё будет переведено!"
+								+ "\n&3- Перевод от: ZBLL/Roughly_"));
+						Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&bЯзык был изменен на русский. Обратите внимание на то, что не всё будет переведено!"
+								+ "\n&3- Перевод от: ZBLL/Roughly_"));
 					}
 				});
 			} else if (args[1].equalsIgnoreCase("češtiny")) {
@@ -1221,6 +1240,34 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				sender.sendMessage(Utils.chat("&cUsage: /disasters config <save|swap|delete> <template>"));
 				return true;
 			}
+		} else if (args[0].equalsIgnoreCase("favor")) {
+			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
+				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				return true;
+			}
+			if (args.length != 2 || Disaster.forName(args[1].toUpperCase()) == null) {
+				sender.sendMessage(Utils.chat("&cUsage: /disasters favor <disaster>\nVote also cannot be a custom disaster!"));
+				return true;
+			}
+			Disaster disaster = Disaster.valueOf(args[1].toUpperCase());
+			plugin.dataFile.set("data.favored", disaster.getMetricsLabel());
+			plugin.saveDataFile();
+			sender.sendMessage(Languages.prefix+ChatColor.GREEN+Languages.langFile.getString("internal.voteSubmission"));
+			return true;
+		} else if (args[0].equalsIgnoreCase("dislike")) {
+			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
+				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				return true;
+			}
+			if (args.length != 2 || Disaster.forName(args[1].toUpperCase()) == null) {
+				sender.sendMessage(Utils.chat("&cUsage: /disasters dislike <disaster>\nVote also cannot be a custom disaster!"));
+				return true;
+			}
+			Disaster disaster = Disaster.valueOf(args[1].toUpperCase());
+			plugin.dataFile.set("data.disliked", disaster.getMetricsLabel());
+			plugin.saveDataFile();
+			sender.sendMessage(Languages.prefix+ChatColor.GREEN+Languages.langFile.getString("internal.voteSubmission"));
+			return true;
 		} else
 			sender.sendMessage(globalUsage);
 		return true;
@@ -1237,7 +1284,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			if (sender.hasPermission("deadlydisasters.help"))
 				tempList.add("help");
 			if (sender.hasPermission("deadlydisasters.modify"))
-				tempList.addAll(Arrays.asList("enable","disable","mintimer","reload","difficulty","language","catalog","config"));
+				tempList.addAll(Arrays.asList("enable","disable","mintimer","reload","difficulty","language","catalog","config","favor","dislike"));
 			if (sender.hasPermission("deadlydisasters.whitelist"))
 				tempList.add("whitelist");
 			if (sender.hasPermission("deadlydisasters.listplayer"))
@@ -1265,7 +1312,8 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				Collections.sort(list);
 				return list;
 			}
-			if ((args[0].equalsIgnoreCase("start") && sender.hasPermission("deadlydisasters.start")) || (args[0].equalsIgnoreCase("help") && sender.hasPermission("deadlydisasters.help"))) {
+			if ((args[0].equalsIgnoreCase("start") && sender.hasPermission("deadlydisasters.start")) || (args[0].equalsIgnoreCase("help") && sender.hasPermission("deadlydisasters.help"))
+					|| ((args[0].equalsIgnoreCase("favor") || args[0].equalsIgnoreCase("dislike")) && sender.hasPermission("deadlydisasters.modify"))) {
 				StringUtil.copyPartialMatches(args[1], disasterNames, list);
 				Collections.sort(list);
 				return list;

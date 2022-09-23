@@ -9,7 +9,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -44,6 +43,7 @@ import deadlydisasters.listeners.TownyListener;
 import deadlydisasters.listeners.unloaders.Loader_ver_14;
 import deadlydisasters.listeners.unloaders.Loader_ver_17;
 import deadlydisasters.utils.ConfigUpdater;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.Utils;
 
 public class Main extends JavaPlugin {
@@ -193,6 +193,7 @@ public class Main extends JavaPlugin {
 			SandStorm.sandStormBiomes.addAll(Arrays.asList(Biome.valueOf("DESERT_HILLS"), Biome.valueOf("DESERT_LAKES"), Biome.valueOf("MODIFIED_WOODED_BADLANDS_PLATEAU")));
 		
 		Disaster.reload(this);
+		Disaster.GEYSER.setMetricsLabel("Water Geyser / Lava Geyser");
 		
 		File doomsday = new File(getDataFolder().getAbsolutePath(), "custom disasters/doomsday.yml");
 		if (!doomsday.exists()) {
@@ -206,6 +207,8 @@ public class Main extends JavaPlugin {
 		}
 		consoleSender.sendMessage(Languages.prefix+Utils.chat("&aEnjoying the plugin? Try the pro version which has many new features such as new &dnew disasters, new custom mobs, new custom items, regenerating worlds, block stability for bases, and much more &aupgrade now to pro here https://www.spigotmc.org/resources/deadlydisasters-pro.100918/"));
 		Blizzard.refreshFrozen(this);
+		
+		Metrics.configureMetrics(this);
 	}
 	public void onDisable() {
 		removeCustomEntities();
@@ -221,6 +224,7 @@ public class Main extends JavaPlugin {
 		dataFile.set("data.entries", count);
 		dataFile.set("data.firstStart", false);
 		Catalog.saveTimer(this);
+		Metrics.saveMetricsData(this);
 		saveDataFile();
 		/*if (!getConfig().getBoolean("general.opt-out-error-sharing") && getDescription().getVersion().equals(latestVersion))
 			sql.checkLog(new File(new File(".").getAbsolutePath()+"/logs/latest.log"));*/
@@ -332,7 +336,7 @@ public class Main extends JavaPlugin {
 	        put("minDistanceRadius", 50);
 	    }};
 	    configuration.createSection(name+".general", values);
-		values = new HashMap<String, Object>();
+		values = new LinkedHashMap<String, Object>();
 		for (Disaster type : Disaster.values()) {
 			if (worldType == Environment.NETHER && type == Disaster.TORNADO)
 				values.put(type.name(), false);
@@ -341,7 +345,7 @@ public class Main extends JavaPlugin {
 		}
 		configuration.createSection(name+".disasters", values);
 		configuration.createSection(name+".external");
-		values = new HashMap<String, Object>() {{
+		values = new LinkedHashMap<String, Object>() {{
 			put("region_protection", true);
 	        put("ignore_weather_effects_in_regions", true);
 	        put("cure_plague_in_regions", true);

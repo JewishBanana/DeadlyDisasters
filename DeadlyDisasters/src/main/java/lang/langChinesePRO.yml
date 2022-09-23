@@ -1,6 +1,6 @@
 # Do NOT translate version， ONLY translate what is in the right side quotes ''
 # Do NOT translate color codes ex. '&6' or '\n' or '&o'
-version: 10.1
+version: 10.2
 internal:
     easy: '简单'
     normal: '普通'
@@ -14,8 +14,8 @@ internal:
     onWord: '开启'
     offWord: '关闭'
     cfgUpdate: '已成功将配置更新到版本'
-    consoleUpdate: '一个新版本更新可用！ &e(^) &a请前往 https://www.spigotmc.org/resources/deadly-disasters.90806/ 下载最新版本'
-    playerUpdate: '一个新版本更新可用！&e(^) &a通知服务器管理在 https://www.spigotmc.org/resources/deadly-disasters.90806/ 下载最新版本 \n&7&o目前插件的版本为'
+    consoleUpdate: '一个新版本更新可用！ &e(^) &a请前往 https://www.spigotmc.org/resources/deadly-disasters.100918/ 下载最新版本'
+    playerUpdate: '一个新版本更新可用！&e(^) &a通知服务器管理在 https://www.spigotmc.org/resources/deadly-disasters.100918/ 下载最新版本 \n&7&o目前插件的版本为'
     allowFlight: '插件在 server.properties 文件中 "allow-flight" 选项为 &atrue &c时才能完美运行 ！'
     olderVersion: '你在运行一个早期Minecraft版本！ 请注意！此插件是为Minecraft 1.16及以上的版本开发的，因此早期版本可能会非常卡顿！'
     firstStart:
@@ -24,6 +24,9 @@ internal:
         line 3: '如果想编辑每个世界的设置，请前往插件目录的 &aworlds.yml &b文件！'
         line 4: '更多指令帮助请输入'
     catalogUpdate: '自定义天灾目录中有新内容可用！'
+    favorDisaster: 'If you are enjoying the plugin it would be greatly appreciated if you would submit what your favorite disaster is with '
+    dislikeDisaster: 'If you are disliking a disaster and wish for it to be improved please vote for it using '
+    voteSubmission: 'Your vote has been submitted, thank you for helping improve the plugin!'
 deaths:
     plague: '因感染黑死病而去世'
     soulDeath: '被迷途的灵魂附身'
@@ -46,6 +49,9 @@ deaths:
     genericMob: '被杀'
     infestedCave: '被侵染吞噬'
     infestedWormDeath: '被侵染蠕虫吞噬'
+    tornado: 'was swept away by a tornado'
+    extremewinds: 'was swept away by severe winds'
+    hurricane: 'was caught up in a hurricane'
 entities:
     endTotem: '末影图腾'
     voidGuard: '虚空守卫者'

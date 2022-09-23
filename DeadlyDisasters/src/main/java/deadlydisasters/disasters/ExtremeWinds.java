@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -29,6 +30,7 @@ import deadlydisasters.disasters.events.WeatherDisasterEvent;
 import deadlydisasters.general.WorldObject;
 import deadlydisasters.listeners.CoreListener;
 import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -39,6 +41,9 @@ public class ExtremeWinds extends WeatherDisaster {
 	private double tempForce,breakForce;
 	private Particle particle;
 	private int maxParticles;
+	private int blocksDestroyed;
+	
+	private Queue<Entity> entities = new ArrayDeque<>();
 	
 	private ExtremeWinds me = this;
 		
@@ -82,7 +87,6 @@ public class ExtremeWinds extends WeatherDisaster {
 		boolean CP = plugin.CProtect;
 		FixedMetadataValue fixdata = new FixedMetadataValue(plugin, "protected");
 		
-		Queue<Entity> entities = new ArrayDeque<>();
 		List<Entity> tempList = new ArrayList<>();
 		tempList.addAll(world.getEntities());
 		int[] cycle = {tempList.size()-1, tempList.size()/20, 0};
@@ -94,6 +98,7 @@ public class ExtremeWinds extends WeatherDisaster {
 					ongoingDisasters.remove(me);
 					cancel();
 					DeathMessages.extremewinds.remove(me);
+					Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 					return;
 				}
 				time--;
@@ -133,6 +138,7 @@ public class ExtremeWinds extends WeatherDisaster {
 										if (b.getState() instanceof InventoryHolder)
 											CoreListener.addBlockInventory(fb, ((InventoryHolder) b.getState()).getInventory().getContents());
 										b.setType(Material.AIR);
+										blocksDestroyed++;
 									}
 								}
 							}
@@ -199,6 +205,9 @@ public class ExtremeWinds extends WeatherDisaster {
 	@Override
 	public void clear() {
 		time = 0;
+	}
+	public boolean isEntityInvolved(UUID uuid) {
+		return (entities.stream().anyMatch(e -> e.getUniqueId().equals(uuid)));
 	}
 	public double getTempForce() {
 		return tempForce;

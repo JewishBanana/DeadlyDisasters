@@ -33,6 +33,11 @@ messages:
             level 4: '&e劲&f风&6降临'
             level 5: '&c烈&f风&6降临'
             level 6: '&4&l暴&f风&6降临'
+    # Make a sound play when a disaster message is broadcasted as an extra indicator, set to NONE for no sound. All sounds can be found here https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html
+    start_sound:
+        sound: 'NONE'
+        volume: 1.0
+        pitch: 1.0
     misc:
         plague:
             started: '&e有生物患上了&0黑死病'

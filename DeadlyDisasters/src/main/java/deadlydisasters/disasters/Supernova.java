@@ -25,6 +25,7 @@ import org.bukkit.util.Vector;
 
 import deadlydisasters.disasters.events.DestructionDisaster;
 import deadlydisasters.disasters.events.DestructionDisasterEvent;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -36,6 +37,7 @@ public class Supernova extends DestructionDisaster {
 	private Particle particle;
 	private Material[] materials;
 	private boolean flash,farParticles;
+	private int blocksDestroyed;
 
 	public Supernova(int level) {
 		super(level);
@@ -104,6 +106,7 @@ public class Supernova extends DestructionDisaster {
 					if (plugin.CProtect)
 						Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 					b.setType(Material.AIR);
+					blocksDestroyed++;
 				}
 				if (crystalLoc.distance(loc) < 3) {
 					crystal.remove();
@@ -148,6 +151,7 @@ public class Supernova extends DestructionDisaster {
 				if (tick > size) {
 					cancel();
 					ongoingDisasters.remove(instance);
+					Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 					return;
 				}
 				Queue<Block> blocks = new ArrayDeque<>(tick*tick*tick);
@@ -169,10 +173,12 @@ public class Supernova extends DestructionDisaster {
 							Material mat = materials[rand.nextInt(materials.length)];
 							if (CP) Utils.getCoreProtect().logPlacement("Deadly-Disasters", b.getLocation(), mat, mat.createBlockData());
 							b.setType(mat);
+							blocksDestroyed++;
 						}
 						continue;
 					}
 					b.setType(Material.AIR);
+					blocksDestroyed++;
 				}
 				tick++;
 				plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {

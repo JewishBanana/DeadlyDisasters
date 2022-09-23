@@ -12,16 +12,13 @@ import deadlydisasters.entities.CustomEntity;
 import deadlydisasters.entities.CustomEntityType;
 import deadlydisasters.entities.EntityHandler;
 import deadlydisasters.general.Main;
-import deadlydisasters.utils.Utils;
 
 public class Loader_ver_17 implements Listener {
 	
 	private EntityHandler handler;
-	private boolean debug;
 	
 	public Loader_ver_17(Main plugin, EntityHandler handler) {
 		this.handler = handler;
-		this.debug = plugin.getConfig().getBoolean("general.debug_messages");
 		
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 	}
@@ -34,7 +31,8 @@ public class Loader_ver_17 implements Listener {
 						handler.addEntityBySpecies(type.species, entity);
 						break;
 					}
-			}
+			} else if (entity.getPersistentDataContainer().has(EntityHandler.removalKey, PersistentDataType.BYTE))
+				entity.remove();
 	}
 	@EventHandler
 	public void onEntitiesUnload(EntitiesUnloadEvent e) {
@@ -42,13 +40,11 @@ public class Loader_ver_17 implements Listener {
 			if (entity.getPersistentDataContainer().has(handler.globalKey, PersistentDataType.BYTE)) {
 				CustomEntity customEntity = handler.findEntity((LivingEntity) entity);
 				if (customEntity == null) {
-					if (debug)
-						Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Failed to unload custom entity of a "+entity.getType()));
+					entity.remove();
 					return;
 				}
 				customEntity.clean();
 				handler.removeEntity(customEntity);
-			} else if (entity.getPersistentDataContainer().has(EntityHandler.removalKey, PersistentDataType.BYTE))
-				entity.remove();
+			}
 	}
 }

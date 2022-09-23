@@ -24,7 +24,7 @@ public enum Disaster {
 	PURGE("&8Purge"),
 	CUSTOM("&fCustom");
 	
-	private String label,tip;
+	private String label,tip,metricsLabel;
 	private int maxLevel,delayTicks,minHeight;
 	private double frequency;
 	
@@ -32,6 +32,7 @@ public enum Disaster {
 	 
     private Disaster(String label) {
         this.label = label;
+        this.metricsLabel = label.substring(2);
     }
     public String getLabel() {
         return label;
@@ -68,6 +69,12 @@ public enum Disaster {
 	}
 	public void setTip(String tip) {
 		this.tip = tip;
+	}
+	public String getMetricsLabel() {
+		return metricsLabel;
+	}
+	public void setMetricsLabel(String metricsLabel) {
+		this.metricsLabel = metricsLabel;
 	}
 	public static void reload(Main plugin) {
 		for (Disaster obj : Disaster.values()) {

@@ -147,12 +147,12 @@ public class Blizzard extends WeatherDisaster {
 							}
 							if (!all.isInvulnerable()) {
 								all.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 20, 0, true, false));
-								all.damage(tempDamage);
+								Utils.pureDamageEntity(all, tempDamage, "dd-blizzarddeath", false);
 							} else
 								all.removePotionEffect(PotionEffectType.WITHER);
 							if (all.getHealth() <= 10D) {
 								if (all instanceof Player)
-									all.damage(tempDamage);
+									Utils.pureDamageEntity(all, tempDamage, "dd-blizzarddeath", false);
 								else if (freeze && !all.isInvulnerable() && all.getLocation().getBlockY() >= freezeHeight) {
 									all.setAI(false);
 									all.setInvulnerable(true);
@@ -195,6 +195,8 @@ public class Blizzard extends WeatherDisaster {
 					return;
 				}
 				for (Player p : world.getPlayers()) {
+					if (!p.getWorld().equals(world))
+						continue;
 					Location closest = null;
 					for (int x=-particleRange; x <= particleRange; x++)
 						for (int z=-particleRange; z <= particleRange; z++) {

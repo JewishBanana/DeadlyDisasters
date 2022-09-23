@@ -1,5 +1,5 @@
 name: DeadlyDisasters
-version: 10.1
+version: 10.2
 author: davidclue
 main: deadlydisasters.general.Main
 description: Adds deadly disasters to the game.
@@ -8,7 +8,7 @@ softdepend: [WorldGuard, CoreProtect, Towny, GriefPrevention, Lands, RealisticSe
 
 commands:
     disasters:
-        usage: /disasters <enable|disable|start|mintimer|reload|help|summon|give|difficulty|language|catalog|whitelist|listplayer|config>...
+        usage: /disasters <enable|disable|start|mintimer|reload|help|summon|give|difficulty|language|catalog|whitelist|listplayer|config|favor|dislike>...
         description: Universal command for the plugin. Use /disasters help, for more information.
     towndisasters:
         usage: /towndisasters <on|off> [player]

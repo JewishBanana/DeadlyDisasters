@@ -23,6 +23,7 @@ import deadlydisasters.general.Languages;
 import deadlydisasters.general.Main;
 import deadlydisasters.general.WorldObject;
 import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -41,6 +42,7 @@ public class Geyser extends DestructionDisaster {
 	private int minReach, maxReach, range;
 	private Sound sound;
 	private int spawnInterval = 10;
+	private int blocksDestroyed;
 	
 	public Geyser(int level) {
 		super(level);
@@ -152,6 +154,7 @@ public class Geyser extends DestructionDisaster {
 								if (b.getType() != material && !Utils.isBlockBlacklisted(block.getBlock().getType()) && !Utils.isZoneProtected(block)) {
 									if (plugin.CProtect) Utils.getCoreProtect().logRemoval("Deadly-Disasters", block, b.getType(), b.getBlockData());
 									b.setType(material);
+									blocksDestroyed++;
 								}
 							}
 						}
@@ -165,11 +168,13 @@ public class Geyser extends DestructionDisaster {
 										for (int x=px[0]-2; x <= px[1]+2; x++) {
 											for (int z=pz[0]-2; z <= pz[1]+2; z++) {
 												Block bc = new Location(loc.getWorld(), x, loc.getY(), z).getBlock();
-												if (bc.getType() == material)
+												if (bc.getType() == material) {
 													bc.setType(Material.AIR);
-												else if (rand.nextInt(3) == 0 && bc.getType() != Material.AIR && !Utils.isBlockBlacklisted(bc.getType()) && !Utils.isZoneProtected(bc.getLocation())) {
+													blocksDestroyed++;
+												} else if (rand.nextInt(3) == 0 && bc.getType() != Material.AIR && !Utils.isBlockBlacklisted(bc.getType()) && !Utils.isZoneProtected(bc.getLocation())) {
 													if (plugin.CProtect) Utils.getCoreProtect().logRemoval("Deadly-Disasters", bc.getLocation(), bc.getType(), bc.getBlockData());
 													bc.setType(Material.AIR);
+													blocksDestroyed++;
 												}
 											}
 										}
@@ -180,6 +185,7 @@ public class Geyser extends DestructionDisaster {
 										finished = true;
 										cancel();
 										ongoingDisasters.remove(me);
+										Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 										return;
 									}
 								}
@@ -222,7 +228,8 @@ public class Geyser extends DestructionDisaster {
 			public void run() {
 				for (Entity all : loc.getWorld().getNearbyEntities(loc, 2, loc.getY(), 2))
 					if (all instanceof LivingEntity && all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
-					&& all.getLocation().getBlockY() <= loc.getBlockY() && all.getLocation().getBlockY() >= mem.getBlockY() && !((LivingEntity) all).hasPotionEffect(PotionEffectType.FIRE_RESISTANCE)) ((LivingEntity) all).damage(damageAmount);
+					&& all.getLocation().getBlockY() <= loc.getBlockY() && all.getLocation().getBlockY() >= mem.getBlockY() && !((LivingEntity) all).hasPotionEffect(PotionEffectType.FIRE_RESISTANCE))
+						Utils.pureDamageEntity((LivingEntity) all, damageAmount, "dd-geyserdeath", false);
 				if (finished) cancel();
 			}
 		};
@@ -261,6 +268,7 @@ public class Geyser extends DestructionDisaster {
 							if (b.getType() != material && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(block)) {
 								if (plugin.CProtect) Utils.getCoreProtect().logRemoval("Deadly-Disasters", block, b.getType(), b.getBlockData());
 								b.setType(material);
+								blocksDestroyed++;
 							}
 						}
 					}
@@ -279,11 +287,13 @@ public class Geyser extends DestructionDisaster {
 								for (int x=px[0]-2; x <= px[1]+2; x++) {
 									for (int z=pz[0]-2; z <= pz[1]+2; z++) {
 										Location block = new Location(loc.getWorld(), x, loc.getY(), z);
-										if (block.getBlock().getType() == material)
+										if (block.getBlock().getType() == material) {
 											block.getBlock().setType(Material.AIR);
-										else if (rand.nextInt(3) == 0 && block.getBlock().getType() != Material.AIR && !Utils.isBlockBlacklisted(block.getBlock().getType()) && !Utils.isZoneProtected(block)) {
+											blocksDestroyed++;
+										} else if (rand.nextInt(3) == 0 && block.getBlock().getType() != Material.AIR && !Utils.isBlockBlacklisted(block.getBlock().getType()) && !Utils.isZoneProtected(block)) {
 											if (plugin.CProtect) Utils.getCoreProtect().logRemoval("Deadly-Disasters", block, block.getBlock().getType(), block.getBlock().getBlockData());
 											block.getBlock().setType(Material.AIR);
+											blocksDestroyed++;
 										}
 									}
 								}
@@ -294,6 +304,7 @@ public class Geyser extends DestructionDisaster {
 								DeathMessages.geysers.remove(me);
 								cancel();
 								ongoingDisasters.remove(me);
+								Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 								return;
 							}
 							for (Entity all : loc.getWorld().getNearbyEntities(loc, 20, 128, 20))

@@ -23,8 +23,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.BlockVector;
@@ -34,6 +32,7 @@ import deadlydisasters.disasters.events.DestructionDisaster;
 import deadlydisasters.disasters.events.DestructionDisasterEvent;
 import deadlydisasters.listeners.CoreListener;
 import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -46,6 +45,7 @@ public class CaveIn extends DestructionDisaster {
 	private BlockData[] materials;
 	private double fallSpeed = -0.5;
 	private double size,damage;
+	public int blocksDestroyed;
 	
 	public Queue<UUID> fallingRoof = new ArrayDeque<>();
 	
@@ -148,14 +148,8 @@ public class CaveIn extends DestructionDisaster {
 						continue;
 					}
 					for (Entity e : world.getNearbyEntities(fb.getLocation().add(.5,.5,.5), .5, .5, .5))
-						if (e instanceof LivingEntity && !(e instanceof Player && Utils.isPlayerImmune((Player) e))) {
-							LivingEntity entity = (LivingEntity) e;
-							entity.damage(0.01);
-							e.setLastDamageCause(new EntityDamageEvent(e, DamageCause.CUSTOM, damage));
-							if (entity.getHealth()-damage <= 0)
-								e.setMetadata("dd-caveincrush", plugin.fixedData);
-							entity.setHealth(Math.max(entity.getHealth()-damage, 0));
-						}
+						if (e instanceof LivingEntity && !(e instanceof Player && Utils.isPlayerImmune((Player) e)))
+							Utils.damageEntity((LivingEntity) e, damage, "dd-caveincrush", false);
 				}
 				iterator = placements.iterator();
 				while (iterator.hasNext()) {
@@ -191,6 +185,7 @@ public class CaveIn extends DestructionDisaster {
 					}, 200L);
 					cancel();
 					ongoingDisasters.remove(me);
+					Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 				}
 			}
 		};
@@ -269,6 +264,7 @@ class CaveInBlock {
 				if (b.getState() instanceof InventoryHolder)
 					CoreListener.addBlockInventory(fb, ((InventoryHolder) b.getState()).getInventory().getContents());
 				b.setType(Material.AIR);
+				classInstance.blocksDestroyed++;
 				fb.setHurtEntities(false);
 				fb.setDropItem(false);
 				fb.setVelocity(new Vector(0,speed,0));

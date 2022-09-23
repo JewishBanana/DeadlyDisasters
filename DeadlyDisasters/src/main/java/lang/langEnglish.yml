@@ -1,6 +1,6 @@
 # Do NOT translate version, ONLY translate what is in the right side quotes ''
 # Do NOT translate color codes ex. '&6' or '\n' or '&o'
-version: 10.1
+version: 10.2
 internal:
     easy: 'EASY'
     normal: 'NORMAL'
@@ -14,8 +14,8 @@ internal:
     onWord: 'ON'
     offWord: 'OFF'
     cfgUpdate: 'Successfully updated config to version'
-    consoleUpdate: 'A new update is available! &e(^) &aUpdate now at https://www.spigotmc.org/resources/deadlydisasters-pro.90806/'
-    playerUpdate: 'A new version is available! &e(^) &aNotify the server operator to update at https://www.spigotmc.org/resources/deadlydisasters-pro.90806/ \n&7&oCurrently installed version is'
+    consoleUpdate: 'A new update is available! &e(^) &aUpdate now at https://www.spigotmc.org/resources/deadlydisasters-pro.100918/'
+    playerUpdate: 'A new version is available! &e(^) &aNotify the server operator to update at https://www.spigotmc.org/resources/deadlydisasters-pro.100918/ \n&7&oCurrently installed version is'
     allowFlight: 'This plugin works best when "allow-flight" is set to &atrue &cin the server properties file!'
     olderVersion: 'You are using an older version! Please know that this plugin is designed for version 1.16 and above so using older versions will be laggy!'
     firstStart:
@@ -24,6 +24,9 @@ internal:
         line 3: 'To access individual world settings edit the &aworlds.yml &bfile in the plugins directory!'
         line 4: 'For more information about commands please type'
     catalogUpdate: 'New content is available in the catalog!'
+    favorDisaster: 'If you are enjoying the plugin it would be greatly appreciated if you would submit what your favorite disaster is with '
+    dislikeDisaster: 'If you are disliking a disaster and wish for it to be improved please vote for it using '
+    voteSubmission: 'Your vote has been submitted, thank you for helping improve the plugin!'
 deaths:
     plague: 'fell ill and died of the Black Plague'
     soulDeath: 'was possessed by a lost soul'
@@ -37,7 +40,7 @@ deaths:
     waterGeyser: 'melted in a water geyser'
     lavaGeyser: 'melted in a lava geyser'
     cavein: 'was crushed in a cave in'
-    acidstorm: 'melted away in a acid storm'
+    acidstorm: 'melted away in an acid storm'
     tsunami: 'drowned in a tsunami'
     blizzard: 'froze to death in a blizzard'
     sandstorm: 'was lost in a sandstorm'
@@ -46,6 +49,9 @@ deaths:
     genericMob: 'was killed by a'
     infestedCave: 'was devoured by the infestation'
     infestedWormDeath: 'was devoured by an Infested Worm'
+    tornado: 'was swept away by a tornado'
+    extremewinds: 'was swept away by severe winds'
+    hurricane: 'was caught up in a hurricane'
 entities:
     endTotem: 'End Totem'
     voidGuard: 'Void Guardian'

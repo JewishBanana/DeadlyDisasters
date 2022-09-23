@@ -26,6 +26,7 @@ import deadlydisasters.disasters.events.DestructionDisaster;
 import deadlydisasters.disasters.events.DestructionDisasterEvent;
 import deadlydisasters.listeners.CoreListener;
 import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -42,6 +43,7 @@ public class Tsunami extends DestructionDisaster {
 	private boolean ignoreOcean;
 	private Material liquid;
 	private BlockData[] materials;
+	private int blocksDestroyed;
 	
 	public Queue<FallingBlock> fallingBlocks = new ArrayDeque<>();
 	
@@ -85,6 +87,7 @@ public class Tsunami extends DestructionDisaster {
 								if (Utils.isZoneProtected(b.getLocation())) continue;
 								if (plugin.CProtect) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 								b.setType(liquid);
+								blocksDestroyed++;
 							}
 						}
 				} else {
@@ -122,6 +125,7 @@ public class Tsunami extends DestructionDisaster {
 												DeathMessages.tsunamis.remove(obj);
 												ongoingDisasters.remove(obj);
 												cancel();
+												Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 												return;
 											}
 											current++;
@@ -146,6 +150,7 @@ public class Tsunami extends DestructionDisaster {
 									DeathMessages.tsunamis.remove(obj);
 									ongoingDisasters.remove(obj);
 									cancel();
+									Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 								}
 								return;
 							}

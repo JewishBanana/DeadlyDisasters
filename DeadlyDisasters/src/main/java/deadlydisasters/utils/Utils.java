@@ -25,6 +25,7 @@ import org.bukkit.GameMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
@@ -73,6 +74,9 @@ public class Utils {
 	private static me.ryanhamshire.GriefPrevention.DataStore grief;
 	private static me.angeschossen.lands.api.integration.LandsIntegration landsclaims;
 	
+	private static Sound startSound;
+	private static float[] startSoundModifiers;
+	
 	@SuppressWarnings("deprecation")
 	public Utils(Main plugin) {
 		Utils.plugin = plugin;
@@ -109,6 +113,19 @@ public class Utils {
 		ExtremeWinds.bannedBlocks.addAll(Tornado.bannedBlocks);
 		ExtremeWinds.bannedBlocks.addAll(Tag.LEAVES.getValues());
 		Hurricane.oceans.addAll(Arrays.asList(Biome.OCEAN, Biome.COLD_OCEAN, Biome.DEEP_COLD_OCEAN, Biome.DEEP_FROZEN_OCEAN, Biome.DEEP_LUKEWARM_OCEAN, Biome.DEEP_OCEAN, Biome.FROZEN_OCEAN, Biome.LUKEWARM_OCEAN, Biome.WARM_OCEAN));
+		
+		if (!plugin.getConfig().getString("messages.start_sound.sound").equalsIgnoreCase("none")) {
+			try {
+				startSound = Sound.valueOf(plugin.getConfig().getString("messages.start_sound.sound"));
+			} catch (Exception e) {
+				Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: There is no sound with the name &d'"+plugin.getConfig().getString("messages.start_sound.sound")+"' &ein the config at:\nmessages:\n    start_sound:\n        sound: "+plugin.getConfig().getString("messages.start_sound.sound")));
+			}
+			try {
+				startSoundModifiers = new float[] {(float) plugin.getConfig().getDouble("messages.start_sound.volume"), (float) plugin.getConfig().getDouble("messages.start_sound.pitch")};
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	public static String chat(String s) {
 		return ChatColor.translateAlternateColorCodes('&', s);
@@ -123,6 +140,9 @@ public class Utils {
 			str += "\n"+type.getTip();
 		for (Player p : world.getPlayers())
 			p.sendMessage(str);
+		if (startSound != null)
+			for (Player p : world.getPlayers())
+				p.playSound(p, startSound, startSoundModifiers[0], startSoundModifiers[1]);
 		Main.consoleSender.sendMessage(Languages.prefix+str);
 	}
 	public static void broadcastEvent(int level, String category, Disaster type, Location loc, Player player) {
@@ -136,6 +156,9 @@ public class Utils {
 			str += "\n"+type.getTip();
 		for (Player p : loc.getWorld().getPlayers())
 			p.sendMessage(str);
+		if (startSound != null)
+			for (Player p : loc.getWorld().getPlayers())
+				p.playSound(p, startSound, startSoundModifiers[0], startSoundModifiers[1]);
 		Main.consoleSender.sendMessage(Languages.prefix+str+ChatColor.GREEN+" ("+loc.getWorld().getName()+")");
 	}
 	public static boolean isWGRegion(Location location) {
@@ -199,11 +222,11 @@ public class Utils {
 		return (p.getGameMode() == GameMode.CREATIVE || p.getGameMode() == GameMode.SPECTATOR);
 	}
 	public static boolean isZoneProtected(Location loc) {
-		return (WorldObject.findWorldObject(loc.getWorld()).protectRegions && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null)
+		return (WorldObject.findWorldObject(loc.getWorld()).protectRegions && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null && townyapi.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true))
 				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.isClaimed(loc)) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
 	}
 	public static boolean isWeatherDisabled(Location loc, WeatherDisaster instance) {
-		return (instance.RegionWeather && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null)
+		return (instance.RegionWeather && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null && townyapi.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true))
 				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.isClaimed(loc)) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
 	}
 	public static Block getBlockAbove(Location location) {
@@ -379,14 +402,6 @@ public class Utils {
 		if (e.isInsideVehicle())
 			e.getVehicle().remove();
 	}
-	public static void pureDamageEntity(LivingEntity entity, double damage, String meta) {
-		if (entity.isDead())
-			return;
-		entity.damage(0.00001);
-		if (entity.getHealth()-damage <= 0 && meta != null)
-			entity.setMetadata(meta, plugin.fixedData);
-		entity.setHealth(Math.max(entity.getHealth()-damage, 0));
-	}
 	public static String spigotText(String text, String hex) {
 		return (net.md_5.bungee.api.ChatColor.of(hex) + text);
 	}
@@ -439,6 +454,25 @@ public class Utils {
 	    Block adjacentBlock = lastTwoTargetBlocks.get(0);
 	    return targetBlock.getFace(adjacentBlock);
 	}
+	public static void pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem) {
+		if (entity.isDead())
+			return;
+		entity.damage(0.00001);
+		if (entity.getHealth()-damage <= 0) {
+			if (!ignoreTotem) {
+				entity.setHealth(0.00001);
+				if (meta != null && entity.getEquipment().getItemInMainHand().getType() != Material.TOTEM_OF_UNDYING && entity.getEquipment().getItemInOffHand().getType() != Material.TOTEM_OF_UNDYING)
+					entity.setMetadata(meta, plugin.fixedData);
+				entity.damage(1);
+				return;
+			}
+			if (meta != null)
+				entity.setMetadata(meta, plugin.fixedData);
+			entity.setHealth(0);
+			return;
+		}
+		entity.setHealth(Math.max(entity.getHealth()-damage, 0));
+	}
 	public static void damageArmor(LivingEntity entity, double damage) {
 		int dmg = Math.max((int) (damage + 4 / 4), 1);
 		for (ItemStack armor : entity.getEquipment().getArmorContents()) {
@@ -450,11 +484,11 @@ public class Utils {
 			armor.setItemMeta(meta);
 		}
 	}
-	public static void damageEntity(LivingEntity entity, double damage, String meta) {
+	public static void damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem) {
 		double armor = entity.getAttribute(Attribute.GENERIC_ARMOR).getValue();
 		double toughness = entity.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).getValue();
 		double actualDamage = damage * (1 - Math.min(20, Math.max(armor / 5, armor - damage/(2 + toughness / 4))) / 25);
-		Utils.pureDamageEntity(entity, actualDamage, meta);
+		Utils.pureDamageEntity(entity, actualDamage, meta, ignoreTotem);
 		Utils.damageArmor(entity, actualDamage);
 	}
 	public static Block rayCastForBlock(Location location, int minRange, int maxRange, int maxAttempts, Set<Material> materialWhitelist) {

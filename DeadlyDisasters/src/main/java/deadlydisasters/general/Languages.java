@@ -26,8 +26,8 @@ public class Languages {
 		CHINESECONFIG("https://docs.google.com/uc?export=download&id=14CcSJ636YbJl3Wr-KhnNX1bZFf1zNvp6"),
 		CHINESETRADLANG(""),
 		CHINESETRADCONFIG(""),
-		RUSSIANLANG(""),
-		RUSSIANCONFIG(""),
+		RUSSIANLANG("https://docs.google.com/uc?export=download&id=1V-SSOqGJZSNA4bUv0Wi-dJzVuqDFNB1D"),
+		RUSSIANCONFIG("https://docs.google.com/uc?export=download&id=1W55tEu5cCUW1JIcOsPWzPmSps1Ra7cSu"),
 		CZECHLANG("https://docs.google.com/uc?export=download&id=1qQZo-cnUJO-Ikdi1-fIQwtBnMz0Ex-ii"),
 		CZECHCONFIG("https://docs.google.com/uc?export=download&id=1QJlGncTIyjLcDDOUAhKgMJ9lGGEZKHuo");
 		
@@ -52,7 +52,7 @@ public class Languages {
 	public static String prefix = Utils.chat("&6&l[DeadlyDisasters]: ");
 	public static String firstStart;
 	
-	public static String joinAfterUpdate = Utils.chat("&bUpdate log for &4&lV10.0 \n&3- Almost every disaster revamped \n- Tons of bug fixes \n- Tons of new config features \n- New custom mobs \n- New commands \n- Performance improvements \n- Per world timers \n- KingdomsX support \n- So much more");
+	public static String joinAfterUpdate = Utils.chat("&bUpdate log for &4&lV10.2 \n&3- Bug fixes\n- You can play a sound when disaster starts (config under messages)\n- Change to how tornados pull stuff\n- Every disaster now has a death message\n- Totems and armor now work for disasters such as meteor explosions");
 	
 	public static void updateLang(int tempID, Main plugin, Player sender) {
 		langID = tempID;

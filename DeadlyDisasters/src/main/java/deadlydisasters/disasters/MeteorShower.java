@@ -34,6 +34,7 @@ import deadlydisasters.general.Main;
 import deadlydisasters.general.WorldObject;
 import deadlydisasters.listeners.CoreListener;
 import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
 
@@ -59,6 +60,7 @@ public class MeteorShower extends WeatherDisaster {
 	public double[] speeds = {1.0, 1.0, 1.0};
 	public int[][] meteorSizes = {{2, 6},{2, 6},{2, 6}};
 	private int spawnRate = 7;
+	public int blocksDestroyed;
 	
 	public boolean spawnOres = true;
 	
@@ -151,6 +153,7 @@ public class MeteorShower extends WeatherDisaster {
 					}
 					ongoingDisasters.remove(me);
 					cancel();
+					Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 					return;
 				}
 				for (int i = list.size()/tick_speed*cycle; i > list.size()/tick_speed*(cycle-1); i--) list.get(i-1).tick(rand);
@@ -192,6 +195,7 @@ public class MeteorShower extends WeatherDisaster {
 				if (!meteor.exists) {
 					cancel();
 					ongoingDisasters.remove(instance);
+					Metrics.incrementValue(Metrics.disasterDestroyedMap, Disaster.METEORSHOWERS.getMetricsLabel(), instance.blocksDestroyed);
 					if (type == 1) {
 						new RepeatingTask(plugin, 0, 1) {
 							@Override
@@ -410,12 +414,14 @@ class Meteor {
 				if (b.getType() != Material.AIR && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
 					if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 					b.setType(Material.AIR);
+					classInstance.blocksDestroyed++;
 					depth--;
 				}
 				b = b.getRelative(BlockFace.DOWN);
 				if (b.getType() != Material.AIR && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
 					if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 					b.setType(Material.AIR);
+					classInstance.blocksDestroyed++;
 					depth--;
 				}
 			}
@@ -495,11 +501,13 @@ class Meteor {
 							if (distance > widthSquared-distOff && rand.nextInt(3) == 1) {
 								if (rand.nextInt(4) == 1) {
 									b.setType(material);
+									classInstance.blocksDestroyed++;
 									if (CP) Utils.getCoreProtect().logPlacement("Deadly-Disasters", b.getLocation(), material, bd);
 								}
 								continue;
 							}
 							b.setType(Material.AIR);
+							classInstance.blocksDestroyed++;
 						}
 				double damage = classInstance.explosionDamage;
 				for (Entity e : loc.getWorld().getNearbyEntities(loc, width, width, width))
@@ -508,7 +516,7 @@ class Meteor {
 						LivingEntity entity = (LivingEntity) e;
 						if (Utils.rayTraceForSolidBlock(loc, e.getLocation().clone().add(0,.5,0)))
 							continue;
-						Utils.pureDamageEntity(entity, damage, "dd-meteorcrush");
+						Utils.damageEntity(entity, damage, "dd-meteorcrush", false);
 					}
 				classInstance.smoke.put(loc.clone().subtract(0,width,0), Arrays.asList(classInstance.smokeTime, width/2));
 			} else {
@@ -531,7 +539,7 @@ class Meteor {
 							if (blocks[i].isDead()) continue;
 							for (Entity e : world.getNearbyEntities(blocks[i].getLocation(), .5, .5, .5))
 								if (e instanceof LivingEntity && !e.isDead())
-									Utils.pureDamageEntity((LivingEntity) e, 6, "dd-meteorcrush");
+									Utils.pureDamageEntity((LivingEntity) e, 6, "dd-meteorcrush", true);
 						}
 						depth++;
 						if (depth >= 20) cancel();
