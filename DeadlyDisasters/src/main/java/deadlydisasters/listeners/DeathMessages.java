@@ -31,6 +31,7 @@ import deadlydisasters.disasters.Purge;
 import deadlydisasters.disasters.SandStorm;
 import deadlydisasters.disasters.Sinkhole;
 import deadlydisasters.disasters.SoulStorm;
+import deadlydisasters.disasters.Supernova;
 import deadlydisasters.disasters.Tornado;
 import deadlydisasters.disasters.Tsunami;
 import deadlydisasters.general.Languages;
@@ -54,6 +55,7 @@ public class DeathMessages implements Listener {
 	public static Set<EndStorm> endstorms = new HashSet<>();
 	public static Set<Hurricane> hurricanes = new HashSet<>();
 	public static Set<Purge> purges = new HashSet<>();
+	public static Set<Supernova> supernovas = new HashSet<>();
 	
 	private Main plugin;
 	

@@ -35,7 +35,15 @@ public enum CustomEntityType {
 	INFESTEDTRIBESMAN("customentities.infestedcaves_mobs.infested_tribesman", "infestedtribesman"),
 	INFESTEDDEVOURER("customentities.infestedcaves_mobs.infested_devourer", "infesteddevourer"),
 	INFESTEDHOWLER("customentities.infestedcaves_mobs.infested_howler", "infestedhowler"),
-	INFESTEDWORM("customentities.infestedcaves_mobs.infested_worm", "infestedworm");
+	INFESTEDWORM("customentities.infestedcaves_mobs.infested_worm", "infestedworm"),
+	CHRISTMASELF("customentities.christmas_mobs.elf", "elf"),
+	PETCHRISTMASELF("customentities.pets.pet_elf", "petelf"),
+	FROSTY("customentities.christmas_mobs.frosty", "frosty"),
+	GRINCH("customentities.christmas_mobs.grinch", "grinch"),
+	SANTA("customentities.christmas_mobs.santa", "santa"),
+	RAMPAGINGGOAT("customentities.easter_mobs.rampaging_goat", "rampaginggoat"),
+	EASTERBUNNY("customentities.easter_mobs.easter_bunny", "easterbunny"),
+	KILLERCHICKEN("customentities.easter_mobs.killer_chicken", "killerchicken");
 	
 	public Main plugin;
 	public String species;

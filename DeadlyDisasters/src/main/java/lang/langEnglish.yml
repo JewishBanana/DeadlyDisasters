@@ -1,6 +1,6 @@
 # Do NOT translate version, ONLY translate what is in the right side quotes ''
 # Do NOT translate color codes ex. '&6' or '\n' or '&o'
-version: 10.2
+version: 13.0
 internal:
     easy: 'EASY'
     normal: 'NORMAL'
@@ -27,6 +27,16 @@ internal:
     favorDisaster: 'If you are enjoying the plugin it would be greatly appreciated if you would submit what your favorite disaster is with '
     dislikeDisaster: 'If you are disliking a disaster and wish for it to be improved please vote for it using '
     voteSubmission: 'Your vote has been submitted, thank you for helping improve the plugin!'
+    earnAchievementLocal: 'You have just earned the achievement'
+    earnAchievement: 'has just earned the achievement'
+    enableMastery: 'Click to activate!'
+    deactivateMastery: 'Currently active, click to &cdeactivate'
+    notifyUnclaimed: 'You have unclaimed achievements! &b(/disasters achievements)'
+    claimAchievement: 'Click to claim reward!'
+    placeGlobeError: 'You can only place this on solid ground!'
+words:
+    progress: 'Progress'
+    rewards: 'Rewards'
 deaths:
     plague: 'fell ill and died of the Black Plague'
     soulDeath: 'was possessed by a lost soul'
@@ -52,6 +62,10 @@ deaths:
     tornado: 'was swept away by a tornado'
     extremewinds: 'was swept away by severe winds'
     hurricane: 'was caught up in a hurricane'
+    bloodSacrifice: 'was sacrificed'
+    bloodSacrificeSuicide: 'has sacrificed themselves'
+    frostyDeath: 'was frozen by frosty'
+    candyCanePierce: 'was pierced by a Candy Cane'
 entities:
     endTotem: 'End Totem'
     voidGuard: 'Void Guardian'
@@ -76,6 +90,10 @@ entities:
     infestedTribesman: 'Infested Tribesman'
     infestedDevourer: 'Infested Devourer'
     infestedHowler: 'Infested Howler'
+    christmasElf: 'Elf'
+    frosty: 'Frosty'
+    grinch: 'Grinch'
+    santa: 'Santa'
 items:
     voidShard: 'Void Shard'
     voidShardLore:
@@ -103,6 +121,26 @@ items:
     yetiFurLore: 'Fur from deadly beasts that live in the tundra..'
     poseidonsTrident: "Poseidon's Trident"
     poseidonsTridentLore: 'A trident left by a fallen god in the depths of the ocean..'
+    bloodPact: 'Blood Pact'
+    bloodPactLore: 'A sleeping demon resides in this axe which slowly awakens with more blood given...'
+    awakenedBloodPact: 'Awakened Blood Pact'
+    awakenedBloodPactLore: 'An awakened demon that resides in this axe thirsty for blood. Sacrifices will now ignore totems.'
+    bloodIngot: 'Blood Ingot'
+    bloodIngotLore: 'An ingot infused with dark blood. Can be used to repair blood items.'
+    candyCane: 'Candy Cane'
+    candyCaneLore: 'A sweet candy cane stolen from a child on Christmas eve'
+    cursedCandyCane: 'Cursed Candy Cane'
+    cursedCandyCaneLore: 'An evil candy cane that has grown a taste for blood'
+    ornament: 'Ornament'
+    ornamentLore: 'Sparkling ornament that is used to craft a snow globe'
+    brokenSnowGlobe: 'Broken Snow Globe'
+    brokenSnowGlobeLore: 'An empty snow globe with damaged glass. Maybe try repairing this...'
+    snowGlobe: 'Snow Globe'
+    snowGlobeLore: 'A snow globe filled with holiday cheer!'
+    snowGlobeAbility: 'Place down to summon a Santa boss'
+    santaHat: 'Santa Hat'
+    santaHatLore: "Santa's hat imbued with the Christmas spirit. Obtained from defeating Santa in the 2022 DeadlyDisasters Christmas event."
+    santaHatAbility: 'Summons Christmas elves to protect you'
 misc:
     prefix: 'DeadlyDisasters'
     cureMessage: 'You feel relief as you are no longer infected!'
@@ -112,6 +150,7 @@ misc:
     yetiBlessing: "Yeti's Blessing"
     basicCoating: 'Basic Coating'
     tidalWave: 'Tidal Wave'
+    bloodSacrifice: 'Blood Sacrifice'
 helpCommand:
     start: 'Starts a disaster, if level is undefined disaster will be random level, if player is undefined then disaster will start on executing player.'
     enable: 'Enables specific disasters or specified settings, all disasters are enabled by default, "all" will allow enabled disasters to naturally occur, "maxlevels" enables level 6 disasters, "eventmsg" enables event broadcast messages.'
@@ -149,6 +188,36 @@ tips:
     tsunami: 'Tip: Tsunamis only happen near deep water. Do not get caught up in these.'
     monsoon: 'Tip: Monsoons have such heavy rainfall that mobs cannot even breathe, as the water level rises drowned leave the ocean.'
     infestedcaves: 'Tip: Avoid breaking the infestation, it regenerates and might let it know where you are...'
+easter:
+    eventMessage: 'There is an Easter event ongoing. Earn eggs by completing achievements and combine them to fight the Easter boss! &b(/disasters event)'
+    infoItem: 'DeadlyDisasters Easter Event'
+    infoItemLore: 'Earn eggs by completing achievements. A player can combine 5 eggs of different colors in a crafting table to create an egg basket which can summon the Easter boss. Only 1 egg of each color can be obtained by a player!'
+    greenEgg: 'Green Easter Egg'
+    greenEggLore: 'A strange green egg laid by a chicken that does not hatch into a chicken?'
+    greenEggGoal: 'This egg can be laid by a chicken.'
+    blueEgg: 'Blue Easter Egg'
+    blueEggLore: 'Deep blue egg that was sitting on the floor of the ocean?'
+    blueEggGoal: 'You can find this egg while fishing.'
+    redEgg: 'Red Easter Egg'
+    redEggLore: 'Blood red egg that an angry goat was guarding?'
+    redEggGoal: 'You can find this egg by slaying a Rampaging Goat'
+    orangeEgg: 'Orange Easter Egg'
+    orangeEggLore: 'Cold but bright orange egg that was left in a deep cave?'
+    orangeEggGoal: 'You can find this egg in deep caves.'
+    purpleEgg: 'Purple Easter Egg'
+    purpleEggLore: 'A mysterious purple egg that was sold to you for a high price?'
+    purpleEggGoal: 'You can find this egg by trading with a wandering merchant.'
+    goldenEgg: 'Golden Easter Egg'
+    goldenEggLore: 'Shiny golden egg dropped by the Easter bunny. Combine with boots to imbue special abilities.'
+    basket: 'Easter Egg Basket'
+    basketLore: 'A basket filled with colorful Easter eggs.'
+    basketAbility: 'Place down to summon a Easter boss'
+    restrictAction: 'You have already obtained this item during the event!'
+    rampagingGoat: 'Rampaging Goat'
+    easterBunny: 'Easter Bunny'
+    killerChicken: 'Killer Chicken'
+    bunnyHop: 'Bunny Hop'
+    discoverEgg: 'You have found the'
 credit:
     translations: 'Translations have been set to <language>. Keep in mind that not everything will be translated!' # Set the <language> field to the language you are translating to
     credit: 'Translations by: <your_name>' # Set the <your_name> field to your name.

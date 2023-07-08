@@ -36,10 +36,15 @@ import deadlydisasters.disasters.Disaster;
 import deadlydisasters.disasters.SandStorm;
 import deadlydisasters.entities.CustomEntityType;
 import deadlydisasters.entities.EntityHandler;
+import deadlydisasters.listeners.ArmorListener;
 import deadlydisasters.listeners.CoreListener;
+import deadlydisasters.listeners.CraftingListener;
 import deadlydisasters.listeners.CustomEnchantHandler;
+import deadlydisasters.listeners.CustomEntitiesListener;
 import deadlydisasters.listeners.DeathMessages;
+import deadlydisasters.listeners.EasterEventHandler;
 import deadlydisasters.listeners.TownyListener;
+import deadlydisasters.listeners.spawners.GlobalSpawner;
 import deadlydisasters.listeners.unloaders.Loader_ver_14;
 import deadlydisasters.listeners.unloaders.Loader_ver_17;
 import deadlydisasters.utils.ConfigUpdater;
@@ -51,7 +56,7 @@ public class Main extends JavaPlugin {
 	public boolean RegionProtection;
 	public boolean CProtect;
 	
-	public boolean updateNotify,firstSetup,firstAfterUpdate,debug;
+	public boolean updateNotify,firstSetup,firstAfterUpdate,debug,customNameSupport;
 	private TimerCheck tc;
 	public EntityHandler handler;
 	private File dataf;
@@ -63,6 +68,7 @@ public class Main extends JavaPlugin {
 	public CustomEnchantHandler enchantHandler;
 	public FixedMetadataValue fixedData;
 	public ConfigSwapper cfgSwapper;
+	public EasterEventHandler eventHandler;
 	
 	public Random random = new Random();
 	public int maxDepth;
@@ -73,9 +79,10 @@ public class Main extends JavaPlugin {
 		instance = this;
 		consoleSender = this.getServer().getConsoleSender();
 		this.mcVersion = Double.parseDouble(Bukkit.getBukkitVersion().substring(0,4));
-		if (mcVersion < 1.18)
+		if (mcVersion < 1.17)
 			this.maxDepth = 0;
-		else this.maxDepth = -64;
+		else
+			this.maxDepth = -64;
 		fixedData = new FixedMetadataValue(this, "protected");
 		
 		if (!(new File(getDataFolder().getAbsolutePath(), "config.yml").exists()))
@@ -135,6 +142,7 @@ public class Main extends JavaPlugin {
 			consoleSender.sendMessage(Languages.prefix+Languages.joinAfterUpdate);
 		}
 		this.debug = getConfig().getBoolean("general.debug_messages");
+		this.customNameSupport = getConfig().getBoolean("general.custom_name_support");
 		
 		for (World w : this.getServer().getWorlds())
 			WorldObject.worlds.add(new WorldObject(w));
@@ -171,17 +179,22 @@ public class Main extends JavaPlugin {
 		
 		CustomEntityType.reload(this);
 
+		new ArmorListener(this);
 		tc = new TimerCheck(this, dataFile, random);
 		handler = new EntityHandler(this, dataFile);
 		if (mcVersion >= 1.17)
 			new Loader_ver_17(this, handler);
 		else
 			new Loader_ver_14(this, handler);
-		new CoreListener(this, tc, dataFile, handler, random);
+		new CoreListener(this, tc, dataFile, random);
 		enchantHandler = new CustomEnchantHandler(this);
+		new CustomEntitiesListener(this);
+		new CraftingListener(this);
 		this.getCommand("disasters").setTabCompleter(new Disasters(this, tc, handler, random, new Catalog(this)));
 		new DeathMessages(this);
 		new Utils(this);
+		new GlobalSpawner(this, handler);
+		eventHandler = new EasterEventHandler(this);
 		
 		Utils.easterEgg();
 		checkForUpdates();
@@ -211,19 +224,25 @@ public class Main extends JavaPlugin {
 		Metrics.configureMetrics(this);
 	}
 	public void onDisable() {
-		removeCustomEntities();
+		try {
+			removeCustomEntities();
+			DeathMessages.purges.forEach(e -> e.clearBar());
+		} catch (NoClassDefFoundError e) {}
 		tc.saveTimerValues();
 		handler.cleanEntities();
-		BlackPlague.time.forEach((k,v) -> {
-			if (Bukkit.getEntity(k) != null)
-				Bukkit.getEntity(k).removeMetadata("dd-plague", this);
-		});
-		DeathMessages.purges.forEach(e -> e.clearBar());
+		try {
+			BlackPlague.time.forEach((k,v) -> {
+				if (Bukkit.getEntity(k) != null)
+					Bukkit.getEntity(k).removeMetadata("dd-plague", this);
+			});
+		} catch (NoClassDefFoundError e) {}
 		long count = 0;
 		if (dataFile.contains("timers")) count = dataFile.getConfigurationSection("timers").getKeys(false).stream().count();
 		dataFile.set("data.entries", count);
 		dataFile.set("data.firstStart", false);
 		Catalog.saveTimer(this);
+		if (eventHandler.isEnabled)
+			eventHandler.saveData();
 		Metrics.saveMetricsData(this);
 		saveDataFile();
 		/*if (!getConfig().getBoolean("general.opt-out-error-sharing") && getDescription().getVersion().equals(latestVersion))
@@ -236,6 +255,7 @@ public class Main extends JavaPlugin {
 		DeathMessages.soulstorms.forEach(e -> e.clearEntities());
 		DeathMessages.purges.forEach(e -> e.clearEntities());
 		DeathMessages.acidstorms.forEach(e -> e.clearEntities());
+		DeathMessages.supernovas.forEach(e -> e.removeCrystal());
 	}
 	public void checkForUpdates() {
 		getLogger().info("Checking for update...");
@@ -334,6 +354,7 @@ public class Main extends JavaPlugin {
 	        put("pet_warning_time", 30);
 	        put("difficulty", "NORMAL");
 	        put("minDistanceRadius", 50);
+	        put("custom_mob_spawning", getConfig().getBoolean("general.auto_enable_natural_spawning"));
 	    }};
 	    configuration.createSection(name+".general", values);
 		values = new LinkedHashMap<String, Object>();
@@ -374,6 +395,7 @@ public class Main extends JavaPlugin {
 	        put("pet_warning_time", 30);
 	        put("difficulty", "NORMAL");
 	        put("minDistanceRadius", 50);
+	        put("custom_mob_spawning", getConfig().getBoolean("general.auto_enable_natural_spawning"));
 	    }};
 	    Map<String, Object> custom_table = new LinkedHashMap<String, Object>() {{
 			put("level_1", 30);

@@ -29,7 +29,9 @@ public class Languages {
 		RUSSIANLANG("https://docs.google.com/uc?export=download&id=1V-SSOqGJZSNA4bUv0Wi-dJzVuqDFNB1D"),
 		RUSSIANCONFIG("https://docs.google.com/uc?export=download&id=1W55tEu5cCUW1JIcOsPWzPmSps1Ra7cSu"),
 		CZECHLANG("https://docs.google.com/uc?export=download&id=1qQZo-cnUJO-Ikdi1-fIQwtBnMz0Ex-ii"),
-		CZECHCONFIG("https://docs.google.com/uc?export=download&id=1QJlGncTIyjLcDDOUAhKgMJ9lGGEZKHuo");
+		CZECHCONFIG("https://docs.google.com/uc?export=download&id=1QJlGncTIyjLcDDOUAhKgMJ9lGGEZKHuo"),
+		FRENCHLANG("https://docs.google.com/uc?export=download&id=1RMkZ9lzBpHNsDblMXOneIeQrCZfIZLK9"),
+		FRENCHCONFIG("https://docs.google.com/uc?export=download&id=1fp-mLVZ5TKvICsNrzmC4rVEXXAb6gdt_");
 		
 		private URL source;
 		private langFileLink(String link) {
@@ -52,7 +54,7 @@ public class Languages {
 	public static String prefix = Utils.chat("&6&l[DeadlyDisasters]: ");
 	public static String firstStart;
 	
-	public static String joinAfterUpdate = Utils.chat("&bUpdate log for &4&lV10.2 \n&3- Bug fixes\n- You can play a sound when disaster starts (config under messages)\n- Change to how tornados pull stuff\n- Every disaster now has a death message\n- Totems and armor now work for disasters such as meteor explosions");
+	public static String joinAfterUpdate = Utils.chat("&bUpdate log for &4&lV10.4 \\n&3- Small bug fixes\\n- Limited time easter event till 16th\\n- Custom world support");
 	
 	public static void updateLang(int tempID, Main plugin, Player sender) {
 		langID = tempID;
@@ -99,6 +101,20 @@ public class Languages {
 					sender.sendMessage(Utils.chat("&bInstalling language files..."));
 				langFile = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langCzech.yml"));
 				cfgFile = FileUtils.openInputStream(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langCzechCfg.yml"));
+				if (sender != null)
+					sender.sendMessage(Utils.chat("&aSuccessfully installed!"));
+			} catch (IOException e) {
+				e.printStackTrace();
+				Main.consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cUnable to update language! Please report the full error above to the discord!"));
+			}
+		} else if (langID == 4) {
+			//french
+			try {
+				fetchNewConfig(plugin, sender);
+				if (sender != null)
+					sender.sendMessage(Utils.chat("&bInstalling language files..."));
+				langFile = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langFrench.yml"));
+				cfgFile = FileUtils.openInputStream(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langFrenchCfg.yml"));
 				if (sender != null)
 					sender.sendMessage(Utils.chat("&aSuccessfully installed!"));
 			} catch (IOException e) {
@@ -202,6 +218,27 @@ public class Languages {
 					if (!cfg.exists())
 						cfg.createNewFile();
 					Utils.copyUrlToFile(langFileLink.CZECHCONFIG.getLink(), cfg);
+					plugin.getLogger().info("Download Successful!");
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			return new FileInputStream(cfg);
+		} else if (langID == 4) {
+			File tempFile = new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langFrench.yml");
+			tempFile.getParentFile().mkdirs();
+			YamlConfiguration yaml = YamlConfiguration.loadConfiguration(tempFile);
+			File cfg = new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langFrenchCfg.yml");
+			if (!cfg.exists() || !yaml.contains("version") || yaml.getDouble("version") < Double.parseDouble(plugin.getDescription().getVersion()))
+				try {
+					plugin.getLogger().info("Downloading config translation file...");
+					if (sender != null)
+						sender.sendMessage(Utils.chat("&eDownloading files..."));
+					tempFile.createNewFile();
+					Utils.copyUrlToFile(langFileLink.FRENCHLANG.getLink(), tempFile);
+					
+					if (!cfg.exists())
+						cfg.createNewFile();
+					Utils.copyUrlToFile(langFileLink.FRENCHCONFIG.getLink(), cfg);
 					plugin.getLogger().info("Download Successful!");
 				} catch (IOException e) {
 					e.printStackTrace();

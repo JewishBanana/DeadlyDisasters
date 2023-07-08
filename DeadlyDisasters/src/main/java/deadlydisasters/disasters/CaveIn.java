@@ -255,7 +255,7 @@ class CaveInBlock {
 	public void fall(BlockData material, double speed) {
 		if (depth > 0) {
 			Block b = loc.getBlock();
-			if (!Utils.isBlockBlacklisted(b.getType()) || !Utils.isZoneProtected(loc)) {
+			if (!Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(loc)) {
 				if (material == null)
 					material = b.getBlockData();
 				FallingBlock fb = b.getWorld().spawnFallingBlock(loc.clone().add(0.5,0.5,0.5), material);

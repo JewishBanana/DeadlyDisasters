@@ -75,7 +75,7 @@ public class Catalog implements Listener {
 		try {
 			Utils.copyUrlToFile(new URL("https://docs.google.com/uc?export=download&id=12yxVcLOBpkwiELjWPDAvDn5aUmCCtBfz"), f);
 		}  catch (IOException e) {
-			Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eError could not fetch catalog! You can ignore this error unless the plugin is throwing actual errors.."));
+//			Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eError could not fetch catalog! You can ignore this error unless the plugin is throwing actual errors.."));
 		}
 		initCatalog();
 	}

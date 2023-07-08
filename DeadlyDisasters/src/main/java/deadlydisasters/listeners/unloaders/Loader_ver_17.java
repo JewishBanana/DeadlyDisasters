@@ -31,8 +31,11 @@ public class Loader_ver_17 implements Listener {
 						handler.addEntityBySpecies(type.species, entity);
 						break;
 					}
-			} else if (entity.getPersistentDataContainer().has(EntityHandler.removalKey, PersistentDataType.BYTE))
+			} else if (entity.getPersistentDataContainer().has(EntityHandler.removalKey, PersistentDataType.BYTE)) {
+				for (Entity pass : entity.getPassengers())
+					pass.remove();
 				entity.remove();
+			}
 	}
 	@EventHandler
 	public void onEntitiesUnload(EntitiesUnloadEvent e) {

@@ -645,7 +645,7 @@ public class CustomDisaster {
 						if (yaml.contains(path+"height"))
 							tornado.setHeight(yaml.getInt(path+"height"));
 						if (yaml.contains(path+"particleChance"))
-							tornado.setParticles(yaml.getInt(path+"particleChance"));
+							tornado.setParticles(yaml.getDouble(path+"particleChance"));
 						if (yaml.contains(path+"width"))
 							tornado.setWidth(yaml.getInt(path+"width"));
 						if (yaml.contains(path+"particleType"))

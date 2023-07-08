@@ -25,21 +25,28 @@ import org.bukkit.GameMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.Tag;
 import org.bukkit.World;
+import org.bukkit.World.Environment;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
 
 import deadlydisasters.commands.Disasters;
@@ -76,6 +83,8 @@ public class Utils {
 	
 	private static Sound startSound;
 	private static float[] startSoundModifiers;
+	
+	private static int descriptionLine = 35;
 	
 	@SuppressWarnings("deprecation")
 	public Utils(Main plugin) {
@@ -126,6 +135,7 @@ public class Utils {
 				e.printStackTrace();
 			}
 		}
+		descriptionLine = plugin.getConfig().getInt("customitems.item_lore_characters_per_line");
 	}
 	public static String chat(String s) {
 		return ChatColor.translateAlternateColorCodes('&', s);
@@ -473,6 +483,25 @@ public class Utils {
 		}
 		entity.setHealth(Math.max(entity.getHealth()-damage, 0));
 	}
+	public static void pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source) {
+		if (entity.isDead())
+			return;
+		entity.damage(0.00001, source);
+		if (entity.getHealth()-damage <= 0) {
+			if (!ignoreTotem) {
+				entity.setHealth(0.00001);
+				if (meta != null && entity.getEquipment().getItemInMainHand().getType() != Material.TOTEM_OF_UNDYING && entity.getEquipment().getItemInOffHand().getType() != Material.TOTEM_OF_UNDYING)
+					entity.setMetadata(meta, plugin.fixedData);
+				entity.damage(1);
+				return;
+			}
+			if (meta != null)
+				entity.setMetadata(meta, plugin.fixedData);
+			entity.setHealth(0);
+			return;
+		}
+		entity.setHealth(Math.max(entity.getHealth()-damage, 0));
+	}
 	public static void damageArmor(LivingEntity entity, double damage) {
 		int dmg = Math.max((int) (damage + 4 / 4), 1);
 		for (ItemStack armor : entity.getEquipment().getArmorContents()) {
@@ -489,6 +518,13 @@ public class Utils {
 		double toughness = entity.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).getValue();
 		double actualDamage = damage * (1 - Math.min(20, Math.max(armor / 5, armor - damage/(2 + toughness / 4))) / 25);
 		Utils.pureDamageEntity(entity, actualDamage, meta, ignoreTotem);
+		Utils.damageArmor(entity, actualDamage);
+	}
+	public static void damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source) {
+		double armor = entity.getAttribute(Attribute.GENERIC_ARMOR).getValue();
+		double toughness = entity.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).getValue();
+		double actualDamage = damage * (1 - Math.min(20, Math.max(armor / 5, armor - damage/(2 + toughness / 4))) / 25);
+		Utils.pureDamageEntity(entity, actualDamage, meta, ignoreTotem, source);
 		Utils.damageArmor(entity, actualDamage);
 	}
 	public static Block rayCastForBlock(Location location, int minRange, int maxRange, int maxAttempts, Set<Material> materialWhitelist) {
@@ -623,5 +659,200 @@ public class Utils {
 		l.log(Level.SEVERE, "----------------------------------");
 		l.log(Level.SEVERE, "Threads closed");
 		l.log(Level.SEVERE, "Application terminated. REPORT THIS TO UnderscoreEnchants discord!");
+	}
+	public static ItemStack createItem(Material type, int amount, String name, List<String> lore, boolean enchanted, boolean hideAttributes) {
+		ItemStack item = new ItemStack(type, amount);
+		ItemMeta meta = item.getItemMeta();
+		meta.setDisplayName(Utils.chat(name));
+		if (lore != null)
+			meta.setLore(chopLore(lore));
+		if (enchanted) {
+			meta.addEnchant(Enchantment.DURABILITY, 1, true);
+			meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+		}
+		if (hideAttributes)
+			meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS);
+		item.setItemMeta(meta);
+		return item;
+	}
+	public static ItemStack createItem(ItemStack item, int amount, String name, List<String> lore, boolean enchanted, boolean hideAttributes) {
+		ItemMeta meta = item.getItemMeta();
+		meta.setDisplayName(Utils.chat(name));
+		if (lore != null)
+			meta.setLore(chopLore(lore));
+		if (enchanted) {
+			meta.addEnchant(Enchantment.DURABILITY, 1, true);
+			meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+		}
+		if (hideAttributes)
+			meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS);
+		item.setItemMeta(meta);
+		return item;
+	}
+	public static List<String> chopLore(List<String> lore) {
+		List<String> tempLore = new ArrayList<>();
+		if (lore != null)
+			for (String line : lore) {
+				line = Utils.chat(line);
+				if (line.length() > descriptionLine) {
+					int c = 0;
+					for (int i=c+descriptionLine; i < line.length(); i++) {
+						if (i == line.length()-1) {
+							tempLore.add(Utils.chat(ChatColor.getLastColors(line.substring(0, c))+line.substring(c, i+1)));
+							break;
+						}
+						if (line.charAt(i) == ' ') {
+							tempLore.add(Utils.chat(ChatColor.getLastColors(line.substring(0, c+1))+line.substring(c, i)));
+							c += i-c+1;
+							if (i+descriptionLine >= line.length()) {
+								tempLore.add(Utils.chat(ChatColor.getLastColors(line.substring(0, c))+line.substring(c, line.length())));
+								break;
+							}
+							i = c+descriptionLine;
+						}
+					}
+				} else
+					tempLore.add(line);
+			}
+		return tempLore;
+	}
+	public static String getNumerical(int num) {
+		switch (num) {
+		default:
+		case 1: return "I";
+		case 2: return "II";
+		case 3: return "III";
+		case 4: return "IV";
+		case 5: return "V";
+		case 6: return "VI";
+		case 7: return "VII";
+		case 8: return "VIII";
+		case 9: return "IX";
+		case 10: return "X";
+		}
+	}
+	public static int getFromNumerical(String num) {
+		switch (num) {
+		default:
+		case "I": return 1;
+		case "II": return 2;
+		case "III": return 3;
+		case "IV": return 4;
+		case "V": return 5;
+		case "VI": return 6;
+		case "VII": return 7;
+		case "VIII": return 8;
+		case "IX": return 9;
+		case "X": return 10;
+		}
+	}
+	public static void damageItem(ItemStack toDamage, int damage) {
+		ItemMeta meta = toDamage.getItemMeta();
+		((Damageable) meta).setDamage(((Damageable) meta).getDamage()+damage);
+		if (((Damageable) meta).getDamage() >= toDamage.getType().getMaxDurability())
+			toDamage.setAmount(0);
+		else toDamage.setItemMeta(meta);
+	}
+	public static void repairItem(ItemStack toRepair, int health) {
+		ItemMeta meta = toRepair.getItemMeta();
+		((Damageable) meta).setDamage(Math.max(((Damageable) meta).getDamage()-health, 0));
+		toRepair.setItemMeta(meta);
+	}
+	public static void upgradeEnchantLevel(ItemStack item, String enchantWithChar, int maxLevel) {
+		ItemMeta meta = item.getItemMeta();
+		if (meta.hasLore()) {
+			List<String> lore = meta.getLore();
+			int index = 0;
+			String line = null;
+			for (String loreList : lore) {
+				if (loreList.contains(enchantWithChar)) {
+					line = loreList;
+					break;
+				}
+				index++;
+			}
+			if (line == null) {
+				lore.addAll(Arrays.asList(enchantWithChar, " "));
+				lore.addAll(meta.getLore());
+				meta.setLore(lore);
+				item.setItemMeta(meta);
+				return;
+			}
+			int currentLevel = -1;
+			for (int i=line.length()-1; i >= 0; i--)
+				if (line.charAt(i) == ' ') {
+					currentLevel = getFromNumerical(line.substring(i+1));
+					break;
+				}
+			if (currentLevel < 0 || currentLevel >= maxLevel)
+				return;
+			lore.set(index, enchantWithChar+' '+getNumerical(currentLevel+1));
+			meta.setLore(lore);
+			item.setItemMeta(meta);
+			return;
+		}
+		meta.setLore(Arrays.asList(enchantWithChar+" I"));
+		item.setItemMeta(meta);
+	}
+	public static boolean upgradeEnchantLevel(ItemStack item, String enchantWithChar, int maxLevel, NamespacedKey key) {
+		ItemMeta meta = item.getItemMeta();
+		if (meta == null)
+			return false;
+		int level = 0;
+		if (meta.getPersistentDataContainer().has(key, PersistentDataType.BYTE))
+			level = meta.getPersistentDataContainer().get(key, PersistentDataType.BYTE);
+		if (level >= maxLevel)
+			return false;
+		meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) (level+1));
+		if (meta.hasLore()) {
+			List<String> lore = meta.getLore();
+			int index = 0;
+			String line = null;
+			for (String loreList : lore) {
+				if (loreList.contains(enchantWithChar)) {
+					line = loreList;
+					break;
+				}
+				index++;
+			}
+			if (line == null) {
+				lore.addAll(Arrays.asList(enchantWithChar+" "+getNumerical(level+1), " "));
+				lore.addAll(meta.getLore());
+				meta.setLore(lore);
+				item.setItemMeta(meta);
+				return true;
+			}
+			lore.set(index, enchantWithChar+' '+getNumerical(level+1));
+			meta.setLore(lore);
+			item.setItemMeta(meta);
+			return true;
+		}
+		meta.setLore(Arrays.asList(enchantWithChar+" "+getNumerical(level+1)));
+		item.setItemMeta(meta);
+		return true;
+	}
+	public static ArmorStand lockArmorStand(ArmorStand stand, boolean setInvisible, boolean setGravity, boolean setMarker) {
+		if (plugin.mcVersion >= 1.16)
+			stand.setInvisible(setInvisible);
+		else
+			stand.setVisible(!setInvisible);
+		stand.setGravity(setGravity);
+		stand.setArms(true);
+		stand.setMarker(setMarker);
+		if (plugin.mcVersion >= 1.16) {
+			stand.addEquipmentLock(EquipmentSlot.CHEST, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+			stand.addEquipmentLock(EquipmentSlot.FEET, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+			stand.addEquipmentLock(EquipmentSlot.HAND, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+			stand.addEquipmentLock(EquipmentSlot.HEAD, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+			stand.addEquipmentLock(EquipmentSlot.LEGS, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+			stand.addEquipmentLock(EquipmentSlot.OFF_HAND, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+		}
+		return stand;
+	}
+	public static final double map(double value, double istart, double istop, double ostart, double ostop) {
+		return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
+	}
+	public static boolean isEnvironment(World world, Environment environment) {
+		return world.getEnvironment() == environment || world.getEnvironment() == Environment.CUSTOM;
 	}
 }

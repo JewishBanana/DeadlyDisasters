@@ -14,48 +14,40 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
-import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.World;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Rotatable;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.EvokerFangs;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.ShulkerBullet;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.WanderingTrader;
-import org.bukkit.entity.Wolf;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockFadeEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityPortalEnterEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.entity.VillagerAcquireTradeEvent;
-import org.bukkit.event.inventory.BrewEvent;
-import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -67,25 +59,19 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.potion.PotionType;
 import org.bukkit.util.Vector;
 
 import deadlydisasters.disasters.AcidStorm;
 import deadlydisasters.disasters.BlackPlague;
+import deadlydisasters.disasters.Blizzard;
 import deadlydisasters.disasters.EndStorm;
 import deadlydisasters.disasters.MeteorShower;
 import deadlydisasters.disasters.events.DestructionDisaster;
 import deadlydisasters.disasters.events.DisasterEvent;
-import deadlydisasters.entities.EntityHandler;
-import deadlydisasters.entities.endstormentities.BabyEndTotem;
-import deadlydisasters.entities.endstormentities.EndWorm;
-import deadlydisasters.entities.purgeentities.DarkMage;
-import deadlydisasters.entities.soulstormentities.SoulReaper;
+import deadlydisasters.entities.christmasentities.Santa;
+import deadlydisasters.entities.easterentities.EasterBunny;
 import deadlydisasters.general.ItemsHandler;
 import deadlydisasters.general.Languages;
 import deadlydisasters.general.Main;
@@ -100,7 +86,6 @@ public class CoreListener implements Listener {
 	private Queue<UUID> notified = new ArrayDeque<>();
 	private Queue<UUID> warnForKick = new ArrayDeque<>();
 	private FileConfiguration dataFile;
-	private EntityHandler handler;
 	private Random rand;
 	private NamespacedKey key;
 	private boolean favoredDisaster,dislikedDisaster;
@@ -124,11 +109,10 @@ public class CoreListener implements Listener {
 	
 	public static Map<UUID,DisasterEvent> fallingBlocks = new HashMap<>();
 	
-	public CoreListener(Main plugin, TimerCheck tc, FileConfiguration dataFile, EntityHandler handler, Random rand) {
+	public CoreListener(Main plugin, TimerCheck tc, FileConfiguration dataFile, Random rand) {
 		this.plugin = plugin;
 		this.tc = tc;
 		this.dataFile = dataFile;
-		this.handler = handler;
 		this.rand = rand;
 		this.key = new NamespacedKey(plugin, "dd-frozen-mob");
 		
@@ -304,30 +288,59 @@ public class CoreListener implements Listener {
 	}
 	@EventHandler
 	public void onBlockBreak(BlockBreakEvent event) {
-		if (event.getBlock().getType() == Material.ICE) {
-			for (Entity e : event.getBlock().getWorld().getNearbyEntities(event.getBlock().getLocation().clone().add(.5,.5,.5), .5, 1.25, .5)) {
-				if (!(e instanceof LivingEntity) || !e.getPersistentDataContainer().has(key, PersistentDataType.BYTE)) continue;
-				if (e.getHeight() > 1 && e.getLocation().add(0,1,0).getBlock().getType().equals(Material.ICE) && !(e.getLocation().add(0,1,0).getBlock().equals(event.getBlock()))) continue;
-				e.setInvulnerable(false);
-				((LivingEntity) e).setAI(true);
-				if (e.getPersistentDataContainer().get(key, PersistentDataType.BYTE) == (byte) 0)
-					((LivingEntity) e).setRemoveWhenFarAway(true);
-				e.getPersistentDataContainer().remove(key);
-				e.setSilent(false);
-				plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
-					@Override
-					public void run() {
-						if (event.getBlock().getType() == Material.WATER)
-							event.getBlock().setType(Material.AIR);
-					}
-				}, 1);
-				return;
-			}
-		} else if (AcidStorm.poisonedCrops.contains(event.getBlock())) {
+		if (Santa.snowGlobeBlocks.contains(event.getBlock()) || EasterBunny.easterBasketBlocks.contains(event.getBlock())) {
+			event.setCancelled(true);
+			return;
+		}
+		if (event.getBlock().getType() == Material.ICE)
+			Blizzard.breakIce(event.getBlock(), plugin);
+		else if (AcidStorm.poisonedCrops.contains(event.getBlock())) {
 			AcidStorm.poisonedCrops.remove(event.getBlock());
 			event.setDropItems(false);
 			event.setExpToDrop(0);
 		}
+	}
+	@EventHandler
+	public void onBlockPlace(BlockPlaceEvent e) {
+		if (!e.getItemInHand().hasItemMeta())
+			return;
+		if (e.getItemInHand().getItemMeta().getPersistentDataContainer().has(ItemsHandler.brokenSnowGlobeKey, PersistentDataType.BYTE))
+			e.setCancelled(true);
+		else if (e.getItemInHand().getItemMeta().getPersistentDataContainer().has(ItemsHandler.snowGlobeKey, PersistentDataType.BYTE)) {
+			if (!(e.getBlockPlaced().getBlockData() instanceof Rotatable)) {
+				e.getPlayer().sendMessage(Utils.chat("&c"+Languages.langFile.getString("internal.placeGlobeError")));
+				e.setCancelled(true);
+				return;
+			}
+			Santa.summonSanta(plugin, e.getBlock());
+		} else if (e.getItemInHand().getItemMeta().getPersistentDataContainer().has(ItemsHandler.easterBasketKey, PersistentDataType.BYTE)) {
+			if (!(e.getBlockPlaced().getBlockData() instanceof Rotatable)) {
+				e.getPlayer().sendMessage(Utils.chat("&c"+Languages.langFile.getString("internal.placeGlobeError")));
+				e.setCancelled(true);
+				return;
+			}
+			if (!EasterBunny.summonEasterBunny(plugin, e.getBlock())) {
+				e.setCancelled(true);
+				e.getPlayer().sendMessage(Utils.chat("&cCould not find possible spawn nearby!"));
+				return;
+			}
+		}
+	}
+	@EventHandler
+	public void onPistonExtend(BlockPistonExtendEvent e) {
+		for (Block b : e.getBlocks())
+			if (Santa.snowGlobeBlocks.contains(b) || EasterBunny.easterBasketBlocks.contains(b)) {
+				e.setCancelled(true);
+				return;
+			}
+	}
+	@EventHandler
+	public void onPistonRetract(BlockPistonRetractEvent e) {
+		for (Block b : e.getBlocks())
+			if (Santa.snowGlobeBlocks.contains(b) || EasterBunny.easterBasketBlocks.contains(b)) {
+				e.setCancelled(true);
+				return;
+			}
 	}
 	@EventHandler
 	public void onBlockForm(EntityChangeBlockEvent event) {
@@ -365,142 +378,11 @@ public class CoreListener implements Listener {
 		blockInventories.put(e, i);
 	}
 	@EventHandler
-	public void onAttack(EntityDamageByEntityEvent e) {
-		Entity damager = e.getDamager();
-		if (damager instanceof Arrow && damager.hasMetadata("dd-voidarrow")) {
-			if (!Utils.isZoneProtected(damager.getLocation()) || plugin.getConfig().getBoolean("customitems.items.void_wrath.allow_in_regions"))
-				EndStorm.createUnstableRift(e.getEntity().getLocation(), ItemsHandler.voidBowPortalTicks);
-			damager.remove();
-			return;
-		}
-		if (damager instanceof EvokerFangs && e.getEntity() instanceof Player && ((Player) e.getEntity()).getHealth() <= e.getFinalDamage() && damager.hasMetadata("dd-endworm")) {
-			e.getEntity().setMetadata("dd-endwormfangs", fixdata);
-			return;
-		}
-		if (damager instanceof ShulkerBullet && damager.hasMetadata("dd-magebullet") && e.getEntity() instanceof LivingEntity) {
-			LivingEntity temp = (LivingEntity) e.getEntity();
-			temp.setVelocity(damager.getVelocity().multiply(3).setY(1));
-			temp.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0, true));
-			temp.removePotionEffect(PotionEffectType.LEVITATION);
-			plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
-				public void run() {
-					temp.removePotionEffect(PotionEffectType.LEVITATION);
-				}
-			}, 1);
-		}
-		if (!(damager instanceof LivingEntity)) return;
-		LivingEntity entity = (LivingEntity) damager;
-		if (e.getEntity().hasMetadata("dd-plague") && !damager.hasMetadata("dd-plague") && BlackPlague.time.size() < BlackPlague.maxInfectedMobs) {
-			if (entity instanceof Player) {
-				if (!Utils.isPlayerImmune((Player) entity)) {
-					entity.sendMessage(Utils.chat("&c"+Languages.langFile.getString("misc.plagueCatch")));
-					BlackPlague.time.put(entity.getUniqueId(), 300);
-					entity.setMetadata("dd-plague", fixdata);
-				}
-			} else {
-				BlackPlague.time.put(entity.getUniqueId(), 300);
-				entity.setMetadata("dd-plague", fixdata);
-			}
-		}
-		if (entity.hasMetadata("dd-customentity")) {
-			if (entity.hasMetadata("dd-endtotem")) {
-				Location loc = e.getEntity().getLocation();
-				e.getEntity().teleport(loc.add(0, 0.15, 0));
-				if (plugin.mcVersion >= 1.16)
-					e.getEntity().setVelocity(new Vector(loc.getX() - entity.getLocation().getX(), 0.1, loc.getZ() - entity.getLocation().getZ()).normalize().multiply(entity.getAttribute(Attribute.GENERIC_ATTACK_KNOCKBACK).getBaseValue()));
-				if (entity instanceof Enderman)
-					entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_EVOKER_PREPARE_ATTACK, SoundCategory.HOSTILE, 1f, 2f);
-				else
-					entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_EVOKER_PREPARE_ATTACK, SoundCategory.HOSTILE, .3f, 2f);
-				if (!entity.hasMetadata("dd-animation"))
-					entity.setMetadata("dd-animation", fixdata);
-			} else if (entity.hasMetadata("dd-voidguardian"))
-				e.setDamage(14 - (entity.getHealth() / 4));
-			else if (entity.hasMetadata("dd-voidstalker") && e.getEntity() instanceof LivingEntity)
-				((LivingEntity) e.getEntity()).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0, true));
-			else if (entity.hasMetadata("dd-ancientmummy") && e.getEntity() instanceof LivingEntity)
-				((LivingEntity) e.getEntity()).addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 60, 4, true));
-			else if (entity.hasMetadata("dd-endworm"))
-				((EndWorm) plugin.handler.findEntity(entity)).triggerAnimation();
-			
-			if (e.getEntity() instanceof Player && e.getFinalDamage() >= ((LivingEntity) e.getEntity()).getHealth()) {
-				if (entity.hasMetadata("dd-sandstormmob"))
-					e.getEntity().setMetadata("dd-sandstormdeath", fixdata);
-				else if (entity.hasMetadata("dd-purgemob"))
-					e.getEntity().setMetadata("dd-purgedeath", fixdata);
-				else if (entity.hasMetadata("dd-lostsoul")) {
-					entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_VEX_CHARGE, SoundCategory.HOSTILE, 2f, .5f);
-					entity.remove();
-					e.getEntity().setMetadata("dd-lostsouldeath", fixdata);
-				}
-			}
-		}
-		if (e.getEntity().hasMetadata("dd-darkmage") && !e.getEntity().isDead()) {
-			LivingEntity damaged = (LivingEntity) e.getEntity();
-			if (damaged.getHealth() < 12 && e.getFinalDamage() < damaged.getHealth())
-				((DarkMage) plugin.handler.findEntity(damaged)).reboundTarget = entity;
-		} else if (e.getEntity().hasMetadata("dd-soulreaper") && !e.getEntity().isDead()) {
-			((SoulReaper) plugin.handler.findEntity((LivingEntity) e.getEntity())).target = entity;
-		}
-	}
-	@EventHandler
-	public void onDamage(EntityDamageEvent e) {
-		if (e.getEntity().hasMetadata("dd-invulnerable")) {
-			e.setCancelled(true);
-			return;
-		}
-		if (!e.getEntity().hasMetadata("dd-customentity"))
-			return;
-		Entity entity = e.getEntity();
-		if (entity.hasMetadata("dd-soulreaper") && e.getCause() != DamageCause.ENTITY_ATTACK)
-			e.setCancelled(true);
-	}
-	@EventHandler
-	public void onDeath(EntityDeathEvent e) {
-		if (e.getEntity().hasMetadata("dd-customentity"))
-			for (ItemStack item : e.getDrops())
-				item.setType(Material.AIR);
-	}
-	@EventHandler
-	public void onEntityInteract(PlayerInteractEntityEvent e) {
-		if (!e.getRightClicked().hasMetadata("dd-customentity")) return;
-		LivingEntity entity = (LivingEntity) e.getRightClicked();
-		if (entity.hasMetadata("dd-endtotem") && entity instanceof Wolf) {
-			ItemStack item = null;
-			if (plugin.mcVersion >= 1.16)
-				item = e.getPlayer().getInventory().getItem(e.getHand());
-			else
-				item = e.getPlayer().getInventory().getItemInMainHand();
-			if (item.getType() == Material.AIR) return;
-			if (item.getType() == Material.CHORUS_FRUIT && entity.getHealth() < entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()) {
-				if (e.getPlayer().getGameMode() != GameMode.CREATIVE)
-					item.setAmount(item.getAmount()-1);
-				entity.setHealth(Math.min(entity.getHealth()+4, entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()));
-				entity.getWorld().spawnParticle(Particle.COMPOSTER, entity.getLocation().clone().add(0,.5,0), 12, .25, .25, .25, .01);
-			} else if (item.getType() == Material.GHAST_TEAR && ((Wolf) entity).getOwner() == null) {
-				if (e.getPlayer().getGameMode() != GameMode.CREATIVE)
-					item.setAmount(item.getAmount()-1);
-				if (rand.nextInt(4) == 0) {
-					entity.getWorld().spawnParticle(Particle.HEART, entity.getLocation().clone().add(0,.5,0), 7, .25, .3, .25, .03);
-					((Wolf) entity).setOwner(e.getPlayer());
-					entity.getWorld().playSound(entity.getLocation(), Sound.BLOCK_CONDUIT_ATTACK_TARGET, SoundCategory.HOSTILE, .5f, .5f);
-				}
-			} else if (item.getType() == Material.NAME_TAG && (((Wolf) entity).getOwner() != null && ((Wolf) entity).getOwner().equals(e.getPlayer()))) {
-				if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
-					((BabyEndTotem) handler.findEntity(entity)).changeName(item.getItemMeta().getDisplayName());
-					if (e.getPlayer().getGameMode() != GameMode.CREATIVE)
-						item.setAmount(item.getAmount()-1);
-				}
-			}
-			e.setCancelled(true);
-		}
-	}
-	@EventHandler
 	public void onInteract(PlayerInteractEvent e) {
 		if (e.getItem() == null || !e.getItem().hasItemMeta())
 			return;
 		Material type = e.getItem().getType();
-		if (type == Material.GHAST_TEAR && e.getItem().getItemMeta().getDisplayName().equals(ItemsHandler.voidShardName)) {
+		if (type == Material.GHAST_TEAR && ((plugin.customNameSupport && e.getItem().getItemMeta().getDisplayName().equals(ItemsHandler.voidShardName)) || e.getItem().getItemMeta().getPersistentDataContainer().has(ItemsHandler.voidShardKey, PersistentDataType.BYTE))) {
 			Location target = e.getPlayer().getEyeLocation().clone().add(e.getPlayer().getLocation().getDirection().multiply(6));
 			if (target.getBlock().getType() != Material.AIR)
 				return;
@@ -508,7 +390,7 @@ public class CoreListener implements Listener {
 			storm.createCustomRift(target);
 			e.getItem().setAmount(e.getItem().getAmount()-1);
 		} else if (type == Material.BLAZE_ROD && (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) && !mageWandCooldownMap.containsKey(e.getPlayer().getUniqueId()) &&
-				e.getItem().getItemMeta().hasLore() && e.getItem().getItemMeta().getLore().get(0).equals(ItemsHandler.mageWandLore)) {
+				e.getItem().getItemMeta().hasLore() && ((plugin.customNameSupport && e.getItem().getItemMeta().getLore().get(0).equals(ItemsHandler.mageWandLore)) || e.getItem().getItemMeta().getPersistentDataContainer().has(ItemsHandler.mageWandKey, PersistentDataType.BYTE))) {
 			mageWandCooldownMap.put(e.getPlayer().getUniqueId(), ItemsHandler.mageWandCooldown);
 			ShulkerBullet[] bullets = new ShulkerBullet[12];
 			double[] speed = {0.05, 0};
@@ -558,7 +440,7 @@ public class CoreListener implements Listener {
 	public void bowShoot(EntityShootBowEvent e) {
 		if (e.getForce() < 0.8 || !e.getBow().hasItemMeta()) return;
 		ItemMeta meta = e.getBow().getItemMeta();
-		if (!voidBowCooldownMap.containsKey(e.getEntity().getUniqueId()) && meta.getDisplayName().equals(ItemsHandler.voidBowName)) {
+		if (!voidBowCooldownMap.containsKey(e.getEntity().getUniqueId()) && ((plugin.customNameSupport && meta.getDisplayName().equals(ItemsHandler.voidBowName)) || meta.getPersistentDataContainer().has(ItemsHandler.voidBowKey, PersistentDataType.BYTE))) {
 			voidBowCooldownMap.put(e.getEntity().getUniqueId(), ItemsHandler.voidBowCooldown);
 			Arrow arrow = (Arrow) e.getProjectile();
 			arrow.setMetadata("dd-voidarrow", fixdata);
@@ -584,40 +466,6 @@ public class CoreListener implements Listener {
 			BlackPlague.cureEntity(e.getPlayer(), plugin);
 			e.getPlayer().sendMessage(ChatColor.GREEN+Languages.langFile.getString("misc.cureMessage"));
 			return;
-		}
-	}
-	@EventHandler
-	public void onCraft(PrepareItemCraftEvent e) {
-		if (e.getRecipe() == null) return;
-		if (e.getRecipe().getResult().hasItemMeta() && e.getRecipe().getResult().getItemMeta().getPersistentDataContainer().has(ItemsHandler.plagueCureKey, PersistentDataType.BYTE)) {
-			PotionMeta meta = (PotionMeta) e.getInventory().getContents()[5].getItemMeta();
-			if (meta.getBasePotionData().getType() != PotionType.AWKWARD)
-				e.getInventory().setResult(new ItemStack(Material.AIR));
-		} else if (e.getRecipe().getResult().hasItemMeta() && e.getRecipe().getResult().getItemMeta().getDisplayName().contains(ItemsHandler.ancientBladeName)) {
-			ItemStack[] items = e.getInventory().getContents();
-			if (!(items[2].hasItemMeta() && items[2].getItemMeta().hasLore() && items[2].getItemMeta().getLore().get(0).equals(ItemsHandler.ancientBoneLore)
-					&& items[4].hasItemMeta() && items[4].getItemMeta().hasLore() && items[4].getItemMeta().getLore().get(0).equals(ItemsHandler.ancientBoneLore)
-					&& items[6].hasItemMeta() && items[6].getItemMeta().hasLore() && items[6].getItemMeta().getLore().get(0).equals(ItemsHandler.ancientBoneLore)
-					&& items[7].hasItemMeta() && items[7].getItemMeta().hasLore() && items[7].getItemMeta().getLore().get(0).equals(ItemsHandler.ancientClothLore)
-					&& items[9].hasItemMeta() && items[9].getItemMeta().hasLore() && items[9].getItemMeta().getLore().get(0).equals(ItemsHandler.ancientClothLore)))
-				e.getInventory().setResult(new ItemStack(Material.AIR));
-		}
-	}
-	@EventHandler
-	public void onBrew(BrewEvent e) {
-		if (e.isCancelled())
-			return;
-		ItemStack[] potions = {e.getContents().getStorageContents()[0], e.getContents().getStorageContents()[1], e.getContents().getStorageContents()[2]};
-		for (int i=0; i < 3; i++) {
-			ItemStack item = potions[i];
-			if (item == null || !item.hasItemMeta() || !item.getItemMeta().getPersistentDataContainer().has(ItemsHandler.plagueCureKey, PersistentDataType.BYTE)) {
-				potions[i] = null;
-				continue;
-			}
-			if (e.getContents().getIngredient().getType() == Material.GUNPOWDER) {
-				if (item.getType() == Material.POTION)
-					e.getResults().set(i, ItemsHandler.plagueCureSplash);
-			}
 		}
 	}
 	@EventHandler
@@ -655,6 +503,12 @@ public class CoreListener implements Listener {
 	public void onBurn(EntityCombustEvent e) {
 		if (e.getEntity().hasMetadata("dd-unburnable"))
 			e.setCancelled(true);
+	}
+	@EventHandler
+	public void onExplode(EntityExplodeEvent e) {
+		for (Block b : e.blockList())
+			if (Santa.snowGlobeBlocks.contains(b) || EasterBunny.easterBasketBlocks.contains(b))
+				e.blockList().remove(b);
 	}
 	@EventHandler
 	public void worldInit(WorldInitEvent e) {

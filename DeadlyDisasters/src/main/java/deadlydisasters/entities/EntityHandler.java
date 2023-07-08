@@ -11,13 +11,23 @@ import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Goat;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Skeleton;
+import org.bukkit.entity.Snowman;
 import org.bukkit.entity.Zombie;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
 
+import deadlydisasters.entities.christmasentities.Elf;
+import deadlydisasters.entities.christmasentities.Frosty;
+import deadlydisasters.entities.christmasentities.Grinch;
+import deadlydisasters.entities.christmasentities.Santa;
+import deadlydisasters.entities.easterentities.EasterBunny;
+import deadlydisasters.entities.easterentities.KillerChicken;
+import deadlydisasters.entities.easterentities.RampagingGoat;
 import deadlydisasters.entities.endstormentities.BabyEndTotem;
 import deadlydisasters.entities.endstormentities.EndTotem;
 import deadlydisasters.entities.endstormentities.EndWorm;
@@ -62,10 +72,12 @@ public class EntityHandler {
 		ConfigurationSection section = file.getConfigurationSection("customentities");
 		if (section == null)
 			section = file.createSection("customentities");
-		for (World world : Bukkit.getWorlds())
-			for (LivingEntity entity : world.getLivingEntities())
-				if (entity.getPersistentDataContainer().has(globalKey, PersistentDataType.BYTE))
-					addEntityBySpecies(null, entity);
+		plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+			for (World world : Bukkit.getWorlds())
+				for (LivingEntity entity : world.getLivingEntities())
+					if (entity.getPersistentDataContainer().has(globalKey, PersistentDataType.BYTE))
+						addEntityBySpecies(null, entity);
+		}, 1);
 	}
 	public void addEntityBySpecies(String species, Entity e) {
 		if (species == null)
@@ -129,6 +141,27 @@ public class EntityHandler {
 		case "shadowleech":
 			addEntity(new ShadowLeech((Zombie) e, plugin, rand));
 			break;
+		case "elf":
+			addEntity(new Elf((Zombie) e, plugin, rand));
+			break;
+		case "frosty":
+			addEntity(new Frosty((Snowman) e, plugin, rand));
+			break;
+		case "grinch":
+			addEntity(new Grinch((Mob) e, plugin, rand));
+			break;
+		case "santa":
+			addEntity(new Santa((Zombie) e, plugin, rand));
+			break;
+		case "rampaginggoat":
+			addEntity(new RampagingGoat((Goat) e, plugin));
+			break;
+		case "easterbunny":
+			addEntity(new EasterBunny((Rabbit) e, plugin, rand));
+			break;
+		case "killerchicken":
+			addEntity(new KillerChicken((Zombie) e, plugin));
+			break;
 		default:
 		}
 	}
@@ -179,16 +212,16 @@ public class EntityHandler {
 			}
 		};
 	}
-	public void addEntity(CustomEntity e) {
+	public <T extends CustomEntity> T addEntity(T e) {
 		if (findEntity(e.getEntity()) != null) {
-//			plugin.getLogger().info("Entity entry already exists for "+e.getEntity().getType());
-			return;
+			return e;
 		}
 		e.entity.setMetadata("dd-customentity", new FixedMetadataValue(plugin, "protected"));
 		e.entity.getPersistentDataContainer().set(globalKey, PersistentDataType.BYTE, (byte) 0);
 		list.add(e);
 		if (!running)
 			startTimers();
+		return e;
 	}
 	public void addFalseEntity(CustomEntity e) {
 		list.add(e);

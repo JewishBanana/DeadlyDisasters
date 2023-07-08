@@ -5,8 +5,14 @@ general:
     catalog_notify: true
     # If set to true then disasters will be automatically enabled on new world creations
     auto_enable_on_generation: true
+    # If set to true then custom mobs naturally spawning will automatically be enabled on new world creations
+    auto_enable_natural_spawning: true
     # Debug messages will send some error info to the console for some errors
     debug_messages: true
+    # Custom name support is a new option added in 13.0 before 13.0 some items used the custom names to identify themselves in the code and activate abilities, this can be an exploit since anyone can use an anvil to rename an item and then get the abilities of the custom item. Since the start of 13.0 all custom names have been switched for nbt to patch this exploit but because of this any previously spawned custom items will no longer work, if this is a problem for you then you can revert this change by setting this field to true
+    custom_name_support: false
+    # Toggle if special limited time events should get enabled or not
+    special_events: true
 blacklist:
     # Blacklists blocks from being damaged in disasters. The format is as follows
     blocks:
@@ -20,6 +26,8 @@ messages:
     permission_error: '&cYou do not have permission to use that!'
     # If disaster tips is set to true then disaster broadcasts will include the disasters tip
     disaster_tips: true
+    # If set to true then players will be notified in chat of any ongoing limited time events
+    event_notifications: true
     destructive:
         level 1: '&aLevel: 1 %disaster% &6event starting at: &a%location% &e(%player%)'
         level 2: '&2Level: 2 %disaster% &6event starting at: &a%location% &e(%player%)'
@@ -421,13 +429,22 @@ customentities:
     # If set to true then custom items can be dropped from custom mobs
     allow_custom_drops: true
 customitems:
+    # The item lore characters per line means the max characters per line in custom items lore, this is to avoid text going off the screen. Not all custom items use this!
+    item_lore_characters_per_line: 40
     # Control which custom recipes are enabled
     recipes:
         plague_cure: true
         ancient_blade: true
+        snow_globe: true
+        easter_basket: true
+        bunny_hop: true
     items:
         void_wrath:
             # If set to true then unstable rifts can be created in protected regions
             allow_in_regions: true
             # If set to true then items that are pulled into rifts will get removed
             remove_items: true
+    enchants:
+        bunny_hop:
+            # Toggle if particles around the players wearing this enchant
+            particles: true

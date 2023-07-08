@@ -131,7 +131,8 @@ public class EndTotem extends CustomEntity {
 			entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_EVOKER_PREPARE_ATTACK, SoundCategory.HOSTILE, 1f, .5f);
 			if (entity.getKiller() != null && plugin.getConfig().getBoolean("customentities.allow_custom_drops")) {
 				entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.CHORUS_FRUIT));
-				if (rand.nextInt(2) == 0) entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.OBSIDIAN));
+				if (rand.nextInt(2) == 0)
+					entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.OBSIDIAN));
 				if (rand.nextInt(7) == 0)
 					entity.getWorld().dropItemNaturally(entity.getLocation(), ItemsHandler.voidshard);
 			}

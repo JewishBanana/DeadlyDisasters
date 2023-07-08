@@ -207,9 +207,9 @@ public class BlackPlague extends WeatherDisaster {
 			if (amount <= 0) return;
 		}
 	}
-	public void infect(LivingEntity e) {
+	public static void infect(LivingEntity e) {
 		time.put(e.getUniqueId(), 300);
-		e.setMetadata("dd-plague", new FixedMetadataValue(plugin, "protected"));
+		e.setMetadata("dd-plague", new FixedMetadataValue(Main.getInstance(), "protected"));
 		e.setRemoveWhenFarAway(false);
 		if (e instanceof Player)
 			infectedPlayers.add(e.getUniqueId());

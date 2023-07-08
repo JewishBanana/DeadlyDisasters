@@ -25,6 +25,7 @@ import org.bukkit.util.Vector;
 
 import deadlydisasters.disasters.events.DestructionDisaster;
 import deadlydisasters.disasters.events.DestructionDisasterEvent;
+import deadlydisasters.listeners.DeathMessages;
 import deadlydisasters.utils.Metrics;
 import deadlydisasters.utils.RepeatingTask;
 import deadlydisasters.utils.Utils;
@@ -80,6 +81,7 @@ public class Supernova extends DestructionDisaster {
 		if (event.isCancelled()) return;
 		this.loc = loc;
 		ongoingDisasters.add(this);
+		DeathMessages.supernovas.add(this);
 		size *= sizeMultiplier;
 		World world = loc.getWorld();
 		Location top = loc.clone();
@@ -102,7 +104,7 @@ public class Supernova extends DestructionDisaster {
 				world.spawnParticle(Particle.CLOUD, crystalLoc, 10, .5, .5, .5, 0.01, null, true);
 				world.spawnParticle(Particle.FLAME, crystalLoc, 10, .5, .5, .5, 0.01, null, true);
 				Block b = crystalLoc.clone().subtract(0,1,0).getBlock();
-				if (b.getType() != Material.AIR && !Utils.isBlockBlacklisted(b.getType())) {
+				if (b.getType() != Material.AIR && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
 					if (plugin.CProtect)
 						Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 					b.setType(Material.AIR);
@@ -151,6 +153,7 @@ public class Supernova extends DestructionDisaster {
 				if (tick > size) {
 					cancel();
 					ongoingDisasters.remove(instance);
+					DeathMessages.supernovas.remove(instance);
 					Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 					return;
 				}
@@ -162,24 +165,19 @@ public class Supernova extends DestructionDisaster {
 							if (!(block.distance(position) >= (tick - 1) && block.distance(position) <= tick)) continue;
 							Block b = world.getBlockAt(position.toLocation(world));
 							blocks.add(b);
-						}
-				for (Block b : blocks) {
-					if (b.getType() == Material.AIR || Utils.isBlockBlacklisted(b.getType()) || Utils.isZoneProtected(b.getLocation()))
-						continue;
-					if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
-					if (tick > size-2 && rand.nextInt(3) == 0) {
-						if (rand.nextInt(3) == 0) {
+							if (b.getType() == Material.AIR || Utils.isBlockBlacklisted(b.getType()) || Utils.isZoneProtected(b.getLocation()))
+								continue;
 							if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
-							Material mat = materials[rand.nextInt(materials.length)];
-							if (CP) Utils.getCoreProtect().logPlacement("Deadly-Disasters", b.getLocation(), mat, mat.createBlockData());
-							b.setType(mat);
+							if (tick > size-2 && rand.nextInt(8) == 0) {
+								Material mat = materials[rand.nextInt(materials.length)];
+								if (CP) Utils.getCoreProtect().logPlacement("Deadly-Disasters", b.getLocation(), mat, mat.createBlockData());
+								b.setType(mat);
+								blocksDestroyed++;
+								continue;
+							}
+							b.setType(Material.AIR);
 							blocksDestroyed++;
 						}
-						continue;
-					}
-					b.setType(Material.AIR);
-					blocksDestroyed++;
-				}
 				tick++;
 				plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 					@Override
@@ -219,6 +217,10 @@ public class Supernova extends DestructionDisaster {
 					}
 			}
 		};
+	}
+	public void removeCrystal() {
+		if (crystal != null)
+			crystal.remove();
 	}
 	public Location findApplicableLocation(Location temp, Player p) {
 		temp = Utils.getBlockBelow(temp).getLocation();

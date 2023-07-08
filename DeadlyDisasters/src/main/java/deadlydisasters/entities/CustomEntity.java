@@ -7,6 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.persistence.PersistentDataType;
 
 import deadlydisasters.general.Main;
 
@@ -22,6 +23,12 @@ public abstract class CustomEntity {
 		if (entity != null) {
 			this.entity = entity;
 			this.entityUUID = entity.getUniqueId();
+			if (entity.getPersistentDataContainer().has(EntityHandler.removalKey, PersistentDataType.BYTE)) {
+				plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+					if (entity != null)
+						entity.remove();
+				}, 1);
+			}
 		}
 		this.plugin = plugin;
 	}

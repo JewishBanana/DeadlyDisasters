@@ -17,6 +17,7 @@ import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
@@ -264,5 +265,26 @@ public class Blizzard extends WeatherDisaster {
 						e.getPersistentDataContainer().remove(key);
 						e.setSilent(false);
 					}
+	}
+	public static void breakIce(Block b, Main plugin) {
+		NamespacedKey key = new NamespacedKey(plugin, "dd-frozen-mob");
+		for (Entity e : b.getWorld().getNearbyEntities(b.getLocation().clone().add(.5,.5,.5), .5, 1.25, .5)) {
+			if (!(e instanceof LivingEntity) || !e.getPersistentDataContainer().has(key, PersistentDataType.BYTE)) continue;
+			if (e.getHeight() > 1 && e.getLocation().add(0,1,0).getBlock().getType().equals(Material.ICE) && !(e.getLocation().add(0,1,0).getBlock().equals(b))) continue;
+			e.setInvulnerable(false);
+			((LivingEntity) e).setAI(true);
+			if (e.getPersistentDataContainer().get(key, PersistentDataType.BYTE) == (byte) 0)
+				((LivingEntity) e).setRemoveWhenFarAway(true);
+			e.getPersistentDataContainer().remove(key);
+			e.setSilent(false);
+			plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
+				@Override
+				public void run() {
+					if (b.getType() == Material.WATER)
+						b.setType(Material.AIR);
+				}
+			}, 1);
+			return;
+		}
 	}
 }

@@ -217,7 +217,7 @@ public class TimerCheck {
 										}
 										break;
 									case ACIDSTORM:
-										if (!worldObj.allowed.contains(Disaster.ACIDSTORM) || loc.getBlockY() < Disaster.ACIDSTORM.getMinHeight() || world.getEnvironment() != Environment.NORMAL || world.hasStorm()
+										if (!worldObj.allowed.contains(Disaster.ACIDSTORM) || loc.getBlockY() < Disaster.ACIDSTORM.getMinHeight() || !Utils.isEnvironment(world, Environment.NORMAL) || world.hasStorm()
 										|| loc.getBlock().getTemperature() <= 0.15 || loc.getBlock().getTemperature() > 0.95 || DeathMessages.acidstorms.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.ACIDSTORM.getMaxLevel())
 											level = Disaster.ACIDSTORM.getMaxLevel();
@@ -226,7 +226,7 @@ public class TimerCheck {
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
 									case EXTREMEWINDS:
-										if (!worldObj.allowed.contains(Disaster.EXTREMEWINDS) || loc.getBlockY() < Disaster.EXTREMEWINDS.getMinHeight() || world.getEnvironment() != Environment.NORMAL
+										if (!worldObj.allowed.contains(Disaster.EXTREMEWINDS) || loc.getBlockY() < Disaster.EXTREMEWINDS.getMinHeight() || !Utils.isEnvironment(world, Environment.NORMAL)
 										|| DeathMessages.extremewinds.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.EXTREMEWINDS.getMaxLevel())
 											level = Disaster.EXTREMEWINDS.getMaxLevel();
@@ -235,7 +235,7 @@ public class TimerCheck {
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
 									case SOULSTORM:
-										if (!worldObj.allowed.contains(Disaster.SOULSTORM) || loc.getBlockY() < Disaster.SOULSTORM.getMinHeight() || world.getEnvironment() != Environment.NETHER
+										if (!worldObj.allowed.contains(Disaster.SOULSTORM) || loc.getBlockY() < Disaster.SOULSTORM.getMinHeight() || !Utils.isEnvironment(world, Environment.NETHER)
 										|| DeathMessages.soulstorms.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.SOULSTORM.getMaxLevel())
 											level = Disaster.SOULSTORM.getMaxLevel();
@@ -244,7 +244,7 @@ public class TimerCheck {
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
 									case BLIZZARD:
-										if (!worldObj.allowed.contains(Disaster.BLIZZARD) || world.getEnvironment() != Environment.NORMAL || loc.getBlockY() < Disaster.BLIZZARD.getMinHeight()
+										if (!worldObj.allowed.contains(Disaster.BLIZZARD) || !Utils.isEnvironment(world, Environment.NORMAL) || loc.getBlockY() < Disaster.BLIZZARD.getMinHeight()
 										|| DeathMessages.blizzards.stream().anyMatch(n -> n.getWorld() == world) || (!seasonsActive && loc.getBlock().getTemperature() > 0.15)) continue;
 										if (level > Disaster.BLIZZARD.getMaxLevel())
 											level = Disaster.BLIZZARD.getMaxLevel();
@@ -253,7 +253,7 @@ public class TimerCheck {
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
 									case SANDSTORM:
-										if (!worldObj.allowed.contains(Disaster.SANDSTORM) || world.getEnvironment() != Environment.NORMAL || !SandStorm.sandStormBiomes.contains(loc.getBlock().getBiome())
+										if (!worldObj.allowed.contains(Disaster.SANDSTORM) || !Utils.isEnvironment(world, Environment.NORMAL) || !SandStorm.sandStormBiomes.contains(loc.getBlock().getBiome())
 										|| loc.getBlockY() < Disaster.SANDSTORM.getMinHeight() || DeathMessages.sandstorms.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.SANDSTORM.getMaxLevel())
 											level = Disaster.SANDSTORM.getMaxLevel();
@@ -279,7 +279,7 @@ public class TimerCheck {
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
 									case METEORSHOWERS:
-										if (!worldObj.allowed.contains(Disaster.METEORSHOWERS) || loc.getBlockY() < Disaster.METEORSHOWERS.getMinHeight() || world.getEnvironment() != Environment.NORMAL
+										if (!worldObj.allowed.contains(Disaster.METEORSHOWERS) || loc.getBlockY() < Disaster.METEORSHOWERS.getMinHeight() || !Utils.isEnvironment(world, Environment.NORMAL)
 										|| DeathMessages.meteorshowers.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.METEORSHOWERS.getMaxLevel())
 											level = Disaster.METEORSHOWERS.getMaxLevel();
@@ -288,7 +288,7 @@ public class TimerCheck {
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
 									case ENDSTORM:
-										if (!worldObj.allowed.contains(Disaster.ENDSTORM) || loc.getBlockY() < Disaster.ENDSTORM.getMinHeight() || world.getEnvironment() != Environment.THE_END || plugin.mcVersion < 1.16
+										if (!worldObj.allowed.contains(Disaster.ENDSTORM) || loc.getBlockY() < Disaster.ENDSTORM.getMinHeight() || !Utils.isEnvironment(world, Environment.THE_END) || plugin.mcVersion < 1.16
 										|| DeathMessages.endstorms.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.ENDSTORM.getMaxLevel())
 											level = Disaster.ENDSTORM.getMaxLevel();
@@ -297,7 +297,7 @@ public class TimerCheck {
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
 									case SUPERNOVA:
-										if (!worldObj.allowed.contains(Disaster.SUPERNOVA) || world.getEnvironment() == Environment.NETHER || loc.getBlockY() < Disaster.SUPERNOVA.getMinHeight() || oceanBiomes.contains(biome)) continue;
+										if (!worldObj.allowed.contains(Disaster.SUPERNOVA) || !Utils.isEnvironment(world, Environment.NORMAL) || loc.getBlockY() < Disaster.SUPERNOVA.getMinHeight() || oceanBiomes.contains(biome)) continue;
 										if (level > Disaster.SUPERNOVA.getMaxLevel())
 											level = Disaster.SUPERNOVA.getMaxLevel();
 										Supernova nova = new Supernova(level);
@@ -305,7 +305,7 @@ public class TimerCheck {
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
 									case HURRICANE:
-										if (!worldObj.allowed.contains(Disaster.HURRICANE) || world.getEnvironment() != Environment.NORMAL || loc.getBlockY() < Disaster.HURRICANE.getMinHeight()
+										if (!worldObj.allowed.contains(Disaster.HURRICANE) || !Utils.isEnvironment(world, Environment.NORMAL) || loc.getBlockY() < Disaster.HURRICANE.getMinHeight()
 										|| (!Hurricane.oceans.contains(biome) && (loc.getBlock().getTemperature() <= 0.85 || loc.getBlock().getTemperature() >= 1.0))) continue;
 										if (level > Disaster.HURRICANE.getMaxLevel())
 											level = Disaster.HURRICANE.getMaxLevel();
@@ -314,7 +314,7 @@ public class TimerCheck {
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
 									case PURGE:
-										if (!worldObj.allowed.contains(Disaster.PURGE)) continue;
+										if (!worldObj.allowed.contains(Disaster.PURGE) || Purge.targetedPlayers.contains(all.getUniqueId())) continue;
 										if (level > Disaster.PURGE.getMaxLevel())
 											level = Disaster.PURGE.getMaxLevel();
 										Purge purge = new Purge(level);

@@ -23,9 +23,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Goat;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Skeleton;
+import org.bukkit.entity.Snowman;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.StringUtil;
@@ -49,9 +52,15 @@ import deadlydisasters.disasters.SoulStorm;
 import deadlydisasters.disasters.Supernova;
 import deadlydisasters.disasters.Tornado;
 import deadlydisasters.disasters.Tsunami;
-import deadlydisasters.disasters.events.DestructionDisaster;
 import deadlydisasters.disasters.events.DisasterEvent;
 import deadlydisasters.entities.EntityHandler;
+import deadlydisasters.entities.christmasentities.Elf;
+import deadlydisasters.entities.christmasentities.Frosty;
+import deadlydisasters.entities.christmasentities.Grinch;
+import deadlydisasters.entities.christmasentities.Santa;
+import deadlydisasters.entities.easterentities.EasterBunny;
+import deadlydisasters.entities.easterentities.KillerChicken;
+import deadlydisasters.entities.easterentities.RampagingGoat;
 import deadlydisasters.entities.endstormentities.BabyEndTotem;
 import deadlydisasters.entities.endstormentities.EndTotem;
 import deadlydisasters.entities.endstormentities.EndWorm;
@@ -90,7 +99,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 	
 	public static List<String> disasterNames = new ArrayList<>();
 	
-	private String globalUsage = Utils.chat("&cUsage: /disasters <enable|disable|start|mintimer|reload|help|summon|give|difficulty|language|catalog|whitelist|listplayer|config|favor|dislike>...");
+	private String globalUsage = Utils.chat("&cUsage: /disasters <enable|disable|start|mintimer|reload|help|summon|give|difficulty|language|catalog|whitelist|listplayer|config|favor|dislike|event>...");
 
 	public Disasters(Main plugin, TimerCheck tc, EntityHandler handler, Random rand, Catalog catalog) {
 		this.plugin = plugin;
@@ -339,7 +348,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				return true;
 			}
 			if (args[1].equalsIgnoreCase("acidstorm")) {
-				if (p.getWorld().getEnvironment() != Environment.NORMAL) {
+				if (!Utils.isEnvironment(p.getWorld(), Environment.NORMAL)) {
 					sender.sendMessage(Utils.chat("&cMust be in an overworld environment to start an acidstorm"));
 					return true;
 				}
@@ -348,7 +357,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.ACIDSTORM.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("blizzard")) {
-				if (p.getWorld().getEnvironment() != Environment.NORMAL) {
+				if (!Utils.isEnvironment(p.getWorld(), Environment.NORMAL)) {
 					sender.sendMessage(Utils.chat("&cMust be in an overworld environment to start a blizzard"));
 					return true;
 				}
@@ -372,7 +381,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				sender.sendMessage(Utils.chat("&cMust have a roof over target player to start a cave-in!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("earthquake")) {
-				Location loc = p.getLocation().clone();
+				Location loc = p.getLocation();
 				for (int c=loc.getBlockY()-1; c > 0; c--) {
 					loc.setY(c);
 					if (loc.getBlock().getType().isSolid()) {
@@ -418,7 +427,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				sender.sendMessage(Utils.chat("&cMust be ground below target player to start a sinkhole!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("soulstorm")) {
-				if (p.getWorld().getEnvironment() != Environment.NETHER) {
+				if (!Utils.isEnvironment(p.getWorld(), Environment.NETHER)) {
 					sender.sendMessage(Utils.chat("&cMust be in a nether environment to start a soulstorm"));
 					return true;
 				}
@@ -442,7 +451,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				sender.sendMessage(Utils.chat("&cMust be ground below target player to start a tornado!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("sandstorm")) {
-				if (p.getWorld().getEnvironment() != Environment.NORMAL) {
+				if (!Utils.isEnvironment(p.getWorld(), Environment.NORMAL)) {
 					sender.sendMessage(Utils.chat("&cMust be in an overworld environment to start a sandstorm"));
 					return true;
 				}
@@ -472,7 +481,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				sender.sendMessage(Utils.chat("&cCould not find pool nearby!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("meteorshowers")) {
-				if (p.getWorld().getEnvironment() != Environment.NORMAL) {
+				if (!Utils.isEnvironment(p.getWorld(), Environment.NORMAL)) {
 					sender.sendMessage(Utils.chat("&cMust be in an overworld environment to start a meteor shower"));
 					return true;
 				}
@@ -485,7 +494,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.chat("&cThis disaster is only available on version 1.16 or higher!"));
 					return true;
 				}
-				if (p.getWorld().getEnvironment() != Environment.THE_END) {
+				if (!Utils.isEnvironment(p.getWorld(), Environment.THE_END)) {
 					sender.sendMessage(Utils.chat("&cMust be in an end environment to start an endstorm"));
 					return true;
 				}
@@ -536,6 +545,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				if (broadcast)
 					custom.broadcastMessage(p.getLocation(), p);
 				custom.start(p.getLocation(), p);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.CUSTOM.getMetricsLabel());
 				return true;
 			}
 			sender.sendMessage(Utils.chat("&cNo disaster '"+args[1]+"' exists!"));
@@ -844,6 +854,41 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				handler.addEntity(new ShadowLeech((Zombie) entity, plugin, rand));
 				sender.sendMessage(Utils.chat("&fSummoned &7Shadow Leech"));
 				return true;
+			} else if (args[1].equalsIgnoreCase("elf")) {
+				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
+				handler.addEntity(new Elf((Zombie) entity, plugin, rand));
+				sender.sendMessage(Utils.chat("&fSummoned &cElf"));
+				return true;
+			} else if (args[1].equalsIgnoreCase("frosty")) {
+				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SNOWMAN);
+				handler.addEntity(new Frosty((Snowman) entity, plugin, rand));
+				sender.sendMessage(Utils.chat("&fSummoned &cFrosty"));
+				return true;
+			} else if (args[1].equalsIgnoreCase("grinch")) {
+				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
+				handler.addEntity(new Grinch(entity, plugin, rand));
+				sender.sendMessage(Utils.chat("&fSummoned &cGrinch"));
+				return true;
+			} else if (args[1].equalsIgnoreCase("santa")) {
+				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
+				handler.addEntity(new Santa((Zombie) entity, plugin, rand));
+				sender.sendMessage(Utils.chat("&fSummoned &cSanta"));
+				return true;
+			} else if (args[1].equalsIgnoreCase("rampaginggoat")) {
+				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.GOAT);
+				handler.addEntity(new RampagingGoat((Goat) entity, plugin));
+				sender.sendMessage(Utils.chat("&fSummoned &aRampaging Goat"));
+				return true;
+			} else if (args[1].equalsIgnoreCase("easterbunny")) {
+				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.RABBIT);
+				handler.addEntity(new EasterBunny((Rabbit) entity, plugin, rand));
+				sender.sendMessage(Utils.chat("&fSummoned &aEaster Bunny"));
+				return true;
+			} else if (args[1].equalsIgnoreCase("killerchicken")) {
+				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
+				handler.addEntity(new KillerChicken((Zombie) entity, plugin));
+				sender.sendMessage(Utils.chat("&fSummoned &aKiller Chicken"));
+				return true;
 			} else
 				sender.sendMessage(Utils.chat("&c'"+args[1]+"' is not a valid mob!"));
 			return true;
@@ -873,43 +918,13 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				sender.sendMessage(Utils.chat("&cTargets inventory is full!"));
 				return true;
 			}
-			if (args[1].equalsIgnoreCase("plaguecure")) {
-				p.getInventory().addItem(ItemsHandler.plagueCure);
-				sender.sendMessage(Utils.chat("&aGave 1 [Plague Cure] to "+p.getName()));
-			} else if (args[1].equalsIgnoreCase("splashplaguecure")) {
-				p.getInventory().addItem(ItemsHandler.plagueCureSplash);
-				sender.sendMessage(Utils.chat("&aGave 1 [Splash Plague Cure] to "+p.getName()));
-			} else if (args[1].equalsIgnoreCase("voidshard")) {
-				p.getInventory().addItem(ItemsHandler.voidshard);
-				sender.sendMessage(Utils.chat("&aGave 1 [Void Shard] to "+p.getName()));
-			} else if (args[1].equalsIgnoreCase("voidswrath")) {
-				p.getInventory().addItem(ItemsHandler.voidswrath);
-				sender.sendMessage(Utils.chat("&aGave 1 [Void Wrath] to "+p.getName()));
-			} else if (args[1].equalsIgnoreCase("voidsedge")) {
-				p.getInventory().addItem(ItemsHandler.voidsedge);
-				sender.sendMessage(Utils.chat("&aGave 1 [Voids Edge] to "+p.getName()));
-			} else if (args[1].equalsIgnoreCase("voidshield")) {
-				p.getInventory().addItem(ItemsHandler.voidshield);
-				sender.sendMessage(Utils.chat("&aGave 1 [Void Guardians Shield] to "+p.getName()));
-			} else if (args[1].equalsIgnoreCase("ancientbone")) {
-				p.getInventory().addItem(ItemsHandler.ancientbone);
-				sender.sendMessage(Utils.chat("&aGave 1 [Ancient Bone] to "+p.getName()));
-			} else if (args[1].equalsIgnoreCase("ancientcloth")) {
-				p.getInventory().addItem(ItemsHandler.ancientcloth);
-				sender.sendMessage(Utils.chat("&aGave 1 [Ancient Cloth] to "+p.getName()));
-			} else if (args[1].equalsIgnoreCase("ancientblade")) {
-				p.getInventory().addItem(ItemsHandler.ancientblade);
-				sender.sendMessage(Utils.chat("&aGave 1 [Ancient Blade] to "+p.getName()));
-			} else if (args[1].equalsIgnoreCase("darkmagewand")) {
-				p.getInventory().addItem(ItemsHandler.mageWand);
-				sender.sendMessage(Utils.chat("&aGave 1 [Dark Mage Wand] to "+p.getName()));
-			} else if (args[1].equalsIgnoreCase("soulripper")) {
-				p.getInventory().addItem(ItemsHandler.soulRipper);
-				sender.sendMessage(Utils.chat("&aGave 1 [Soul Ripper] to "+p.getName()));
-			} else {
+			if (!ItemsHandler.allItems.keySet().contains(args[1].toLowerCase())) {
 				sender.sendMessage(Utils.chat("&c'"+args[1]+"' is not a valid item!"));
 				return true;
 			}
+			ItemStack item = ItemsHandler.allItems.get(args[1].toLowerCase());
+			p.getInventory().addItem(item);
+			sender.sendMessage(Utils.chat("&aGave 1 ["+item.getItemMeta().getDisplayName()+"&a] to "+p.getName()));
 			p.playSound(p.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1, 1);
 			return true;
 		} else if (args[0].equalsIgnoreCase("difficulty")) {
@@ -1051,6 +1066,19 @@ public class Disasters implements CommandExecutor,TabCompleter {
 								+ "\n&3- Přeložil: &dFreddy1CZ1"));
 					}
 				});
+			} else if (args[1].equalsIgnoreCase("français")) {
+				plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+					public void run() {
+						Languages.updateLang(4, plugin, p[0]);
+						Languages.changeConfigLang(plugin);
+						plugin.dataFile.set("data.lang", 4);
+						plugin.saveDataFile();
+						sender.sendMessage(Languages.prefix+Utils.chat("&bTranslations have been set to French. Keep in mind that not everything will be translated!"
+								+ "\n&3- Translations by: &dArryl"));
+						Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&bTranslations have been set to French. Keep in mind that not everything will be translated!"
+								+ "\n&3- Translations by: &dArryl"));
+					}
+				});
 			} else {
 				sender.sendMessage(Utils.chat("&c'"+args[1]+"' is not an applicable language!"));
 				return true;
@@ -1171,8 +1199,8 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						for (UUID worldUUID : tc.timer.keySet())
 							if (Bukkit.getWorld(worldUUID).equals(Bukkit.getPlayer(uuid).getWorld())) {
 								string.append(Utils.chat("\n&d"+Bukkit.getWorld(worldUUID).getName()+" &7: &c"+tc.timer.get(worldUUID).get(uuid)));
-								if (DestructionDisaster.countdownMap.containsKey(uuid))
-									for (Entry<DisasterEvent, Integer> entry : DestructionDisaster.countdownMap.get(uuid).entrySet())
+								if (DisasterEvent.countdownMap.containsKey(uuid))
+									for (Entry<DisasterEvent, Integer> entry : DisasterEvent.countdownMap.get(uuid).entrySet())
 										string.append(Utils.chat("\n  &7- "+entry.getKey().type.getLabel()+" &7(&"+Utils.getLevelChar(entry.getKey().level)+entry.getKey().level+"&7) : &e"+entry.getValue()+"&9s"));
 							} else
 								string.append(Utils.chat("\n&d"+Bukkit.getWorld(worldUUID).getName()+" &7: &a"+tc.timer.get(worldUUID).get(uuid)));
@@ -1268,6 +1296,21 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			plugin.saveDataFile();
 			sender.sendMessage(Languages.prefix+ChatColor.GREEN+Languages.langFile.getString("internal.voteSubmission"));
 			return true;
+		} else if (args[0].equalsIgnoreCase("event")) {
+			if (!(sender instanceof Player)) {
+				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.console_error_message")));
+				return true;
+			}
+			if (!(((Player) sender).hasPermission("deadlydisasters.event"))) {
+				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				return true;
+			}
+			if (!plugin.eventHandler.isEnabled) {
+				sender.sendMessage(Utils.chat("&cThere is no ongoing event at this time!"));
+				return true;
+			}
+			plugin.eventHandler.openGUI((Player) sender);
+			return true;
 		} else
 			sender.sendMessage(globalUsage);
 		return true;
@@ -1275,8 +1318,6 @@ public class Disasters implements CommandExecutor,TabCompleter {
 	@Override
 	public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
 		final List<String> list = new ArrayList<>();
-		if (!(sender.hasPermission("deadlydisasters.disasters")))
-			return list;
 		if (args.length == 1) {
 			final List<String> tempList = new ArrayList<>();
 			if (sender.hasPermission("deadlydisasters.start"))
@@ -1293,6 +1334,8 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				tempList.add("summon");
 			if (sender.hasPermission("deadlydisasters.give"))
 				tempList.add("give");
+			if (sender.hasPermission("deadlydisasters.event"))
+				tempList.add("event");
 			StringUtil.copyPartialMatches(args[0], tempList, list);
 			Collections.sort(list);
 			return list;
@@ -1321,17 +1364,17 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			if (args[0].equalsIgnoreCase("summon") && sender.hasPermission("deadlydisasters.summon")) {
 				StringUtil.copyPartialMatches(args[1], Arrays.asList("babyendtotem","endtotem","endworm","voidguardian","voidarcher","voidstalker","lostsoul",
 						"ancientskeleton","ancientmummy","tunneller","primedcreeper","skeletonknight","darkmage","soulreaper","normalMeteor","explodingMeteor","splittingMeteor",
-						"swampbeast","zombieknight","shadowleech"), list);
+						"swampbeast","zombieknight","shadowleech","elf","frosty","grinch","santa","rampaginggoat","easterbunny","killerchicken"), list);
 				Collections.sort(list);
 				return list;
 			}
 			if (args[0].equalsIgnoreCase("give") && sender.hasPermission("deadlydisasters.give")) {
-				StringUtil.copyPartialMatches(args[1], Arrays.asList("plaguecure","voidshard","voidswrath","voidsedge","voidshield","ancientblade","ancientbone","ancientcloth","darkmagewand","soulripper","splashplaguecure"), list);
+				StringUtil.copyPartialMatches(args[1], ItemsHandler.allItems.keySet(), list);
 				Collections.sort(list);
 				return list;
 			}
 			if (args[0].equalsIgnoreCase("language") && sender.hasPermission("deadlydisasters.modify")) {
-				StringUtil.copyPartialMatches(args[1], Arrays.asList("english","中文","русский","češtiny"), list);
+				StringUtil.copyPartialMatches(args[1], Arrays.asList("english","中文","русский","češtiny","français"), list);
 				Collections.sort(list);
 				return list;
 			}
