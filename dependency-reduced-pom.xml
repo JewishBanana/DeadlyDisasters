@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>net.davidclue</groupId>
   <artifactId>deadlydisasters</artifactId>
-  <version>12.4</version>
+  <version>14.3</version>
   <build>
     <plugins>
       <plugin>
@@ -17,14 +17,6 @@
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <relocations>
-            <relocation>
-              <pattern>org.bstats</pattern>
-              <shadedPattern>deadlydisasters.utils</shadedPattern>
-            </relocation>
-          </relocations>
-        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -41,12 +33,22 @@
       <id>spigot-repo</id>
       <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
     </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
   </repositories>
   <dependencies>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.19.2-R0.1-SNAPSHOT</version>
+      <version>1.20.2-R0.1-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.koca2000</groupId>
+      <artifactId>NoteBlockAPI</artifactId>
+      <version>1.6.2</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

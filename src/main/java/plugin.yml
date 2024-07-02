@@ -1,14 +1,14 @@
 name: DeadlyDisasters
-version: 12.4
+version: 14.3
 author: davidclue
-main: deadlydisasters.general.Main
+main: com.github.jewishbanana.deadlydisasters.Main
 description: Adds deadly disasters to the game.
 api-version: 1.14
-softdepend: [WorldGuard, CoreProtect, Towny, GriefPrevention, Lands, RealisticSeasons, Kingdoms]
+softdepend: [WorldGuard, CoreProtect, Towny, GriefPrevention, Lands, RealisticSeasons, Kingdoms, NoteBlockAPI]
 
 commands:
     disasters:
-        usage: /disasters <enable|disable|start|mintimer|reload|help|summon|give|difficulty|language|catalog|whitelist|listplayer|config>...
+        usage: /disasters <enable|disable|start|mintimer|reload|help|summon|give|difficulty|language|catalog|whitelist|listplayer|config|favor|dislike|event>...
         description: Universal command for the plugin. Use /disasters help, for more information.
     towndisasters:
         usage: /towndisasters <on|off> [player]
@@ -27,6 +27,9 @@ permissions:
             deadlydisasters.give: true
             deadlydisasters.regen: true
             deadlydisasters.towny: true
+            deadlydisasters.achievements: true
+            deadlydisasters.event: true
+            deadlydisasters.entities: true
     deadlydisasters.start:
         description: Allows you to start disasters via command.
     deadlydisasters.help:
@@ -45,3 +48,11 @@ permissions:
         description: Allows the use of world regeneration commands.
     deadlydisasters.towny:
         description: Allows the use of the townydisasters command.
+    deadlydisasters.achievements:
+        description: Allows the use of the achievements command.
+        default: true
+    deadlydisasters.event:
+        description: Allows the use of the event command.
+        default: true
+    deadlydisasters.entities:
+        description: Allows the use of the entities command.

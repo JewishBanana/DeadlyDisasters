@@ -1,8 +1,7 @@
+/.metadata/
 /.settings/
 /.idea/
 /target/
-buildNumber.properties
-**.iml
-.project
-.classpath
-dependency-reduced-pom.xml
+/.project
+/.classpath
+/dependency-reduced-pom.xml

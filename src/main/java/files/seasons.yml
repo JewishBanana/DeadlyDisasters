@@ -52,3 +52,5 @@ disasters:
     - SUMMER
     INFESTEDCAVES:
     - ALL
+    LANDSLIDE:
+    - ALL

@@ -1,0 +1,138 @@
+package com.github.jewishbanana.deadlydisasters.entities.soulstormentities;
+
+import java.util.Iterator;
+import java.util.Random;
+import java.util.UUID;
+
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
+import org.bukkit.World.Environment;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Mob;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.EulerAngle;
+
+import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.entities.CustomDropsFactory;
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
+import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
+import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
+import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
+
+public class LostSoul extends CustomEntity {
+	
+	private Random rand;
+	private ArmorStand stand;
+	private UUID standUUID;
+
+	public LostSoul() {
+	}
+	public LostSoul(Mob entity, Main plugin, Random rand) {
+		super(entity, plugin);
+		this.entityType = CustomEntityType.LOSTSOUL;
+		this.species = entityType.species;
+		entity.getPersistentDataContainer().set(entityType.nameKey, PersistentDataType.BYTE, (byte) 0);
+		
+		this.rand = rand;
+		entity.setMetadata("dd-lostsoul", new FixedMetadataValue(plugin, "protected"));
+		stand = (ArmorStand) entity.getWorld().spawnEntity(entity.getLocation().clone().add(100,100,0), EntityType.ARMOR_STAND);
+		if (plugin.mcVersion >= 1.16)
+			stand.setInvisible(true);
+		else
+			stand.setVisible(false);
+		stand.setMarker(true);
+		stand.setGravity(false);
+		stand.setSmall(true);
+		if (plugin.mcVersion >= 1.16) {
+			stand.addEquipmentLock(EquipmentSlot.CHEST, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+			stand.addEquipmentLock(EquipmentSlot.FEET, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+			stand.addEquipmentLock(EquipmentSlot.HAND, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+			stand.addEquipmentLock(EquipmentSlot.HEAD, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+			stand.addEquipmentLock(EquipmentSlot.LEGS, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+			stand.addEquipmentLock(EquipmentSlot.OFF_HAND, org.bukkit.entity.ArmorStand.LockType.ADDING_OR_CHANGING);
+		}
+		stand.getPersistentDataContainer().set(EntityHandler.removalKey, PersistentDataType.BYTE, (byte) 0);
+		standUUID = stand.getUniqueId();
+		
+		entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(entityType.getHealth());
+		entity.setHealth(entityType.getHealth());
+		entity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(entityType.getDamage());
+		entity.setSilent(true);
+		int head = rand.nextInt(4);
+		if (head == 0)
+			stand.getEquipment().setHelmet(CustomHead.SOUL1.getHead());
+		else if (head == 1)
+			stand.getEquipment().setHelmet(CustomHead.SOUL2.getHead());
+		else if (head == 2)
+			stand.getEquipment().setHelmet(CustomHead.SOUL3.getHead());
+		else
+			stand.getEquipment().setHelmet(CustomHead.SOUL4.getHead());
+		entity.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 999999, 0, true, false));
+		entity.getEquipment().setItemInMainHand(new ItemStack(Material.AIR));
+		
+		if (entity.getCustomName() == null)
+			entity.setCustomName(Languages.getString("entities.lostSoul"));
+	}
+	@Override
+	public void tick() {
+		if (entity == null || stand == null)
+			return;
+		stand.teleport(entity.getLocation().subtract(0,.3,0));
+		stand.setHeadPose(new EulerAngle(Math.toRadians(entity.getLocation().getPitch()),0,0));
+		if (plugin.mcVersion >= 1.16)
+			entity.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, entity.getLocation(), 1, .2, .2, .2, 0.05);
+		entity.getWorld().spawnParticle(VersionUtils.getNormalSmoke(), entity.getLocation().clone().add(0,0.4,0), 2, .025, .1, .025, 0.015);
+	}
+	@Override
+	public void function(Iterator<CustomEntity> it) {
+		entity = (Mob) plugin.getServer().getEntity(entityUUID);
+		if (entity == null || stand == null) {
+			clean();
+			it.remove();
+			return;
+		}
+		stand = (ArmorStand) plugin.getServer().getEntity(standUUID);
+		if (entity.isDead()) {
+			if (plugin.mcVersion >= 1.16)
+				entity.getWorld().spawnParticle(Particle.SOUL, entity.getLocation().add(0,.5,0), 15, .3, .5, .3, .03);
+			entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_VEX_DEATH, SoundCategory.HOSTILE, 1f, .7f);
+			if (entity.getKiller() != null)
+				CustomDropsFactory.generateDrops(entity.getLocation(), entityType);
+			clean();
+			it.remove();
+			return;
+		}
+		if (rand.nextInt(8) == 0)
+			if (rand.nextInt(2) == 0)
+				entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_VEX_AMBIENT, SoundCategory.HOSTILE, 1f, .5f);
+			else
+				entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_VEX_CHARGE, SoundCategory.HOSTILE, 1f, .5f);
+	}
+	@Override
+	public void clean() {
+		if (stand != null)
+			stand.remove();
+	}
+	@Override
+	public void update(FileConfiguration file) {
+	}
+	@Override
+	public boolean spawnCondition(Location loc) {
+		if (loc.getWorld().getEnvironment() == Environment.NETHER)
+			return true;
+		return false;
+	}
+}
