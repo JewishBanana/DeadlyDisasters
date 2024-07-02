@@ -2,6 +2,6 @@
 /.settings/
 /.idea/
 /target/
-/.project
-/.classpath
-/dependency-reduced-pom.xml
+.project
+.classpath
+dependency-reduced-pom.xml
