@@ -48,7 +48,7 @@ public class WorldObject {
 		settings = yamlFile.getConfigurationSection(world.getName()+".general").getValues(false);
 		configFile = plugin.cfgSwapper.getConfiguration((String) settings.get("config"));
 		if (configFile == null) {
-			Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Could not set config for world &d'"+world.getName()+"' &e as the config &c'"+(String) settings.get("config")+"' &edoes not exist in the config folder!"));
+			Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: Could not set config for world &d'"+world.getName()+"' &e as the config &c'"+(String) settings.get("config")+"' &edoes not exist in the config folder!"));
 			configFile = plugin.getConfig();
 		}
 		settings.put("region_protection", yamlFile.get(world.getName()+".external.region_plugins.region_protection"));
@@ -58,7 +58,7 @@ public class WorldObject {
 		
 		DifficultyLevel diff = DifficultyLevel.NORMAL;
 		if (DifficultyLevel.forName(((String) yamlFile.get(world.getName()+".general.difficulty")).toUpperCase()) == null) {
-			Main.consoleSender.sendMessage(Utils.chat(Languages.prefix+"&c'"+(String) yamlFile.get(world.getName()+".general.difficulty")+"' is not a real difficulty level! &eSetting disaster difficulty for '"
+			Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&c'"+(String) yamlFile.get(world.getName()+".general.difficulty")+"' is not a real difficulty level! &eSetting disaster difficulty for '"
 					+ world.getName()+"' to NORMAL until you use '/disasters difficulty "+world.getName()+" <difficulty>' or fix this line in worlds.yml:&c\n"
 					+ world.getName()+"\n  -> general\n    -> difficulty: "+(String) yamlFile.get(world.getName()+".general.difficulty")));
 		} else
@@ -81,7 +81,7 @@ public class WorldObject {
 		Map<String, Object> map = yamlFile.getConfigurationSection(world.getName()+".disasters").getValues(false);
 		for (Map.Entry<String, Object> values : map.entrySet()) {
 			if (Boolean.valueOf((boolean) values.getValue()) == null || Disaster.forName(values.getKey()) == null) {
-				Main.consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cWhy did you change this? Only change the true/false field! Something won't work right until you fix this line in worlds.yml:\n"
+				Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cWhy did you change this? Only change the true/false field! Something won't work right until you fix this line in worlds.yml:\n"
 						+ world.getName()+"\n  -> disasters\n    -> "+values.getKey()+": "+values.getValue()));
 				continue;
 			}
@@ -108,7 +108,7 @@ public class WorldObject {
 		try {
 			yamlFile.save(new File(plugin.getDataFolder().getAbsolutePath(), "worlds.yml"));
 		} catch (IOException e) {
-			Main.consoleSender.sendMessage(Utils.chat("&c[DeadlyDisasters]: Error #00 Unable to save worlds file!"));
+			Main.consoleSender.sendMessage(Utils.convertString("&c[DeadlyDisasters]: Error #00 Unable to save worlds file!"));
 		}
 	}
 	public static WorldObject findWorldObject(World w) {

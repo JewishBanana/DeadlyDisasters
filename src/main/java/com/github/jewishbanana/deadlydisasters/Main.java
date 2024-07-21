@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -62,6 +61,7 @@ import com.github.jewishbanana.deadlydisasters.listeners.spawners.InfestedSpawne
 import com.github.jewishbanana.deadlydisasters.listeners.unloaders.Loader_ver_14;
 import com.github.jewishbanana.deadlydisasters.listeners.unloaders.Loader_ver_17;
 import com.github.jewishbanana.deadlydisasters.utils.ConfigUpdater;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.NBSongs;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
@@ -139,7 +139,7 @@ public class Main extends JavaPlugin {
 				this.reloadConfig();
 			} catch (IOException e) {
 				e.printStackTrace();
-				consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cUnable to initialize config! Please report the full error above to the discord."));
+				consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cUnable to initialize config! Please report the full error above to the discord."));
 			}
 		
 		dataf = new File(getDataFolder().getAbsolutePath(), "pluginData/data.yml");
@@ -206,11 +206,6 @@ public class Main extends JavaPlugin {
 			WorldObject.worlds.add(new WorldObject(w, this));
 		
 		PluginManager pm = getServer().getPluginManager();
-		if (pm.getPlugin("UIFramework") == null) {
-			consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cERROR Cannot start plugin because UIFramework is not detected!"));
-			this.setEnabled(false);
-			return;
-		}
 		if (pm.getPlugin("WorldGuard") != null) {
 			Utils.WGuardB = true;
 			getLogger().info("Successfully hooked into World Guard");
@@ -244,6 +239,7 @@ public class Main extends JavaPlugin {
 			NBSongs.init(this);
 			getLogger().info("Successfully hooked into NoteBlockAPI");
 		}
+		new DependencyUtils(this);
 		
 		CustomEntityType.reload(this);
 		CustomDropsFactory.reload(this);
@@ -256,7 +252,7 @@ public class Main extends JavaPlugin {
 		else
 			new Loader_ver_14(this, CustomEntity.handler);
 		new CoreListener(this, tc, dataFile, random);
-		if (mcVersion >= 1.16)
+		if (mcVersion >= 1.16 && DependencyUtils.isUIFrameworkEnabled())
 			new LootGenerateListener(this);
 		enchantHandler = new CustomEnchantHandler(this);
 		new CustomEntitiesListener(this);
@@ -287,7 +283,7 @@ public class Main extends JavaPlugin {
 			try {
 				doomsday.getParentFile().mkdirs();
 				FileUtils.copyInputStreamToFile(getResource("files/doomsday.yml"), doomsday);
-				consoleSender.sendMessage(Languages.prefix+Utils.chat("&bInstalled &e'doomsday' &bsuccessfully!"));
+				consoleSender.sendMessage(Languages.prefix+Utils.convertString("&bInstalled &e'doomsday' &bsuccessfully!"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -349,15 +345,14 @@ public class Main extends JavaPlugin {
 					checkURL = new URL("https://api.spigotmc.org/legacy/update.php?resource=100918");
 					con = checkURL.openConnection();
 					latestVersion = new BufferedReader(new InputStreamReader(con.getInputStream())).readLine();
-				} catch (MalformedURLException e) {
-					return;
-				} catch (IOException e) {
+				} catch (Exception e) {
 					return;
 				}
-				if (Double.parseDouble(getDescription().getVersion()) < Double.parseDouble(latestVersion)) {
+				if (!getDescription().getVersion().equals(latestVersion)) {
 					String msg = Languages.getString("internal.consoleUpdate");
-					consoleSender.sendMessage(Utils.chat(Languages.prefix+"&a"+msg.substring(0, msg.indexOf('^'))+latestVersion+msg.substring(msg.indexOf('^')+1)));
-					if (getConfig().getBoolean("general.update_notify")) updateNotify = true;
+					consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&a"+msg.substring(0, msg.indexOf('^'))+latestVersion+msg.substring(msg.indexOf('^')+1)));
+					if (getConfig().getBoolean("general.update_notify"))
+						updateNotify = true;
 				}
 			}
 		});
@@ -413,10 +408,10 @@ public class Main extends JavaPlugin {
 				ConfigUpdater.update(this, getResource("files/achievements.yml"), new File(getDataFolder().getAbsolutePath(), "achievements.yml"), Arrays.asList(""));
 			if (new File(getDataFolder().getAbsolutePath(), "entities.yml").exists())
 				ConfigUpdater.update(this, getResource("files/entities.yml"), new File(getDataFolder().getAbsolutePath(), "entities.yml"), Arrays.asList(""));
-			consoleSender.sendMessage(Utils.chat(Languages.prefix+"&a"+Languages.getString("internal.cfgUpdate")+" "+getDescription().getVersion()));
+			consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&a"+Languages.getString("internal.cfgUpdate")+" "+getDescription().getVersion()));
 		} catch (IOException e) {
 			e.printStackTrace();
-			consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cUnable to update config! Please report the full error above to the discord."));
+			consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cUnable to update config! Please report the full error above to the discord."));
 		}
 	}
 	public void checkWorldsYaml() {
@@ -430,7 +425,7 @@ public class Main extends JavaPlugin {
 			try {
 				worldFile.save(worldsf);
 			} catch (IOException e) {
-				consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cCould not save worlds file in first init!"));
+				consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cCould not save worlds file in first init!"));
 			}
 		} else {
 			worldFile = YamlConfiguration.loadConfiguration(worldsf);
@@ -441,7 +436,7 @@ public class Main extends JavaPlugin {
 			try {
 				worldFile.save(worldsf);
 			} catch (IOException e) {
-				consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cCould not save worlds file in init!"));
+				consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cCould not save worlds file in init!"));
 			}
 		}
 		WorldObject.yamlFile = worldFile;
@@ -547,18 +542,10 @@ public class Main extends JavaPlugin {
 		try {
 			dataFile.save(dataf);
 		} catch (IOException e) {
-			consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cError #00 Unable to save data file!"));
+			consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cError #00 Unable to save data file!"));
 		}
 	}
 	public static Main getInstance() {
 		return instance;
-	}
-	public static boolean isSpigot() {
-	    try {
-	        Class.forName("org.bukkit.entity.Player$Spigot"); //Some Spigot class
-	        return true;
-	    } catch (Throwable tr) {
-	        return false;
-	    }
 	}
 }

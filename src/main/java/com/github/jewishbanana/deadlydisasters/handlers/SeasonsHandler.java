@@ -79,7 +79,7 @@ public class SeasonsHandler {
 			else
 				for (String s : list) {
 					if (!(s.equals("SPRING") || s.equals("SUMMER") || s.equals("FALL") || s.equals("WINTER"))) {
-						Main.consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cSeason &6'"+s+"' &cdoes not exist! Something won't work right until you fix this line in seasons.yml:\n"
+						Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cSeason &6'"+s+"' &cdoes not exist! Something won't work right until you fix this line in seasons.yml:\n"
 								+ "disasters\n  -> "+temp.name()+": "+Arrays.toString(list.toArray())));
 						set.clear();
 						set.addAll(Arrays.asList(me.casperge.realisticseasons.season.Season.SPRING, me.casperge.realisticseasons.season.Season.SUMMER, me.casperge.realisticseasons.season.Season.FALL, me.casperge.realisticseasons.season.Season.WINTER));
@@ -95,7 +95,7 @@ public class SeasonsHandler {
 		try {
 			seasonFile.save(new File(plugin.getDataFolder().getAbsolutePath(), "seasons.yml"));
 		} catch (IOException e) {
-			Main.consoleSender.sendMessage(Utils.chat("&c[DeadlyDisasters]: Error unable to save seasons file!"));
+			Main.consoleSender.sendMessage(Utils.convertString("&c[DeadlyDisasters]: Error unable to save seasons file!"));
 		}
 	}
 	public void reload(Main plugin) {

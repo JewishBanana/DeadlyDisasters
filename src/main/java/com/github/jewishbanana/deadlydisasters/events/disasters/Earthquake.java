@@ -16,12 +16,12 @@ import org.bukkit.Material;
 import org.bukkit.Particle.DustOptions;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.TileState;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.util.BlockVector;
@@ -30,6 +30,7 @@ import org.bukkit.util.Vector;
 import com.github.jewishbanana.deadlydisasters.events.DestructionDisaster;
 import com.github.jewishbanana.deadlydisasters.events.DestructionDisasterEvent;
 import com.github.jewishbanana.deadlydisasters.events.Disaster;
+import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
 import com.github.jewishbanana.deadlydisasters.utils.AsyncRepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
@@ -50,6 +51,7 @@ public class Earthquake extends DestructionDisaster {
 	private World world;
 	private double size,tilt,force;
 	public int blocksDestroyed;
+	public boolean placeLava;
 
 	public Earthquake(int level) {
 		super(level);
@@ -57,6 +59,7 @@ public class Earthquake extends DestructionDisaster {
 		tilt = configFile.getDouble("earthquake.tilt");
 		force = configFile.getDouble("earthquake.force");
 		volume = configFile.getDouble("earthquake.volume");
+		this.placeLava = configFile.getBoolean("earthquake.place_lava");
 		switch (level) {
 		default:
 		case 1:
@@ -106,6 +109,7 @@ public class Earthquake extends DestructionDisaster {
 		loc.subtract(angle);
 		vectors.put(new BlockVector(loc.getX(), loc.getY(), loc.getZ()).add(new Vector(angle.getZ(), 0, -angle.getX()).normalize().multiply(wid)).toBlockVector(), angle.clone());
 		Earthquake instance = this;
+		boolean pushPlayersInRegions = WorldObject.findWorldObject(world).protectRegions;
 		addPlayersToSurvivalChannel(loc.clone().subtract(0,len,0), len+5, survivingPlayers);
 		DeathMessages.earthquakes.add(this);
 		int[] delay = {0, 0};
@@ -127,7 +131,8 @@ public class Earthquake extends DestructionDisaster {
 									iterator.next().dig(iterator);
 								for (Map.Entry<BlockVector, Vector> entry : pullVectorMap.get(delay[1]).entrySet()) {
 									for (Entity e : world.getNearbyEntities(entry.getKey().subtract(entry.getValue()).toLocation(world), level*10, level*10, level*10)) {
-										if (!(e instanceof LivingEntity) || (e instanceof Player && ((Player) e).isFlying())) continue;
+										if ((pushPlayersInRegions && Utils.isZoneProtected(e.getLocation())) || (e instanceof Player && ((Player) e).isFlying()))
+											continue;
 										double yVel = e.getVelocity().getY();
 										if (!e.isOnGround() || e.getVelocity().getY() > 3)
 											yVel = 0;
@@ -381,7 +386,7 @@ public class Earthquake extends DestructionDisaster {
 				depth--;
 			}
 			if (depth <= 0) {
-				if (loc.getBlockY() < 15) {
+				if (classInstance.placeLava && b.getWorld().getEnvironment() != Environment.THE_END && loc.getBlockY() < 15) {
 					classInstance.addBlockToList(b, b.getState());
 					b.setType(Material.LAVA);
 					classInstance.blocksDestroyed++;

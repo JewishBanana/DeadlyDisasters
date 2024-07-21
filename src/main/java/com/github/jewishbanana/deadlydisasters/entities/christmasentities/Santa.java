@@ -105,7 +105,7 @@ public class Santa extends CustomEntity {
 		if (entity.getCustomName() == null)
 			entity.setCustomName(Languages.getString("entities.santa"));
 		
-		bar = Bukkit.createBossBar(Utils.chat("&c"+Languages.getString("entities.santa")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
+		bar = Bukkit.createBossBar(Utils.convertString("&c"+Languages.getString("entities.santa")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
 	}
 
 	@Override

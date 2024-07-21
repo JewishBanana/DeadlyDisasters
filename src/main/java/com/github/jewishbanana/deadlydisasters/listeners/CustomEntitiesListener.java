@@ -7,7 +7,6 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -45,8 +44,6 @@ import com.github.jewishbanana.deadlydisasters.entities.purgeentities.DarkMage;
 import com.github.jewishbanana.deadlydisasters.entities.soulstormentities.SoulReaper;
 import com.github.jewishbanana.deadlydisasters.events.Disaster;
 import com.github.jewishbanana.deadlydisasters.events.disasters.BlackPlague;
-import com.github.jewishbanana.deadlydisasters.events.disasters.EndStorm;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
@@ -66,12 +63,6 @@ public class CustomEntitiesListener implements Listener {
 			return;
 		Entity damager = e.getDamager();
 		Entity hurtEntity = e.getEntity();
-		if (damager instanceof Arrow && damager.hasMetadata("dd-voidarrow")) {
-			if (!Utils.isZoneProtected(damager.getLocation()) || plugin.getConfig().getBoolean("customitems.items.void_wrath.allow_in_regions"))
-				EndStorm.createUnstableRift(damager.getLocation(), ItemsHandler.voidBowPortalTicks, ((Arrow) damager).getShooter());
-			damager.remove();
-			return;
-		}
 		if (damager instanceof Projectile && hurtEntity.hasMetadata("dd-frosty")) {
 			e.setCancelled(true);
 			return;
@@ -101,7 +92,7 @@ public class CustomEntitiesListener implements Listener {
 		if (hurtEntity.hasMetadata("dd-plague") && !damager.hasMetadata("dd-plague") && BlackPlague.time.size() < BlackPlague.maxInfectedMobs) {
 			if (entity instanceof Player) {
 				if (!Utils.isPlayerImmune((Player) entity)) {
-					entity.sendMessage(Utils.chat("&c"+Languages.getString("misc.plagueCatch")));
+					entity.sendMessage(Utils.convertString("&c"+Languages.getString("misc.plagueCatch")));
 					BlackPlague.time.put(entity.getUniqueId(), 300);
 					entity.setMetadata("dd-plague", plugin.fixedData);
 				}

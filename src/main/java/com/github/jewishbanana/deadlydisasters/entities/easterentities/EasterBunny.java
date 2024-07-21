@@ -95,7 +95,7 @@ public class EasterBunny extends CustomEntity {
 		if (entity.getCustomName() == null)
 			entity.setCustomName(Languages.getString("easter.easterBunny"));
 		
-		bar = Bukkit.createBossBar(Utils.chat("&c"+Languages.getString("easter.easterBunny")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
+		bar = Bukkit.createBossBar(Utils.convertString("&c"+Languages.getString("easter.easterBunny")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
 	}
 
 	@Override

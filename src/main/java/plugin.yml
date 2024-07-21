@@ -1,10 +1,10 @@
 name: DeadlyDisasters
-version: 14.3
+version: 14.4
 author: davidclue
 main: com.github.jewishbanana.deadlydisasters.Main
 description: Adds deadly disasters to the game.
 api-version: 1.14
-softdepend: [WorldGuard, CoreProtect, Towny, GriefPrevention, Lands, RealisticSeasons, Kingdoms, NoteBlockAPI]
+softdepend: [WorldGuard, CoreProtect, Towny, GriefPrevention, Lands, RealisticSeasons, Kingdoms, NoteBlockAPI, UIFramework, UltimateContent]
 
 commands:
     disasters:

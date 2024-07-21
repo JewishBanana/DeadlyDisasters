@@ -46,6 +46,7 @@ public class Hurricane extends DestructionDisaster {
 	private double lvl,blockForce,minForce,maxForce;
 	private Particle particle;
 	private int blocksDestroyed;
+	private int windHeight;
 	
 	public static Set<Biome> oceans = new HashSet<>();
 	
@@ -59,6 +60,7 @@ public class Hurricane extends DestructionDisaster {
 		minForce = (double) level / 100.0;
 		maxForce = (double) level / 50.0;
 		particle = Particle.CLOUD;
+		windHeight = configFile.getInt("hurricane.wind_height");
 		
 		this.type = Disaster.HURRICANE;
 	}
@@ -122,7 +124,7 @@ public class Hurricane extends DestructionDisaster {
 				}
 				for (int i=ticker[0]; i < ticker[0]+divided; i++)
 					for (Entity e : world.getNearbyEntities(loc, i, i, i))
-						if (!storage.containsKey(e) && e.getLocation().getY() > 60 && !Utils.isZoneProtected(e.getLocation()))
+						if (!storage.containsKey(e) && e.getLocation().getY() >= windHeight && !Utils.isZoneProtected(e.getLocation()))
 							storage.put(e, loc.distance(e.getLocation()));
 				ticker[0] += divided;
 				if (ticker[0] >= size) {

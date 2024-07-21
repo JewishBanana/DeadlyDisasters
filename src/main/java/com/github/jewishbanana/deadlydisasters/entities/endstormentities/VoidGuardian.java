@@ -27,8 +27,8 @@ import com.github.jewishbanana.deadlydisasters.entities.CustomDropsFactory;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class VoidGuardian extends CustomEntity {
@@ -51,8 +51,13 @@ public class VoidGuardian extends CustomEntity {
 		entity.getAttribute(Attribute.GENERIC_FOLLOW_RANGE).setBaseValue(40);
 		entity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.25);
 		changeColor(50, 50, 50, CustomHead.VOIDGUARD.getHead());
-		entity.getEquipment().setItemInMainHand(ItemsHandler.voidsedge);
-		entity.getEquipment().setItemInOffHand(ItemsHandler.voidshield);
+		if (DependencyUtils.isUltimateContentEnabled()) {
+			entity.getEquipment().setItemInMainHand(com.github.jewishbanana.uiframework.items.ItemType.getItemType(com.github.jewishbanana.ultimatecontent.items.weapons.VoidsEdge.REGISTERED_KEY).getBuilder().getItem());
+			entity.getEquipment().setItemInOffHand(com.github.jewishbanana.uiframework.items.ItemType.getItemType(com.github.jewishbanana.ultimatecontent.items.tools.AbyssalShield.REGISTERED_KEY).getBuilder().getItem());
+		} else {
+			entity.getEquipment().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
+			entity.getEquipment().setItemInOffHand(new ItemStack(Material.SHIELD));
+		}
 		entity.setMetadata("dd-voidguardian", new FixedMetadataValue(plugin, "protected"));
 		EntityEquipment equip = entity.getEquipment();
 		equip.setHelmetDropChance(0);

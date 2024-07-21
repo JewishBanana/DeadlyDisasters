@@ -83,9 +83,9 @@ public class Monsoon extends WeatherDisaster {
 				else if (configFile.getString("monsoon.block_changes."+material).toLowerCase().equals("air"))
 					blockChanges.putIfAbsent(Material.getMaterial(material), Material.AIR);
 				else
-					Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Could not find material &c'"+configFile.getString("monsoon.block_changes."+material)+"' &eon line &d'"+material+" : "+configFile.getString("monsoon.block_changes."+material)+"' &ein monsoon block changes section in the config!"));
+					Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: Could not find material &c'"+configFile.getString("monsoon.block_changes."+material)+"' &eon line &d'"+material+" : "+configFile.getString("monsoon.block_changes."+material)+"' &ein monsoon block changes section in the config!"));
 			} else
-				Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Could not find material &c'"+material+"' &eon line &d'"+material+" : "+configFile.getString("monsoon.block_changes."+material)+"' &ein monsoon block changes section in the config!"));
+				Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: Could not find material &c'"+material+"' &eon line &d'"+material+" : "+configFile.getString("monsoon.block_changes."+material)+"' &ein monsoon block changes section in the config!"));
 		
 		this.type = Disaster.MONSOON;
 	}

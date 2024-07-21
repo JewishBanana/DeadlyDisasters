@@ -54,13 +54,16 @@ import org.bukkit.util.BlockVector;
 import org.bukkit.util.Vector;
 
 import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.entities.CustomDropsFactory;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.events.disasters.CaveIn;
 import com.github.jewishbanana.deadlydisasters.utils.AsyncRepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.ChannelDataHolder;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
+import com.github.jewishbanana.uiframework.items.ItemType;
 
 public class AchievementsHandler implements Listener {
 	
@@ -118,7 +121,7 @@ public class AchievementsHandler implements Listener {
 							try {
 								displayItem = new ItemStack(Material.valueOf(file.getString("display."+section+'.'+type+'.'+name+".item")));
 							} catch (IllegalArgumentException e) {
-								Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eCould not add item display to achievement &d'"+name+"&d' &eno such item &c"+file.getString("display."+section+'.'+type+'.'+name+".item")+" &eexists!"));
+								Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&eCould not add item display to achievement &d'"+name+"&d' &eno such item &c"+file.getString("display."+section+'.'+type+'.'+name+".item")+" &eexists!"));
 							}
 						if (displayItem != null) {
 							if (file.contains("display."+section+'.'+type+'.'+name+".amount"))
@@ -126,10 +129,10 @@ public class AchievementsHandler implements Listener {
 							ItemMeta meta = displayItem.getItemMeta();
 							if (meta.hasLore()) {
 								List<String> lore = meta.getLore();
-								lore.addAll(Arrays.asList(" ", Utils.chat(file.getString("display."+section+'.'+type+'.'+name+".description"))));
+								lore.addAll(Arrays.asList(" ", Utils.convertString(file.getString("display."+section+'.'+type+'.'+name+".description"))));
 								meta.setLore(lore);
 							} else {
-								List<String> lore = new ArrayList<>(Arrays.asList(" ", Utils.chat(file.getString("display."+section+'.'+type+'.'+name+".description"))));
+								List<String> lore = new ArrayList<>(Arrays.asList(" ", Utils.convertString(file.getString("display."+section+'.'+type+'.'+name+".description"))));
 								meta.setLore(lore);
 							}
 							displayItem.setItemMeta(meta);
@@ -152,7 +155,7 @@ public class AchievementsHandler implements Listener {
 	}
 	public void openGUI(Player player, int page) {
 		UUID uuid = player.getUniqueId();
-		Inventory inv = Bukkit.createInventory(null, 54, Utils.chat("&9DeadlyDisasters Achievements"));
+		Inventory inv = Bukkit.createInventory(null, 54, Utils.convertString("&9DeadlyDisasters Achievements"));
 		inv.setItem(4, achievementInfo);
 		Map<ItemStack, Achievement> itemMap = new HashMap<>();
 		Map<ItemStack, Mastery> masteryMap = new HashMap<>();
@@ -171,19 +174,19 @@ public class AchievementsHandler implements Listener {
 				lore.add(ach.series);
 				lore.add(tier.description);
 				lore.add(" ");
-				lore.add(Utils.chat("&b"+progress+": "+tier.getProgress(uuid)+'/'+tier.goal));
+				lore.add(Utils.convertString("&b"+progress+": "+tier.getProgress(uuid)+'/'+tier.goal));
 				lore.add(" ");
-				lore.add(Utils.chat("&3"+rewards+":"));
+				lore.add(Utils.convertString("&3"+rewards+":"));
 				tier.rewards.forEach((k,v) -> {
 					if (k.hasItemMeta() && k.getItemMeta().hasDisplayName())
-						lore.add(Utils.chat("&d"+v+" &8x &6"+k.getItemMeta().getDisplayName().toLowerCase()));
+						lore.add(Utils.convertString("&d"+v+" &8x &6"+k.getItemMeta().getDisplayName().toLowerCase()));
 					else
-						lore.add(Utils.chat("&d"+v+" &8x &6"+k.getType().toString().toLowerCase().replace('_', ' ')));
+						lore.add(Utils.convertString("&d"+v+" &8x &6"+k.getType().toString().toLowerCase().replace('_', ' ')));
 				});
-				lore.add(Utils.chat("&2XP: &a"+tier.xp));
+				lore.add(Utils.convertString("&2XP: &a"+tier.xp));
 				if (achieved && !tier.hasClaimed(uuid)) {
 					lore.add(" ");
-					lore.add(Utils.chat("&b&l"+Languages.getString("internal.claimAchievement")));
+					lore.add(Utils.convertString("&b&l"+Languages.getString("internal.claimAchievement")));
 				}
 				ItemStack item = Utils.createItem(tier.item, tier.amount, tier.name, lore, achieved ? !tier.hasClaimed(uuid) : false, true);
 				itemMap.put(item, tier);
@@ -216,7 +219,7 @@ public class AchievementsHandler implements Listener {
 					for (Achievement tier : ach.tiers)
 						if (tier.hasAchieved(uuid) && !tier.hasClaimed(uuid)) {
 							if (e.getPlayer() != null)
-								e.getPlayer().sendMessage(Languages.prefix+ChatColor.GREEN+Utils.chat(Languages.getString("internal.notifyUnclaimed")));
+								e.getPlayer().sendMessage(Languages.prefix+ChatColor.GREEN+Utils.convertString(Languages.getString("internal.notifyUnclaimed")));
 							return;
 						}
 			}, 200);
@@ -254,7 +257,7 @@ public class AchievementsHandler implements Listener {
 				ItemMeta meta = e.getCurrentItem().getItemMeta();
 				List<String> lore = meta.getLore();
 				lore.remove(lore.size()-1);
-				lore.add(Utils.chat("&a"+Languages.getString("internal.enableMastery")));
+				lore.add(Utils.convertString("&a"+Languages.getString("internal.enableMastery")));
 				meta.setLore(lore);
 				meta.removeEnchant(VersionUtils.getUnbreaking());
 				e.getCurrentItem().setItemMeta(meta);
@@ -273,7 +276,7 @@ public class AchievementsHandler implements Listener {
 				ItemMeta meta = e.getCurrentItem().getItemMeta();
 				List<String> lore = meta.getLore();
 				lore.remove(lore.size()-1);
-				lore.add(Utils.chat("&b"+Languages.getString("internal.deactivateMastery")));
+				lore.add(Utils.convertString("&b"+Languages.getString("internal.deactivateMastery")));
 				meta.setLore(lore);
 				meta.addEnchant(VersionUtils.getUnbreaking(), 1, true);
 				meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -562,12 +565,12 @@ public class AchievementsHandler implements Listener {
 				tiers[i] = new Achievement(pathName+".tiers."+tier, tempProgress, tempClaimed);
 				i++;
 			}
-			this.series = Utils.chat(file.getString(pathName+".series"));
+			this.series = Utils.convertString(file.getString(pathName+".series"));
 			if (file.contains(pathName+".hidden_slots"))
 				try {
 					this.hiddenItem = Utils.createItem(Material.valueOf(file.getString(pathName+".hidden_slots").toUpperCase()), 1, "&f???", null, false, true);
 				} catch (IllegalArgumentException e) {
-					Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eCould not add hidden item to achievement &d'"+name+"&d' &eno such item &c"+file.getString(pathName+".hidden_slots")+" &eexists!"));
+					Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&eCould not add hidden item to achievement &d'"+name+"&d' &eno such item &c"+file.getString(pathName+".hidden_slots")+" &eexists!"));
 					this.hiddenItem = Utils.createItem(Material.BLACK_STAINED_GLASS_PANE, 1, "&f???", null, false, true);
 				}
 			else
@@ -578,12 +581,12 @@ public class AchievementsHandler implements Listener {
 			try {
 				this.item = Material.valueOf(file.getString(pathName+".item").toUpperCase());
 			} catch (IllegalArgumentException e) {
-				Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eCould not set item icon for achievement &d'"+pathName+"' &eno such item named &c'"+file.getString(pathName+".item")+"'"));
+				Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&eCould not set item icon for achievement &d'"+pathName+"' &eno such item named &c'"+file.getString(pathName+".item")+"'"));
 				this.item = Material.BARRIER;
 			}
-			this.name = Utils.chat(file.getString(pathName+".name"));
+			this.name = Utils.convertString(file.getString(pathName+".name"));
 			this.amount = file.getInt(pathName+".amount");
-			this.description = Utils.chat(file.getString(pathName+".description"));
+			this.description = Utils.convertString(file.getString(pathName+".description"));
 			this.goal = file.getInt(pathName+".goal");
 			this.hidden = file.getBoolean(pathName+".hidden");
 			if (file.contains(pathName+".locked"))
@@ -594,12 +597,28 @@ public class AchievementsHandler implements Listener {
 			for (String key : file.getStringList(pathName+".rewards")) {
 				String reward = key.replaceAll(" ", "");
 				try {
-					if (ItemsHandler.allItems.containsKey(reward.substring(0, reward.indexOf('|'))))
-						rewards.put(ItemsHandler.allItems.get(reward.substring(0, reward.indexOf('|'))), Integer.parseInt(reward.substring(reward.indexOf('|')+1)));
-					else
-						rewards.put(new ItemStack(Material.valueOf(reward.substring(0, reward.indexOf('|')).toUpperCase())), Integer.parseInt(reward.substring(reward.indexOf('|')+1)));
+					String itemName = reward.substring(0, reward.indexOf('|'));
+					ItemStack item = null;
+					if (ItemsHandler.allItems.containsKey(itemName))
+						item = ItemsHandler.allItems.get(itemName);
+					else if (DependencyUtils.isUIFrameworkEnabled()) {
+						String uiName = CustomDropsFactory.changesMap.containsKey(itemName) ? CustomDropsFactory.changesMap.get(itemName) : itemName;
+						if (ItemType.getItemType(uiName) != null)
+							item = ItemType.getItemType(uiName).getBuilder().getItem();
+						else if (DependencyUtils.isUltimateContentEnabled() && ItemType.getItemType(uiName) != null)
+							item = ItemType.getItemType(uiName).getBuilder().getItem();
+					} else if (CustomDropsFactory.changesMap.containsKey(itemName) || CustomDropsFactory.changesMap.containsValue(itemName)) {
+						if (!CustomDropsFactory.warnedItems) {
+							Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: &bYou have custom drop items in your achievements.yml class that are a part of UltimateContent! If you want these custom items then download UltimateContent to your server."));
+							CustomDropsFactory.warnedItems = true;
+						}
+						continue;
+					}
+					if (item == null)
+						item = new ItemStack(Material.valueOf(itemName.toUpperCase()));
+					rewards.put(item, Integer.parseInt(reward.substring(reward.indexOf('|')+1)));
 				} catch (IllegalArgumentException e) {
-					Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eCould not add reward item to achievement &d'"+name+"&d' &eimproper usage on line\n    &c-> "+key));
+					Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&eCould not add reward item to achievement &d'"+name+"&d' &eimproper usage on line\n    &c-> "+key));
 				}
 			}
 			if (file.contains(pathName+".sound.type")) {
@@ -610,7 +629,7 @@ public class AchievementsHandler implements Listener {
 					if (file.contains(pathName+".sound.pitch"))
 						soundSettings[1] = (float) file.getDouble(pathName+".sound.pitch");
 				} catch (IllegalArgumentException e) {
-					Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eCould not add sound to achievement &d'"+name+"&d' &eno such sound &c"+file.getString(pathName+".sound.type")+" &eexists!"));
+					Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&eCould not add sound to achievement &d'"+name+"&d' &eno such sound &c"+file.getString(pathName+".sound.type")+" &eexists!"));
 				}
 			}
 		}
@@ -641,7 +660,7 @@ public class AchievementsHandler implements Listener {
 					Player player = (Player) Bukkit.getEntity(uuid);
 					if (tier.sound != null)
 						player.playSound(player.getLocation(), tier.sound, tier.soundSettings[0], tier.soundSettings[1]);
-					if (Main.isSpigot()) {
+					if (Utils.isSpigot()) {
 						net.md_5.bungee.api.chat.TextComponent local = new net.md_5.bungee.api.chat.TextComponent(Languages.getString("internal.earnAchievementLocal")+' '+ChatColor.getLastColors(tier.name)+'['+tier.name+']');
 						local.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text(ChatColor.getLastColors(tier.name)+tier.description)));
 						net.md_5.bungee.api.chat.TextComponent message = new net.md_5.bungee.api.chat.TextComponent(player.getName()+' '+Languages.getString("internal.earnAchievement")+' '+ChatColor.getLastColors(tier.name)+'['+tier.name+']');
@@ -679,7 +698,7 @@ public class AchievementsHandler implements Listener {
 				Player player = (Player) Bukkit.getEntity(uuid);
 				if (tier.sound != null)
 					player.playSound(player.getLocation(), tier.sound, tier.soundSettings[0], tier.soundSettings[1]);
-				if (Main.isSpigot()) {
+				if (Utils.isSpigot()) {
 					net.md_5.bungee.api.chat.TextComponent local = new net.md_5.bungee.api.chat.TextComponent(Languages.getString("internal.earnAchievementLocal")+' '+ChatColor.getLastColors(tier.name)+'['+tier.name+']');
 					local.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text(ChatColor.getLastColors(tier.name)+tier.description)));
 					net.md_5.bungee.api.chat.TextComponent message = new net.md_5.bungee.api.chat.TextComponent(player.getName()+' '+Languages.getString("internal.earnAchievement")+' '+ChatColor.getLastColors(tier.name)+'['+tier.name+']');
@@ -765,12 +784,12 @@ public class AchievementsHandler implements Listener {
 			try {
 				this.material = Material.valueOf(file.getString(pathName+".item").toUpperCase());
 			} catch (IllegalArgumentException e) {
-				Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eCould not add item to mastery &d'"+name+"&d' &eno such item &c"+file.getString(pathName+".item")+" &eexists!"));
+				Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&eCould not add item to mastery &d'"+name+"&d' &eno such item &c"+file.getString(pathName+".item")+" &eexists!"));
 				this.material = Material.BARRIER;
 			}
-			this.name = Utils.chat(file.getString(pathName+".name"));
-			this.description = Utils.chat(file.getString(pathName+".description"));
-			this.abilityDescription = Utils.chat(file.getString(pathName+".ability_description"));
+			this.name = Utils.convertString(file.getString(pathName+".name"));
+			this.description = Utils.convertString(file.getString(pathName+".description"));
+			this.abilityDescription = Utils.convertString(file.getString(pathName+".ability_description"));
 			this.abilityPower = file.getDouble(pathName+".ability_power");
 			this.modelData = file.getInt(pathName+".data");
 		}
@@ -800,16 +819,16 @@ public class AchievementsHandler implements Listener {
 					data = tier.modelData;
 					lore.add("&fTier "+Utils.getNumerical(tier.requiredTier)+": "+tier.abilityDescription);
 				} else {
-					lore.add(Utils.chat("&8Tier "+Utils.getNumerical(tier.requiredTier)+": "+ChatColor.stripColor(tier.abilityDescription)));
+					lore.add(Utils.convertString("&8Tier "+Utils.getNumerical(tier.requiredTier)+": "+ChatColor.stripColor(tier.abilityDescription)));
 				}
 			}
 			List<String> newLore = new ArrayList<>();
 			newLore.add(description);
 			newLore.addAll(lore);
 			if (activePlayers.contains(uuid))
-				newLore.addAll(Arrays.asList(" ", Utils.chat("&b"+Languages.getString("internal.deactivateMastery"))));
+				newLore.addAll(Arrays.asList(" ", Utils.convertString("&b"+Languages.getString("internal.deactivateMastery"))));
 			else if (achievement.tiers[tiers[0].requiredTier-1].hasAchieved(uuid))
-				newLore.addAll(Arrays.asList(" ", Utils.chat("&a"+Languages.getString("internal.enableMastery"))));
+				newLore.addAll(Arrays.asList(" ", Utils.convertString("&a"+Languages.getString("internal.enableMastery"))));
 			ItemStack toUse = Utils.createItem(item, 1, itemName, newLore, activePlayers.contains(uuid), true);
 			ItemMeta meta = toUse.getItemMeta();
 			meta.setCustomModelData(data);

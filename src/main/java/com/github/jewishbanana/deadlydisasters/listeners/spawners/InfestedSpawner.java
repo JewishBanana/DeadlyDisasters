@@ -75,7 +75,7 @@ public class InfestedSpawner implements Listener {
 					loc = Utils.findSmartYSpawn(e.getChunk().getBlock(0, -32, 0).getLocation(), e.getChunk().getBlock(0, -32, 0).getLocation(), 3, 28);
 				} catch (IllegalArgumentException e) {
 					e.printStackTrace();
-					Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: You are most likely using a bugged version of paper that does not support getting chunks below Y=0! The plugin will disable natural spawning of infested mobs."));
+					Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: You are most likely using a bugged version of paper that does not support getting chunks below Y=0! The plugin will disable natural spawning of infested mobs."));
 					HandlerList.unregisterAll(instance);
 					return;
 				}

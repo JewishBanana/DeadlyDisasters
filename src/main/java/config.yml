@@ -73,6 +73,8 @@ sinkhole:
     speed: 5
     # Size multiplier
     size: 1.0
+    # Controls if lava gets placed or not at the bottom of sinkholes (Lava is never placed in sinkholes in end type worlds)
+    place_lava: true
     # The minimum height the disaster can spawn at
     min_height: 50
     # Max level this specific disaster can reach
@@ -94,6 +96,8 @@ earthquake:
     tilt: 0.3
     # Force multiplier for how strong earthquakes can throw nearby entities
     force: 1.0
+    # Controls if lava gets placed or not at the bottom of earthquakes (Lava is never placed in earthquakes in end type worlds)
+    place_lava: true
     min_height: 50
     max_level: 6
     frequency: 1.0
@@ -177,6 +181,8 @@ supernova:
     place_fire: true
     # If set to true then explosion particles can be seen from very far away by players but this drastically affects performance
     far_particles: true
+    # Controls how fast the crystal falls from the sky
+    fall_speed_multiplier: 1.0
     min_height: 55
     max_level: 6
     frequency: 0.3
@@ -192,6 +198,8 @@ hurricane:
     lightning_frequency: 1.0
     # The minimum force of wind required to break blocks near players
     block_break_force: 0.04
+    # This controls the minimum Y level that hurricanes can affect entities
+    wind_height: 60
     min_height: 60
     max_level: 6
     frequency: 1.0
@@ -405,6 +413,10 @@ extremewinds:
     interior_height_distance: 6
     # How strong winds need to be to rip blocks from buildings
     block_break_force: 0.1
+    # This controls the minimum Y level that winds can affect entities
+    wind_height: 50
+    # Controls if entities are pushed by winds or not
+    push_entities: true
     min_height: 60
     max_level: 6
     frequency: 0.6
@@ -558,25 +570,10 @@ customitems:
     item_lore_characters_per_line: 40
     # Control which custom recipes are enabled
     recipes:
-        plague_cure: true
-        ancient_blade: true
-        yetis_blessing: true
-        basic_coating: true
         snow_globe: true
         easter_basket: true
-        bunny_hop: true
         pumpkin_basket: true
     items:
-        void_wrath:
-            ability_cooldown: 10
-            # How many ticks unstable rifts live for
-            portal_ticks: 80
-            # If set to true then unstable rifts can be created in protected regions
-            allow_in_regions: true
-            # If set to true then items that are pulled into rifts will get removed
-            remove_items: true
-        ancient_blade:
-            ability_cooldown: 8
         dark_mage_wand:
             ability_cooldown: 10
         soul_ripper:
@@ -589,8 +586,6 @@ customitems:
             chest_spawn_rate: 1.0
             # Chance of librarian acquiring this item as a trade
             librarian_trade_chance: 7.0
-        poseidons_trident:
-            ability_cooldown: 10
         plague_cure:
             # Chance of cleric acquiring this item as a trade
             cleric_trade_chance: 5.0
@@ -609,30 +604,6 @@ customitems:
             ghoul_life_ticks: 300
             amount_of_ghouls: 2
     enchants:
-        ancient_curse:
-            # How many ticks entities hit by a fire spell are on fire for
-            fire_ticks: 80
-            # How many ticks the spell travels for
-            spell_life_ticks: 20
-            # Amount of flame particles spawned per spell tick
-            particle_count: 10
-        yetis_blessing:
-            # Modify each level of the enchant
-            level 1:
-                # The radius of the yetis roar when activated
-                range: 4
-                # The chance of the enchant activating a roar when physically hit
-                chance: 8.0
-            level 2:
-                range: 6
-                chance: 11.0
-            level 3:
-                range: 8
-                chance: 15.0
-        tidal_wave:
-            level 1:
-                # Modify the range that the wave travels in blocks
-                range: 15
         blood_sacrifice:
             level 1:
                 # Chance of ability activating on hit
@@ -649,9 +620,3 @@ customitems:
                 chance: 15.0
                 lifeTake: 30.0
                 damage: 9.0
-        bunny_hop:
-            level 1:
-                # Control how powerful the jump is
-                jump_multiplier: 1.0
-                # Toggle if particles around the players wearing this enchant
-                particles: true

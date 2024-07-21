@@ -267,7 +267,7 @@ public class DeathParade extends DestructionDisaster {
 				str = "&c"+str;
 			else if (level == 6)
 				str = "&4"+str;
-			str = Utils.chat(str.replace("%level%", level+"").replace("%player%", p.getName()));
+			str = Utils.convertString(str.replace("%level%", level+"").replace("%player%", p.getName()));
 			if (configFile.getBoolean("messages.disaster_tips"))
 				str += "\n"+type.getTip();
 			for (Player all : location.getWorld().getPlayers())

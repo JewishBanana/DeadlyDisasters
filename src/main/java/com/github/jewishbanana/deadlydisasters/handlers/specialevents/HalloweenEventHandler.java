@@ -68,11 +68,11 @@ public class HalloweenEventHandler extends SpecialEvent implements Listener {
 		}
 	}
 	public void openGUI(Player player) {
-		Inventory inv = Bukkit.createInventory(null, 27, Utils.chat("&9DeadlyDisasters Halloween Event"));
+		Inventory inv = Bukkit.createInventory(null, 27, Utils.convertString("&9DeadlyDisasters Halloween Event"));
 		ItemStack glass = Utils.createItem(Material.GRAY_STAINED_GLASS_PANE, 1, " ", null, false, true);
 		for (int i=0; i < 27; i++)
 			inv.setItem(i, glass);
-		inv.setItem(4, Utils.createItem(Material.NETHER_STAR, 1, Utils.chat("&6"+Languages.getString("halloween.infoItem")), Arrays.asList(Utils.chat("&a"+Languages.getString("halloween.infoItemLore"))), false, true));
+		inv.setItem(4, Utils.createItem(Material.NETHER_STAR, 1, Utils.convertString("&6"+Languages.getString("halloween.infoItem")), Arrays.asList(Utils.convertString("&a"+Languages.getString("halloween.infoItemLore"))), false, true));
 		inv.setItem(10, ItemsHandler.cursedFlesh);
 		inv.setItem(11, ItemsHandler.vampireFang);
 		inv.setItem(12, ItemsHandler.candyCorn);
@@ -88,7 +88,7 @@ public class HalloweenEventHandler extends SpecialEvent implements Listener {
 	public void onJoin(PlayerJoinEvent e) {
 		if (notify)
 			plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-				e.getPlayer().sendMessage(Languages.prefix+Utils.chat("&a"+Languages.getString("halloween.eventMessage")));
+				e.getPlayer().sendMessage(Languages.prefix+Utils.convertString("&a"+Languages.getString("halloween.eventMessage")));
 			}, 20);
 	}
 	@EventHandler

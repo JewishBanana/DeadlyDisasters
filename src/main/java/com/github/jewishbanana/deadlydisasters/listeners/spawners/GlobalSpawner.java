@@ -33,8 +33,8 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.inventory.ItemStack;
 
 import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
-import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
 import com.github.jewishbanana.deadlydisasters.entities.christmasentities.Elf;
 import com.github.jewishbanana.deadlydisasters.entities.christmasentities.Frosty;
 import com.github.jewishbanana.deadlydisasters.entities.christmasentities.Grinch;
@@ -73,7 +73,6 @@ import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 public class GlobalSpawner implements Listener {
 	
 	private Main plugin;
-	private EntityHandler handler;
 	private Random rand;
 	private boolean spawnChristmas;
 	private static List<CustomEntityType> types;
@@ -297,96 +296,96 @@ public class GlobalSpawner implements Listener {
 			case ENDTOTEM:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.WITHER_SKELETON);
 				entity.getEquipment().setItemInMainHand(new ItemStack(Material.AIR));
-				handler.addEntity(new EndTotem(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new EndTotem(entity, plugin, rand));
 				return;
 			case BABYENDTOTEM:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.WOLF);
-				handler.addEntity(new BabyEndTotem(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new BabyEndTotem(entity, plugin, rand));
 				return;
 			case ENDWORM:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-				handler.addEntity(new EndWorm(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new EndWorm(entity, plugin, rand));
 				return;
 			case VOIDARCHER:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SKELETON);
-				handler.addEntity(new VoidArcher(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new VoidArcher(entity, plugin, rand));
 				return;
 			case VOIDGUARDIAN:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-				handler.addEntity(new VoidGuardian(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new VoidGuardian(entity, plugin, rand));
 				return;
 			case VOIDSTALKER:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.PHANTOM);
-				handler.addEntity(new VoidStalker(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new VoidStalker(entity, plugin, rand));
 				return;
 			case LOSTSOUL:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.VEX);
-				handler.addEntity(new LostSoul(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new LostSoul(entity, plugin, rand));
 				return;
 			case SOULREAPER:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SKELETON);
-				handler.addEntity(new SoulReaper(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new SoulReaper(entity, plugin, rand));
 				return;
 			case ANCIENTMUMMY:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.HUSK);
-				handler.addEntity(new AncientMummy(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new AncientMummy(entity, plugin, rand));
 				return;
 			case ANCIENTSKELETON:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SKELETON);
-				handler.addEntity(new AncientSkeleton(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new AncientSkeleton(entity, plugin, rand));
 				return;
 			case PRIMEDCREEPER:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.CREEPER);
-				handler.addEntity(new PrimedCreeper(entity, plugin));
+				CustomEntity.handler.addEntity(new PrimedCreeper(entity, plugin));
 				return;
 			case SKELETONKNIGHT:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SKELETON);
-				handler.addEntity(new SkeletonKnight((Skeleton) entity, plugin));
+				CustomEntity.handler.addEntity(new SkeletonKnight((Skeleton) entity, plugin));
 				return;
 			case DARKMAGE:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				entity.getEquipment().setHelmet(new ItemStack(Material.DIAMOND_HELMET));
-				handler.addEntity(new DarkMage(entity, plugin));
+				CustomEntity.handler.addEntity(new DarkMage(entity, plugin));
 			case TUNNELLER:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-				handler.addEntity(new TunnellerZombie((Zombie) entity, null, plugin));
+				CustomEntity.handler.addEntity(new TunnellerZombie((Zombie) entity, null, plugin));
 				return;
 			case YETI:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.IRON_GOLEM);
-				handler.addEntity(new Yeti(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new Yeti(entity, plugin, rand));
 				return;
 			case CURSEDDIVER:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.DROWNED);
-				handler.addEntity(new CursedDiver(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new CursedDiver(entity, plugin, rand));
 				return;
 			case INFESTEDCREEPER:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.CREEPER);
-				handler.addEntity(new InfestedCreeper((Creeper) entity, plugin));
+				CustomEntity.handler.addEntity(new InfestedCreeper((Creeper) entity, plugin));
 				return;
 			case INFESTEDDEVOURER:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-				handler.addEntity(new InfestedDevourer((Zombie) entity, plugin, rand));
+				CustomEntity.handler.addEntity(new InfestedDevourer((Zombie) entity, plugin, rand));
 				return;
 			case INFESTEDENDERMAN:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ENDERMAN);
-				handler.addEntity(new InfestedEnderman(entity, plugin));
+				CustomEntity.handler.addEntity(new InfestedEnderman(entity, plugin));
 				return;
 			case INFESTEDHOWLER:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-				handler.addEntity(new InfestedHowler((Zombie) entity, plugin, rand));
+				CustomEntity.handler.addEntity(new InfestedHowler((Zombie) entity, plugin, rand));
 				return;
 			case INFESTEDSKELETON:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.WITHER_SKELETON);
-				handler.addEntity(new InfestedSkeleton(entity, plugin));
+				CustomEntity.handler.addEntity(new InfestedSkeleton(entity, plugin));
 				return;
 			case INFESTEDSPIRIT:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.VEX);
-				handler.addEntity(new InfestedSpirit(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new InfestedSpirit(entity, plugin, rand));
 				return;
 			case INFESTEDTRIBESMAN:
 				for (int i=0; i < 4; i++) {
 					entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-					handler.addEntity(new InfestedTribesman((Zombie) entity, plugin, rand));
+					CustomEntity.handler.addEntity(new InfestedTribesman((Zombie) entity, plugin, rand));
 				}
 				return;
 			case INFESTEDWORM:
@@ -416,43 +415,43 @@ public class GlobalSpawner implements Listener {
 							oppositeFace = BlockFace.EAST;
 							break;
 						}
-						handler.addFalseEntity(new InfestedWorm(loc.getBlock().getRelative(face), oppositeFace, plugin, rand));
+						CustomEntity.handler.addFalseEntity(new InfestedWorm(loc.getBlock().getRelative(face), oppositeFace, plugin, rand));
 						return;
 					}
 				return;
 			case INFESTEDZOMBIE:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-				handler.addEntity(new InfestedZombie(entity, plugin));
+				CustomEntity.handler.addEntity(new InfestedZombie(entity, plugin));
 				return;
 			case FIREPHANTOM:
 				entity = (Mob) loc.getWorld().spawnEntity(loc.clone().add(0,10,0), EntityType.PHANTOM);
-				handler.addEntity(new FirePhantom(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new FirePhantom(entity, plugin, rand));
 				return;
 			case SHADOWLEECH:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-				handler.addEntity(new ShadowLeech((Zombie) entity, plugin, rand));
+				CustomEntity.handler.addEntity(new ShadowLeech((Zombie) entity, plugin, rand));
 				return;
 			case ZOMBIEKNIGHT:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-				handler.addEntity(new ZombieKnight((Zombie) entity, plugin));
+				CustomEntity.handler.addEntity(new ZombieKnight((Zombie) entity, plugin));
 				return;
 			case SWAMPBEAST:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-				handler.addEntity(new SwampBeast(entity, plugin));
+				CustomEntity.handler.addEntity(new SwampBeast(entity, plugin));
 				return;
 			case CHRISTMASELF:
 				for (int i=0; i < 3; i++) {
 					entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-					handler.addEntity(new Elf((Zombie) entity, plugin, rand));
+					CustomEntity.handler.addEntity(new Elf((Zombie) entity, plugin, rand));
 				}
 				return;
 			case FROSTY:
 				entity = loc.getWorld().spawn(loc, Snowman.class);
-				handler.addEntity(new Frosty((Snowman) entity, plugin, rand));
+				CustomEntity.handler.addEntity(new Frosty((Snowman) entity, plugin, rand));
 				return;
 			case GRINCH:
 				entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-				handler.addEntity(new Grinch(entity, plugin, rand));
+				CustomEntity.handler.addEntity(new Grinch(entity, plugin, rand));
 				return;
 			default:
 				return;

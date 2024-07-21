@@ -1,11 +1,13 @@
 package com.github.jewishbanana.deadlydisasters.utils;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,12 +19,15 @@ import java.util.Random;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.DyeColor;
 import org.bukkit.GameMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
@@ -68,6 +73,7 @@ import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.listeners.CoreListener;
+import com.github.jewishbanana.deadlydisasters.listeners.LootGenerateListener;
 import com.github.jewishbanana.deadlydisasters.listeners.TownyListener;
 import com.github.jewishbanana.deadlydisasters.listeners.spawners.GlobalSpawner;
 
@@ -86,7 +92,7 @@ public class Utils {
 	private static net.coreprotect.CoreProtectAPI coreProtect;
 	private static com.palmergames.bukkit.towny.TownyAPI townyapi;
 	private static me.ryanhamshire.GriefPrevention.DataStore grief;
-	private static me.angeschossen.lands.api.integration.LandsIntegration landsclaims;
+	private static me.angeschossen.lands.api.LandsIntegration landsclaims;
 	
 	private static Sound startSound;
 	private static float[] startSoundModifiers;
@@ -96,8 +102,38 @@ public class Utils {
 	private static Set<Material> gravityBlocks = new HashSet<>(Arrays.asList(Material.GRAVEL, Material.SAND, Material.RED_SAND, Material.DRAGON_EGG, Material.BLACK_CONCRETE_POWDER, Material.BLUE_CONCRETE_POWDER, Material.BROWN_CONCRETE_POWDER, Material.CYAN_CONCRETE_POWDER, Material.GRAY_CONCRETE_POWDER, Material.GREEN_CONCRETE_POWDER, Material.LIGHT_BLUE_CONCRETE_POWDER, Material.LIGHT_GRAY_CONCRETE_POWDER, Material.LIME_CONCRETE_POWDER, Material.MAGENTA_CONCRETE_POWDER, Material.ORANGE_CONCRETE_POWDER, Material.PINK_CONCRETE_POWDER, Material.PURPLE_CONCRETE_POWDER, Material.RED_CONCRETE_POWDER, Material.WHITE_CONCRETE_POWDER, Material.YELLOW_CONCRETE_POWDER));
 	
 	private static DecimalFormat decimalFormat;
+	private static boolean usingSpigot;
+	private static Pattern hexPattern;
+	private static Map<DyeColor, ChatColor> dyeChatMap;
+	
 	static {
+		hexPattern = Pattern.compile("\\(hex:#[a-fA-F0-9]{6}\\)");
 		decimalFormat = new DecimalFormat("0.0");
+		
+		dyeChatMap = new HashMap<>();
+		dyeChatMap.put(DyeColor.BLACK, ChatColor.BLACK);
+		dyeChatMap.put(DyeColor.BLUE, ChatColor.DARK_BLUE);
+		dyeChatMap.put(DyeColor.BROWN, ChatColor.GOLD);
+		dyeChatMap.put(DyeColor.CYAN, ChatColor.AQUA);
+		dyeChatMap.put(DyeColor.GRAY, ChatColor.DARK_GRAY);
+		dyeChatMap.put(DyeColor.GREEN, ChatColor.DARK_GREEN);
+		dyeChatMap.put(DyeColor.LIGHT_BLUE, ChatColor.BLUE);
+		dyeChatMap.put(DyeColor.LIGHT_GRAY, ChatColor.GRAY);
+		dyeChatMap.put(DyeColor.LIME, ChatColor.GREEN);
+		dyeChatMap.put(DyeColor.MAGENTA, ChatColor.LIGHT_PURPLE);
+		dyeChatMap.put(DyeColor.ORANGE, ChatColor.GOLD);
+		dyeChatMap.put(DyeColor.PINK, ChatColor.LIGHT_PURPLE);
+		dyeChatMap.put(DyeColor.PURPLE, ChatColor.DARK_PURPLE);
+		dyeChatMap.put(DyeColor.RED, ChatColor.DARK_RED);
+		dyeChatMap.put(DyeColor.WHITE, ChatColor.WHITE);
+		dyeChatMap.put(DyeColor.YELLOW, ChatColor.YELLOW);
+		
+		try {
+	        Class.forName("org.bukkit.entity.Player$Spigot");
+	        usingSpigot = true;
+	    } catch (Throwable tr) {
+	    	usingSpigot = false;
+	    }
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -118,7 +154,7 @@ public class Utils {
 				if (GriefB)
 					grief = me.ryanhamshire.GriefPrevention.GriefPrevention.instance.dataStore;
 				if (LandsB)
-					landsclaims = new me.angeschossen.lands.api.integration.LandsIntegration(plugin);
+					landsclaims = me.angeschossen.lands.api.LandsIntegration.of(plugin);
 			}
 		}, 1);
 		
@@ -139,8 +175,26 @@ public class Utils {
 		
 		gravityBlocks.addAll(Tag.ANVIL.getValues());
 	}
-	public static String chat(String s) {
-		return ChatColor.translateAlternateColorCodes('&', s);
+	public static String convertString(String text) {
+		if (text == null)
+			return null;
+		String s = text;
+		Matcher match = hexPattern.matcher(s);
+		if (usingSpigot) {
+		    while (match.find()) {
+		        String color = s.substring(match.start(), match.end());
+		        s = s.replace(color, net.md_5.bungee.api.ChatColor.of(color.substring(5, color.length()-1))+"");
+		        match = hexPattern.matcher(s);
+		    }
+		    return net.md_5.bungee.api.ChatColor.translateAlternateColorCodes('&', s);
+		}
+	    while (match.find()) {
+	        String color = s.substring(match.start(), match.end());
+	        Color col = Color.decode(color);
+	        s = s.replace(color, dyeChatMap.getOrDefault(DyeColor.getByColor(org.bukkit.Color.fromRGB(col.getRed(), col.getGreen(), col.getBlue())), ChatColor.WHITE)+"");
+	        match = hexPattern.matcher(s);
+	    }
+	    return ChatColor.translateAlternateColorCodes('&', s);
 	}
 	public static void broadcastEvent(int level, String category, Disaster type, World world) {
 		if (level > 5) level = 5;
@@ -195,7 +249,7 @@ public class Utils {
 	public static me.ryanhamshire.GriefPrevention.DataStore getGriefPrevention() {
 		return grief;
 	}
-	public static me.angeschossen.lands.api.integration.LandsIntegration getLandsClaims() {
+	public static me.angeschossen.lands.api.LandsIntegration getLandsClaims() {
 		return landsclaims;
 	}
 	public static void reloadVariables() {
@@ -205,7 +259,7 @@ public class Utils {
 			try {
 				startSound = Sound.valueOf(plugin.getConfig().getString("messages.start_sound.sound").toUpperCase());
 			} catch (Exception e) {
-				Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: There is no sound with the name &d'"+plugin.getConfig().getString("messages.start_sound.sound")+"' &ein the config at:\nmessages:\n    start_sound:\n        sound: "+plugin.getConfig().getString("messages.start_sound.sound")));
+				Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: There is no sound with the name &d'"+plugin.getConfig().getString("messages.start_sound.sound")+"' &ein the config at:\nmessages:\n    start_sound:\n        sound: "+plugin.getConfig().getString("messages.start_sound.sound")));
 			}
 			try {
 				startSoundModifiers = new float[] {(float) plugin.getConfig().getDouble("messages.start_sound.volume"), (float) plugin.getConfig().getDouble("messages.start_sound.pitch")};
@@ -410,11 +464,11 @@ public class Utils {
 	}
 	public static boolean isZoneProtected(Location loc) {
 		return (WorldObject.findWorldObject(loc.getWorld()).protectRegions && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null && townyapi.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true))
-				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.isClaimed(loc)) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
+				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.getArea(loc) != null) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
 	}
 	public static boolean isWeatherDisabled(Location loc, WeatherDisaster instance) {
 		return (instance.RegionWeather && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null && townyapi.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true))
-				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.isClaimed(loc)) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
+				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.getArea(loc) != null) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
 	}
 	public static Block getBlockAbove(Location location) {
 		Block b = location.getBlock();
@@ -613,7 +667,7 @@ public class Utils {
 			return null;
 		String s = text;
 		if (!s.contains("(hex:"))
-			return chat(s);
+			return convertString(s);
 		while (s.contains("(hex:")) {
 			String hex = s.substring(s.indexOf("(hex:")+5);
 			s = s.substring(0, s.indexOf("(hex:")) + net.md_5.bungee.api.ChatColor.of(hex.substring(0, hex.indexOf(")"))) + hex.substring(hex.indexOf(")")+1);
@@ -775,7 +829,7 @@ public class Utils {
 		return null;
 	}
 	public static void sendDebugMessage() {
-		Main.consoleSender.sendMessage(Utils.chat("&c[DeadlyDisasters]: An error has occurred above this message. Please report the full error to the discord https://discord.gg/MhXFj72VeN"));
+		Main.consoleSender.sendMessage(Utils.convertString("&c[DeadlyDisasters]: An error has occurred above this message. Please report the full error to the discord https://discord.gg/MhXFj72VeN"));
 	}
 	public static void reloadPlugin(Main plugin) {
 		CoreListener.reload(plugin);
@@ -794,6 +848,7 @@ public class Utils {
 			plugin.seasonsHandler.reload(plugin);
 		CustomDropsFactory.reload(plugin);
 		GlobalSpawner.reload(plugin);
+		LootGenerateListener.reload(plugin);
 	}
 	public static void easterEgg() {
 		if (plugin.random.nextInt(999999) != 500)
@@ -882,7 +937,7 @@ public class Utils {
 	public static ItemStack createItem(Material type, int amount, String name, List<String> lore, boolean enchanted, boolean hideAttributes) {
 		ItemStack item = new ItemStack(type, amount);
 		ItemMeta meta = item.getItemMeta();
-		meta.setDisplayName(Utils.chat(name));
+		meta.setDisplayName(Utils.convertString(name));
 		if (lore != null) {
 			List<String> temp = new ArrayList<>();
 			for (String s : lore)
@@ -901,7 +956,7 @@ public class Utils {
 	}
 	public static ItemStack createItem(ItemStack item, int amount, String name, List<String> lore, boolean enchanted, boolean hideAttributes) {
 		ItemMeta meta = item.getItemMeta();
-		meta.setDisplayName(Utils.chat(name));
+		meta.setDisplayName(Utils.convertString(name));
 		if (lore != null) {
 			List<String> temp = new ArrayList<>();
 			for (String s : lore)
@@ -922,7 +977,7 @@ public class Utils {
 		List<String> tempLore = new ArrayList<>();
 		if (lore != null)
 			for (String line : lore) {
-				line = Utils.chat(line);
+				line = Utils.convertString(line);
 				int offset = 0;
 				for (int i=0; i < line.length(); i++)
 					if (line.charAt(i) == ChatColor.COLOR_CHAR)
@@ -932,14 +987,14 @@ public class Utils {
 					int c = 0;
 					for (int i=max_length; i > 0; i--) {
 						if (i == 0) {
-							tempLore.add(Utils.chat(ChatColor.getLastColors(line.substring(0, c))+line.substring(c)));
+							tempLore.add(Utils.convertString(ChatColor.getLastColors(line.substring(0, c))+line.substring(c)));
 							break;
 						}
 						if (line.charAt(i) == ' ') {
-							tempLore.add(Utils.chat(ChatColor.getLastColors(line.substring(0, c+1))+line.substring(c, i)));
+							tempLore.add(Utils.convertString(ChatColor.getLastColors(line.substring(0, c+1))+line.substring(c, i)));
 							c += i-c+1;
 							if (i+max_length >= line.length()) {
-								tempLore.add(Utils.chat(ChatColor.getLastColors(line.substring(0, c))+line.substring(c, line.length())));
+								tempLore.add(Utils.convertString(ChatColor.getLastColors(line.substring(0, c))+line.substring(c, line.length())));
 								break;
 							}
 							i = c+max_length;
@@ -1151,18 +1206,13 @@ public class Utils {
 	public static double clamp(double value, double min, double max) {
 		return value < min ? min : value > max ? max : value;
 	}
-//	@SuppressWarnings("unchecked")
-//	public static <T> T lotterySet(Object[]... objects) {
-//		double sum = 0.0;
-//		for (Object[] i : objects)
-//			sum += (double) i[1];
-//		double num = rand.nextDouble()*(sum+1);
-//		sum = 0.0;
-//		for (Object[] i : objects) {
-//			sum += (double) i[1];
-//			if (num <= sum)
-//				return (T) i[0];
-//		}
-//		return null;
-//	}
+	public static List<ItemStack> createIngredients(Collection<Material> materials) {
+		List<ItemStack> list = new ArrayList<>();
+		for (Material material : materials)
+			list.add(new ItemStack(material));
+		return list;
+	}
+	public static boolean isSpigot() {
+		return usingSpigot;
+	}
 }

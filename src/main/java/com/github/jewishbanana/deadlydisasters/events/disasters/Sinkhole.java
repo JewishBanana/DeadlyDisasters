@@ -17,6 +17,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
@@ -43,6 +44,7 @@ public class Sinkhole extends DestructionDisaster {
 	public int maxD,blocksDestroyed;
 	private double radius = 0, size;
 	public Random rand;
+	public boolean placeLava;
 	
 	public Map<Block,Integer> liquidBlocks = new HashMap<>();
 	
@@ -55,6 +57,7 @@ public class Sinkhole extends DestructionDisaster {
 		this.speed = configFile.getInt("sinkhole.speed");
 		this.size = configFile.getDouble("sinkhole.size");
 		this.volume = configFile.getDouble("sinkhole.volume");
+		this.placeLava = configFile.getBoolean("sinkhole.place_lava");
 		switch (level) {
 		default:
 		case 1:
@@ -275,7 +278,7 @@ class Places {
 			b = b.getRelative(BlockFace.DOWN);
 			if (depth <= 0) {
 				classInstance.blockToBlock.put(memory, b);
-				if (b.getLocation().getBlockY() < (classInstance.maxD + 15)) {
+				if (classInstance.placeLava && b.getWorld().getEnvironment() != Environment.THE_END && b.getLocation().getBlockY() < (classInstance.maxD + 15)) {
 					classInstance.addBlockToList(b, b.getState());
 					b.setType(Material.LAVA);
 					classInstance.blocksDestroyed++;

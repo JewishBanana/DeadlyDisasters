@@ -62,7 +62,7 @@ public class BlackPlague extends WeatherDisaster {
 			if (typeList.contains(s.toUpperCase()))
 				blacklisted.add(EntityType.valueOf(s.toUpperCase()));
 			else if (plugin.debug)
-				Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Unreconized entity &d'"+s+"' &ein config under \nplague:\n    blacklisted_mobs:\n        "+s));
+				Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: Unreconized entity &d'"+s+"' &ein config under \nplague:\n    blacklisted_mobs:\n        "+s));
 		priorities.addAll(Arrays.asList(EntityType.VILLAGER, EntityType.ZOMBIE));
 		if (plugin.mcVersion >= 1.14)
 			priorities.add(EntityType.WANDERING_TRADER);
@@ -75,7 +75,7 @@ public class BlackPlague extends WeatherDisaster {
 		this.world = world;
 		updateWeatherSettings();
 		if (broadcastAllowed && (boolean) WorldObject.findWorldObject(world).settings.get("event_broadcast")) {
-			String str = Utils.chat(configFile.getString("messages.misc.plague.started"));
+			String str = Utils.convertString(configFile.getString("messages.misc.plague.started"));
 			if (configFile.getBoolean("messages.disaster_tips"))
 				str += "\n"+type.getTip();
 			for (Player players : world.getPlayers())
@@ -152,7 +152,7 @@ public class BlackPlague extends WeatherDisaster {
 								if (near instanceof Player) {
 									if (Utils.isPlayerImmune((Player) near))
 										continue;
-									((Player) near).sendMessage(Utils.chat("&c"+Languages.getString("misc.plagueCatch")));
+									((Player) near).sendMessage(Utils.convertString("&c"+Languages.getString("misc.plagueCatch")));
 									infectedPlayers.add(near.getUniqueId());
 								}
 								temp.put(near.getUniqueId(), 300);

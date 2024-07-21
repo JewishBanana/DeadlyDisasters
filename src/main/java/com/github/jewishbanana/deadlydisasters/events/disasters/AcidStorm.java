@@ -34,7 +34,6 @@ import org.bukkit.entity.Slime;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
@@ -43,9 +42,9 @@ import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.events.Disaster;
 import com.github.jewishbanana.deadlydisasters.events.WeatherDisaster;
 import com.github.jewishbanana.deadlydisasters.events.WeatherDisasterEvent;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
@@ -92,9 +91,9 @@ public class AcidStorm extends WeatherDisaster {
 				else if (configFile.getString("acidstorm.block_changes."+material).toLowerCase().equals("air"))
 					blockChanges.putIfAbsent(Material.getMaterial(material.toUpperCase()), Material.AIR);
 				else
-					Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Could not find material &c'"+configFile.getString("acidstorm.block_changes."+material)+"' &eon line &d'"+material+" : "+configFile.getString("acidstorm.block_changes."+material)+"' &ein acidstorm block changes section in the config!"));
+					Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: Could not find material &c'"+configFile.getString("acidstorm.block_changes."+material)+"' &eon line &d'"+material+" : "+configFile.getString("acidstorm.block_changes."+material)+"' &ein acidstorm block changes section in the config!"));
 			} else
-				Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Could not find material &c'"+material+"' &eon line &d'"+material+" : "+configFile.getString("acidstorm.block_changes."+material)+"' &ein acidstorm block changes section in the config!"));
+				Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: Could not find material &c'"+material+"' &eon line &d'"+material+" : "+configFile.getString("acidstorm.block_changes."+material)+"' &ein acidstorm block changes section in the config!"));
 		
 		this.type = Disaster.ACIDSTORM;
 	}
@@ -141,7 +140,7 @@ public class AcidStorm extends WeatherDisaster {
 							if (all instanceof Slime || all.isDead())
 								continue;
 							LivingEntity e = (LivingEntity) all;
-							if (e.getEquipment().getHelmet() != null && e.getEquipment().getHelmet().hasItemMeta() && e.getEquipment().getHelmet().getItemMeta().getPersistentDataContainer().has(ItemsHandler.basicCoatingKey, PersistentDataType.BYTE))
+							if (DependencyUtils.getBasicCoatingLevel(e.getEquipment().getHelmet()) != 0)
 								continue;
 							if (all instanceof Player) {
 								if (Utils.isPlayerImmune((Player) all))
@@ -281,7 +280,7 @@ public class AcidStorm extends WeatherDisaster {
 							}
 							addBlockWithTopToListAsync(b, b.getState());
 							changes.put(b, material);
-							world.playSound(b.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, (float) (0.1*volume), 2);
+							plugin.getServer().getScheduler().runTask(plugin, () -> world.playSound(b.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, (float) (0.1*volume), 2));
 						}
 				}
 				plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
@@ -365,7 +364,7 @@ public class AcidStorm extends WeatherDisaster {
 								break;
 							} catch (ClassCastException e) {
 								it.remove();
-								Main.consoleSender.sendMessage(Utils.chat("&c[DeadlyDisasters]: Error block type "+b.getType()+" could not be cast to Ageable!"));
+								Main.consoleSender.sendMessage(Utils.convertString("&c[DeadlyDisasters]: Error block type "+b.getType()+" could not be cast to Ageable!"));
 								Utils.sendDebugMessage();
 								continue;
 							} catch (Exception ex) {

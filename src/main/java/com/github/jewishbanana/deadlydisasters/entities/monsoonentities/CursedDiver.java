@@ -21,6 +21,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
@@ -32,8 +33,8 @@ import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Monsoon;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
@@ -62,7 +63,10 @@ public class CursedDiver extends CustomEntity {
 		entity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(entityType.getDamage());
 		entity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(.3);
 		entity.getAttribute(Attribute.GENERIC_FOLLOW_RANGE).setBaseValue(40);
-		entity.getEquipment().setItemInMainHand(ItemsHandler.poseidonsTrident);
+		if (DependencyUtils.isUltimateContentEnabled())
+			entity.getEquipment().setItemInMainHand(com.github.jewishbanana.uiframework.items.ItemType.getItemType(com.github.jewishbanana.ultimatecontent.items.weapons.TritonsFang.REGISTERED_KEY).getBuilder().getItem());
+		else
+			entity.getEquipment().setItemInMainHand(new ItemStack(Material.TRIDENT));
 		
 		if (entity.getCustomName() == null)
 			entity.setCustomName(Languages.getString("entities.cursedDiver"));

@@ -566,7 +566,7 @@ achievements:
                             pitch: 1.5
                         xp: 500
                         rewards:
-                        - voidshard | 1
+                        - dd:void_tear | 1
                     tier 4:
                         item: 'ender_eye'
                         amount: 4
@@ -580,9 +580,9 @@ achievements:
                             pitch: 1.25
                         xp: 1000
                         rewards:
-                        - voidswrath | 1
-                        - voidsedge | 1
-                        - voidshield | 1
+                        - ui:call_of_the_void | 1
+                        - ui:voids_edge | 1
+                        - ui:abyssal_shield | 1
                     tier 5:
                         item: 'ender_eye'
                         amount: 5

@@ -30,7 +30,7 @@ import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Supernova extends DestructionDisaster {
 	
-	private double size,sizeMultiplier,particleMultiplier;
+	private double size,sizeMultiplier,particleMultiplier,fallSpeedMultiplier;
 	private int tick = 1;
 	private EnderCrystal crystal;
 	private Particle particle;
@@ -70,6 +70,7 @@ public class Supernova extends DestructionDisaster {
 		if (!configFile.getBoolean("supernova.place_fire"))
 			materials = new Material[]{Material.OBSIDIAN, Material.BLACK_CONCRETE};
 		farParticles = configFile.getBoolean("supernova.far_particles");
+		this.fallSpeedMultiplier = configFile.getDouble("supernova.fall_speed_multiplier");
 		this.type = Disaster.SUPERNOVA;
 	}
 	@Override
@@ -88,7 +89,7 @@ public class Supernova extends DestructionDisaster {
 		crystal = world.spawn(crystalLoc, EnderCrystal.class);
 		crystal.setShowingBottom(false);
 		crystal.setBeamTarget(top);
-		Vector vec = new Vector(0,-2,0);
+		Vector vec = new Vector(0,(-2.0 * fallSpeedMultiplier),0);
 		addPlayersToSurvivalChannel(loc, size, survivingPlayers);
 		new RepeatingTask(plugin, 0, 1) {
 			@Override

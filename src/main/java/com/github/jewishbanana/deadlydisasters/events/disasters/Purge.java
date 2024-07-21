@@ -76,7 +76,7 @@ public class Purge extends DestructionDisaster {
 		barColor = BarColor.RED;
 		spawnDistance = configFile.getInt("purge.spawn_distance");
 		despawnSpeed = configFile.getInt("purge.despawn_speed");
-		endMessage = Utils.chat(configFile.getString("messages.misc.purge.ended"));
+		endMessage = Utils.convertString(configFile.getString("messages.misc.purge.ended"));
 		volume = configFile.getDouble("purge.volume");
 		spawnSpeed = 60 - (8 * (level - 1));
 		
@@ -113,7 +113,7 @@ public class Purge extends DestructionDisaster {
 		if (!targetedPlayers.contains(playerUUID))
 			targetedPlayers.add(playerUUID);
 		if (showBar) {
-			bar = Bukkit.createBossBar(Utils.chat(barTitle), barColor, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
+			bar = Bukkit.createBossBar(Utils.convertString(barTitle), barColor, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
 			bar.addPlayer(p);
 		}
 		p.playSound(p.getLocation(), Sound.EVENT_RAID_HORN, (float) (100 * volume), 0.1f);
@@ -143,7 +143,7 @@ public class Purge extends DestructionDisaster {
 					bar.removeAll();
 					targetedPlayers.remove(playerUUID);
 					DeathMessages.purges.remove(instance);
-					player.sendMessage(Utils.chat(endMessage));
+					player.sendMessage(Utils.convertString(endMessage));
 					for (Entity e : player.getNearbyEntities(30, 30, 30))
 						if (e instanceof Player)
 							e.sendMessage(endMessage);
@@ -337,7 +337,7 @@ public class Purge extends DestructionDisaster {
 				str = "&c"+str;
 			else if (level == 6)
 				str = "&4"+str;
-			str = Utils.chat(str.replace("%level%", level+"").replace("%player%", p.getName()));
+			str = Utils.convertString(str.replace("%level%", level+"").replace("%player%", p.getName()));
 			if (configFile.getBoolean("messages.disaster_tips"))
 				str += "\n"+type.getTip();
 			for (Player all : location.getWorld().getPlayers())

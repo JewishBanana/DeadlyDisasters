@@ -175,7 +175,7 @@ public enum CustomEntityType {
 		try {
 			yaml.save(new File(plugin.getDataFolder().getAbsolutePath(), "entities.yml"));
 		} catch (IOException e) {
-			Main.consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cError #00 Unable to save data file!"));
+			Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cError #00 Unable to save data file!"));
 		}
 	}
 	public double getHealth() {

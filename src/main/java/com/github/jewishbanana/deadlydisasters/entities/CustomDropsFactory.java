@@ -13,12 +13,27 @@ import org.bukkit.inventory.ItemStack;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class CustomDropsFactory {
 	
 	private static boolean allowDrops;
 	private static Map<String,Queue<CustomDrop>> dropMap = new HashMap<>();
+	public static Map<String, String> changesMap;
+	public static boolean warnedItems;
+	static {
+		changesMap = Map.of(
+				"voidshard", "dd:void_tear",
+				"voidswrath", "ui:call_of_the_void",
+				"voidsedge", "ui:voids_edge",
+				"voidshield", "ui:abyssal_shield",
+				"ancientcloth", "ui:ancient_cloth",
+				"ancientbone", "ui:ancient_bone",
+				"yetifur", "ui:yeti_fur",
+				"poseidonstrident", "ui:tritons_fang",
+				"goldenegg", "ui:golden_egg");
+	}
 
 	public static void generateDrops(Location loc, CustomEntityType type) {
 		if (allowDrops)
@@ -34,18 +49,33 @@ public class CustomDropsFactory {
 		dropMap.clear();
 		allowDrops = CustomEntityType.yaml.getBoolean("settings.allow_custom_drops");
 		Random rand = new Random();
+		warnedItems = false;
 		for (CustomEntityType temp : CustomEntityType.values()) {
 			dropMap.put(temp.species, new ArrayDeque<CustomDrop>());
 			for (String s : temp.getDropsList()) {
 				s = s.replaceAll("\\s+", "");
 				ItemStack item = null;
-				if (ItemsHandler.allItems.containsKey(s.substring(0, s.indexOf('|'))))
-					item = ItemsHandler.allItems.get(s.substring(0, s.indexOf('|')));
-				else if (Material.getMaterial(s.substring(0, s.indexOf('|')).toUpperCase()) != null)
-					item = new ItemStack(Material.getMaterial(s.substring(0, s.indexOf('|')).toUpperCase()));
-				else {
+				String itemName = s.substring(0, s.indexOf('|'));
+				if (ItemsHandler.allItems.containsKey(itemName))
+					item = ItemsHandler.allItems.get(itemName);
+				else if (DependencyUtils.isUIFrameworkEnabled()) {
+					String uiName = changesMap.containsKey(itemName) ? changesMap.get(itemName) : itemName;
+					if (com.github.jewishbanana.uiframework.items.ItemType.getItemType(uiName) != null)
+						item = com.github.jewishbanana.uiframework.items.ItemType.getItemType(uiName).getBuilder().getItem();
+					else if (DependencyUtils.isUltimateContentEnabled() && com.github.jewishbanana.uiframework.items.ItemType.getItemType(uiName) != null)
+						item = com.github.jewishbanana.uiframework.items.ItemType.getItemType(uiName).getBuilder().getItem();
+				} else if (changesMap.containsKey(itemName) || changesMap.containsValue(itemName)) {
+					if (!warnedItems) {
+						Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: &bYou have custom drop items in your entities.yml class that are a part of UltimateContent! If you want these custom items then download UltimateContent to your server."));
+						warnedItems = true;
+					}
+					continue;
+				}
+				if (item == null && Material.getMaterial(itemName.toUpperCase()) != null)
+					item = new ItemStack(Material.getMaterial(itemName.toUpperCase()));
+				if (item == null) {
 					if (plugin.debug)
-						Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Item &d'"+s.substring(0, s.indexOf('|'))+"' &edoes not exist in config at &c"+temp.configPath+".drops"));
+						Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: Item &d'"+s.substring(0, s.indexOf('|'))+"' &edoes not exist in config at &c"+temp.configPath+".drops"));
 					continue;
 				}
 				s = s.substring(s.indexOf('|')+1);
@@ -54,7 +84,7 @@ public class CustomDropsFactory {
 					chance = Double.parseDouble(s.substring(0, s.indexOf('|'))) / 100;
 				} catch (NumberFormatException e) {
 					if (plugin.debug)
-						Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: &d'"+s.substring(0, s.indexOf('|'))+"' &eis not a valid double in config at &c"+temp.configPath+".drops"));
+						Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: &d'"+s.substring(0, s.indexOf('|'))+"' &eis not a valid double in config at &c"+temp.configPath+".drops"));
 					continue;
 				}
 				s = s.substring(s.indexOf('|')+1);
@@ -64,12 +94,13 @@ public class CustomDropsFactory {
 					max = Integer.parseInt(s.substring(s.indexOf('-')+1));
 				} catch (NumberFormatException e) {
 					if (plugin.debug)
-						Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: &d'"+s+"' &einvalid integer min-max value in config at &c"+temp.configPath+".drops"));
+						Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: &d'"+s+"' &einvalid integer min-max value in config at &c"+temp.configPath+".drops"));
 					continue;
 				}
 				dropMap.get(temp.species).add(new CustomDrop(item, chance, min, max, rand));
 			}
 		}
+		warnedItems = false;
 	}
 }
 class CustomDrop {

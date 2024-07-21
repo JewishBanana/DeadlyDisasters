@@ -92,8 +92,8 @@ public enum Disaster {
 			if (obj == Disaster.CUSTOM)
 				continue;
 			if (obj != Disaster.PURGE) {
-				if (!Main.isSpigot())
-					obj.setLabel(Utils.chat(plugin.getConfig().getString(obj.name().toLowerCase()+".name")));
+				if (!Utils.isSpigot())
+					obj.setLabel(Utils.convertString(plugin.getConfig().getString(obj.name().toLowerCase()+".name")));
 				else
 					obj.setLabel(Utils.translateTextColor(plugin.getConfig().getString(obj.name().toLowerCase()+".name")));
 			}
@@ -104,7 +104,7 @@ public enum Disaster {
 			if (plugin.getConfig().contains(obj.name().toLowerCase()+".min_height"))
 				obj.setMinHeight(plugin.getConfig().getInt(obj.name().toLowerCase()+".min_height"));
 			if (Languages.langFile.contains("tips."+obj.name().toLowerCase()))
-				obj.setTip(Utils.chat("&7&o")+Languages.getString("tips."+obj.name().toLowerCase()));
+				obj.setTip(Utils.convertString("&7&o")+Languages.getString("tips."+obj.name().toLowerCase()));
 		}
 	}
 	public static Disaster forName(String name) {

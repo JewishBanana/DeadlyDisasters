@@ -26,8 +26,8 @@ import com.github.jewishbanana.deadlydisasters.entities.CustomDropsFactory;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 
 public class VoidArcher extends CustomEntity {
 	
@@ -55,7 +55,10 @@ public class VoidArcher extends CustomEntity {
 			armor[i].setItemMeta(meta);
 		}
 		entity.getEquipment().setArmorContents(armor);
-		entity.getEquipment().setItemInMainHand(ItemsHandler.voidswrath);
+		if (DependencyUtils.isUltimateContentEnabled())
+			entity.getEquipment().setItemInMainHand(com.github.jewishbanana.uiframework.items.ItemType.getItemType(com.github.jewishbanana.ultimatecontent.items.weapons.CallOfTheVoid.REGISTERED_KEY).getBuilder().getItem());
+		else
+			entity.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
 		EntityEquipment equip = entity.getEquipment();
 		equip.setHelmetDropChance(0);
 		equip.setChestplateDropChance(0);

@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.jewishbanana.deadlydisasters</groupId>
 	<artifactId>deadlydisasters</artifactId>
-	<version>14.3</version>
+	<version>14.4</version>
 	<name>DeadlyDisasters</name>
 
 	<build>
@@ -62,5 +62,11 @@
 			<version>1.6.2</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+	        <groupId>com.github.angeschossen</groupId>
+	        <artifactId>LandsAPI</artifactId>
+	        <version>7.6.1</version>
+	        <scope>provided</scope>
+	    </dependency>
 	</dependencies>
 </project>

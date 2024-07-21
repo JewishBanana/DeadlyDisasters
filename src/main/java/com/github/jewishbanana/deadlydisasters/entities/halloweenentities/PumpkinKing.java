@@ -115,7 +115,7 @@ public class PumpkinKing extends CustomEntity {
 			entity.setCustomName(Languages.getString("halloween.pumpkinKing"));
 		
 		step = entity.getLocation();
-		bar = Bukkit.createBossBar(Utils.chat("&c"+Languages.getString("halloween.pumpkinKing")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
+		bar = Bukkit.createBossBar(Utils.convertString("&c"+Languages.getString("halloween.pumpkinKing")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
 	}
 	@Override
 	public void tick() {
@@ -795,7 +795,7 @@ public class PumpkinKing extends CustomEntity {
 		if (spawn == null)
 			return false;
 		for (Player p : world.getPlayers())
-			p.sendMessage(Utils.chat(ChatColor.RED+Languages.getString("halloween.deathParade")));
+			p.sendMessage(Utils.convertString(ChatColor.RED+Languages.getString("halloween.deathParade")));
 		WitherSkeleton king = (WitherSkeleton) world.spawnEntity(spawn.clone().add(150, 300, 0), EntityType.WITHER_SKELETON, false);
 		king.setRemoveWhenFarAway(false);
 		king.teleport(spawn);

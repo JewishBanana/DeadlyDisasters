@@ -20,7 +20,7 @@ customentities:
             drops:
             - chorus_fruit | 80.0 | 0-2
             - obsidian | 50.0 | 0-1
-            - voidshard | 12.5 | 0-1
+            - dd:void_tear | 12.5 | 0-1
         endworm:
             spawning: true
             spawnrate: 1.0
@@ -34,7 +34,7 @@ customentities:
             spawnrate: 1.25
             health: 20.0
             drops:
-            - voidswrath | 5.0 | 0-1
+            - ui:call_of_the_void | 5.0 | 0-1
             - bone | 50.0 | 1-2
             - arrow | 25.0 | 0-2
         voidguardian:
@@ -42,8 +42,8 @@ customentities:
             spawnrate: 2.0
             health: 40.0
             drops:
-            - voidsedge | 5.0 | 0-1
-            - voidshield | 7.5 | 0-1
+            - ui:voids_edge | 5.0 | 0-1
+            - ui:abyssal_shield | 7.5 | 0-1
             - rotten_flesh | 60.0 | 0-4
         voidstalker:
             spawning: true
@@ -60,7 +60,7 @@ customentities:
             health: 40.0
             damage: 10.0
             drops:
-            - ancientcloth | 15.0 | 0-1
+            - ui:ancient_cloth | 15.0 | 0-1
             - bone | 25.0 | 0-2
             - rotten_flesh | 60.0 | 0-3
         ancientskeleton:
@@ -69,7 +69,7 @@ customentities:
             health: 30.0
             damage: 7.0
             drops:
-            - ancientbone | 10.0 | 0-1
+            - ui:ancient_bone | 10.0 | 0-1
             - gold_nugget | 20.0 | 0-3
     # Soul storm mobs can only spawn naturally in soul sand valley biomes
     soulstorm_mobs:
@@ -159,7 +159,7 @@ customentities:
             corpse_life_ticks: 160
             drops:
             - beef | 40.0 | 1-6
-            - yetifur | 10.0 | 0-1
+            - ui:yeti_fur | 10.0 | 0-1
     # Solarstorm mobs can only spawn in warm places like savannas or deserts (If RealisticSeasons is enabled then solarstorm mobs can only spawn during the summer)
     solarstorm_mobs:
         firephantom:
@@ -180,7 +180,7 @@ customentities:
             health: 30.0
             damage: 8.0
             drops:
-            - poseidonstrident | 2.5 | 0-1
+            - ui:tritons_fang | 2.5 | 0-1
             - rotten_flesh | 60.0 | 0-3
     # Infested caves mobs can only spawn in deep dark biomes
     infestedcaves_mobs:
@@ -294,7 +294,7 @@ customentities:
             boss_music_volume: 0.5
             drops:
             - santahat | 100.0 | 0-1
-    # Easter mobs will only naturally spawn during the week before Easter
+    # Easter mobs will only naturally spawn 3 weeks prior to Easter, and 1 week after for a total of 1 month
     easter_mobs:
         rampaging_goat:
             spawning: true
@@ -319,8 +319,8 @@ customentities:
             play_boss_music: true
             boss_music_volume: 0.2
             drops:
-            - goldenegg | 100.0 | 0-1
-    # Halloween mobs will only naturally spawn during october
+            - ui:golden_egg | 100.0 | 0-1
+    # Halloween mobs will only naturally spawn during October
     halloween_mobs:
         scarecrow:
             spawning: true

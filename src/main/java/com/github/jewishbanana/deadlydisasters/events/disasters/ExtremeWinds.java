@@ -44,6 +44,8 @@ public class ExtremeWinds extends WeatherDisaster {
 	private Particle particle;
 	private int maxParticles;
 	private int blocksDestroyed;
+	private int windHeight;
+	private boolean pushEntities;
 	
 	private Queue<Entity> entities = new ArrayDeque<>();
 	
@@ -58,6 +60,8 @@ public class ExtremeWinds extends WeatherDisaster {
 		maxParticles = (configFile.getInt("extremewinds.max_particles")/6) * level;
 		breakForce = configFile.getDouble("extremewinds.block_break_force");
 		volume = configFile.getDouble("extremewinds.volume");
+		windHeight = configFile.getInt("extremewinds.wind_height");
+		pushEntities = configFile.getBoolean("extremewinds.push_entities");
 		
 		this.type = Disaster.EXTREMEWINDS;
 	}
@@ -70,7 +74,7 @@ public class ExtremeWinds extends WeatherDisaster {
 		ongoingDisasters.add(me);
 		DeathMessages.extremewinds.add(this);
 		if (broadcastAllowed && (boolean) WorldObject.findWorldObject(world).settings.get("event_broadcast")) {
-			String str = Utils.chat(configFile.getString("messages.weather.winds.level "+level));
+			String str = Utils.convertString(configFile.getString("messages.weather.winds.level "+level));
 			if (configFile.getBoolean("messages.disaster_tips"))
 				str += "\n"+type.getTip();
 			for (Player all : world.getPlayers())
@@ -112,14 +116,15 @@ public class ExtremeWinds extends WeatherDisaster {
 				Vector offset = speed.clone().multiply(-1).setY(0).multiply(force[0]*700);
 				Vector entityWindSpeed = speed.clone().setY(speed.getY()/2).multiply(10);
 				if (force[0] > 0) {
-					for (Entity e : entities) {
-						if (e instanceof LivingEntity)
-							e.setVelocity(e.getVelocity().setY(Math.min(e.getVelocity().getY(), 0.35)).add(speed));
-						else
-							e.setVelocity(entityWindSpeed);
-					}
+					if (pushEntities)
+						for (Entity e : entities) {
+							if (e instanceof LivingEntity)
+								e.setVelocity(e.getVelocity().setY(Math.min(e.getVelocity().getY(), 0.35)).add(speed));
+							else
+								e.setVelocity(entityWindSpeed);
+						}
 					for (Player p : world.getPlayers())
-						if (p.getLocation().getBlockY() > 50) {
+						if (p.getLocation().getBlockY() >= windHeight) {
 							Location pLoc = p.getLocation();
 							for (int i=0; i < maxParticles; i++)
 								p.spawnParticle(particle, (rand.nextDouble()*fallOff-halfFall)+pLoc.getX()+offset.getX(), (rand.nextDouble()*fallOff-(fallOff/4))+pLoc.getY(), (rand.nextDouble()*fallOff-halfFall)+pLoc.getZ()+offset.getZ(), 0, speed.getX(), 0.001, speed.getZ(), force[0]*150);
