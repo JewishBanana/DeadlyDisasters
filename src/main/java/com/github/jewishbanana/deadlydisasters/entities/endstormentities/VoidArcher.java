@@ -22,8 +22,8 @@ import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 
 public class VoidArcher extends CustomEntity {
 	
@@ -48,7 +48,7 @@ public class VoidArcher extends CustomEntity {
 			armor[i].setItemMeta(meta);
 		}
 		entity.getEquipment().setArmorContents(armor);
-		entity.getEquipment().setItemInMainHand(ItemsHandler.voidswrath);
+		entity.getEquipment().setItemInMainHand(DependencyUtils.doesItemExist("ui:call_of_the_void") ? DependencyUtils.getItemType("ui:call_of_the_void").getItem() : new ItemStack(Material.BOW));
 		EntityEquipment equip = entity.getEquipment();
 		equip.setHelmetDropChance(0);
 		equip.setChestplateDropChance(0);
@@ -79,8 +79,8 @@ public class VoidArcher extends CustomEntity {
 			if (entity.getKiller() != null && plugin.getConfig().getBoolean("customentities.allow_custom_drops")) {
 				entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.BONE, rand.nextInt(4)));
 				if (rand.nextInt(2) == 0) entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.ARROW));
-				if (rand.nextDouble() < 0.075)
-					entity.getWorld().dropItemNaturally(entity.getLocation(), ItemsHandler.voidswrath);
+				if (DependencyUtils.doesItemExist("ui:call_of_the_void") && rand.nextDouble() < 0.075)
+					entity.getWorld().dropItemNaturally(entity.getLocation(), DependencyUtils.getItemType("ui:call_of_the_void").getItem());
 			}
 			it.remove();
 			return;

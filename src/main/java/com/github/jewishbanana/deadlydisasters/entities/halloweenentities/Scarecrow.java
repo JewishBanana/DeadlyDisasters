@@ -40,6 +40,7 @@ import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.utils.AnimationHandler;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 import com.github.jewishbanana.deadlydisasters.utils.AnimationHandler.BodyPart;
 
 public class Scarecrow extends AnimatedEntity {
@@ -182,7 +183,7 @@ public class Scarecrow extends AnimatedEntity {
 					throwPumpkin(entity.getTarget());
 			}
 		}
-		entity.getWorld().spawnParticle(Particle.BLOCK_DUST, entity.getLocation().clone().add(0,1.1,0), 1, .2, .4, .2, 1, Material.JACK_O_LANTERN.createBlockData());
+		entity.getWorld().spawnParticle(VersionUtils.getBlockDust(), entity.getLocation().clone().add(0,1.1,0), 1, .2, .4, .2, 1, Material.JACK_O_LANTERN.createBlockData());
 	}
 	@Override
 	public void function(Iterator<CustomEntity> it) {
@@ -211,7 +212,7 @@ public class Scarecrow extends AnimatedEntity {
 		}
 		if (Utils.isTargetInRange(entity, 25, 225, true)) {
 			cooldown = 8;
-			entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 60, 5, true, false, false));
+			entity.addPotionEffect(new PotionEffect(VersionUtils.getSlowness(), 60, 5, true, false, false));
 			throwAnimation.startAnimation(stand);
 			throwing = true;
 			entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_WITHER_AMBIENT, SoundCategory.HOSTILE, 2, .5f);
@@ -271,7 +272,7 @@ public class Scarecrow extends AnimatedEntity {
 					pumpkin.setHeadPose(new EulerAngle(Math.toRadians(360-angle), 0, 0));
 				else
 					pumpkin.setHeadPose(new EulerAngle(Math.toRadians(360+angle), 0, 0));
-				pumpkin.getWorld().spawnParticle(Particle.BLOCK_CRACK, pumpkin.getLocation().add(0,2,0), 2, .1, .1, .1, 1, Material.JACK_O_LANTERN.createBlockData());
+				pumpkin.getWorld().spawnParticle(VersionUtils.getBlockCrack(), pumpkin.getLocation().add(0,2,0), 2, .1, .1, .1, 1, Material.JACK_O_LANTERN.createBlockData());
 				if (!projectile.getLocation().getBlock().isPassable()) {
 					pumpkin.remove();
 					projectile.remove();
@@ -285,8 +286,8 @@ public class Scarecrow extends AnimatedEntity {
 					new RepeatingTask(plugin, 0, 2) {
 						@Override
 						public void run() {
-							explosion.getWorld().spawnParticle(Particle.REDSTONE, explosion, 30, 2, 2, 2, .001, new DustOptions(Color.ORANGE, 1f));
-							explosion.getWorld().spawnParticle(Particle.REDSTONE, explosion, 30, 2, 2, 2, .001, new DustOptions(Color.BLACK, 1f));
+							explosion.getWorld().spawnParticle(VersionUtils.getRedstoneDust(), explosion, 30, 2, 2, 2, .001, new DustOptions(Color.ORANGE, 1f));
+							explosion.getWorld().spawnParticle(VersionUtils.getRedstoneDust(), explosion, 30, 2, 2, 2, .001, new DustOptions(Color.BLACK, 1f));
 							if (--timer[0] <= 0)
 								cancel();
 						}
@@ -309,8 +310,8 @@ public class Scarecrow extends AnimatedEntity {
 						new RepeatingTask(plugin, 0, 2) {
 							@Override
 							public void run() {
-								explosion.getWorld().spawnParticle(Particle.REDSTONE, explosion, 30, 2, 2, 2, .001, new DustOptions(Color.ORANGE, 1f));
-								explosion.getWorld().spawnParticle(Particle.REDSTONE, explosion, 30, 2, 2, 2, .001, new DustOptions(Color.BLACK, 1f));
+								explosion.getWorld().spawnParticle(VersionUtils.getRedstoneDust(), explosion, 30, 2, 2, 2, .001, new DustOptions(Color.ORANGE, 1f));
+								explosion.getWorld().spawnParticle(VersionUtils.getRedstoneDust(), explosion, 30, 2, 2, 2, .001, new DustOptions(Color.BLACK, 1f));
 								if (--timer[0] <= 0)
 									cancel();
 							}

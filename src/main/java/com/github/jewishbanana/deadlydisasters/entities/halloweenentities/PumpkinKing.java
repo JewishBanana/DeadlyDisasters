@@ -41,6 +41,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Slime;
 import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.entity.Zombie;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -62,6 +63,7 @@ import com.github.jewishbanana.deadlydisasters.utils.NBSongs;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.SongPlayer;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 import net.md_5.bungee.api.ChatColor;
 
@@ -111,7 +113,7 @@ public class PumpkinKing extends CustomEntity {
 			entity.setCustomName(Languages.getString("halloween.pumpkinKing"));
 		
 		step = entity.getLocation();
-		bar = Bukkit.createBossBar(Utils.chat("&c"+Languages.getString("halloween.pumpkinKing")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
+		bar = Bukkit.createBossBar(Utils.convertString("&c"+Languages.getString("halloween.pumpkinKing")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
 	}
 	@Override
 	public void tick() {
@@ -242,7 +244,7 @@ public class PumpkinKing extends CustomEntity {
 							Zombie zombie = spawn.getWorld().spawn(spawn, Zombie.class, false, consumer -> {
 								consumer.setRotation(plugin.random.nextFloat()*360, 0);
 							});
-							Ghoul ghoul = plugin.handler.addEntity(new Ghoul(zombie, spawn.getBlock(), plugin, true));
+							Ghoul ghoul = CustomEntity.handler.addEntity(new Ghoul(zombie, spawn.getBlock(), plugin, true));
 							ghouls.add(zombie.getUniqueId());
 							plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
 								ghoul.setWalking(true);
@@ -255,7 +257,7 @@ public class PumpkinKing extends CustomEntity {
 							break;
 					}
 					cooldown = c * 2;
-					entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, c * 20, 5, true, false, false));
+					entity.addPotionEffect(new PotionEffect(VersionUtils.getSlowness(), c * 20, 5, true, false, false));
 					entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_ZOGLIN_DEATH, SoundCategory.HOSTILE, 2f, .5f);
 					break label;
 				}
@@ -284,7 +286,7 @@ public class PumpkinKing extends CustomEntity {
 							break;
 					}
 					cooldown = c;
-					entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, c  * 5, 5, true, false, false));
+					entity.addPotionEffect(new PotionEffect(VersionUtils.getSlowness(), c  * 5, 5, true, false, false));
 					entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_ZOGLIN_ANGRY, SoundCategory.HOSTILE, 2f, .5f);
 					break label;
 				}
@@ -350,7 +352,7 @@ public class PumpkinKing extends CustomEntity {
 				if (stand.getLocation().distanceSquared(target.getLocation()) < 1) {
 					createSoulBombExplosion(stand.getLocation().add(0,1,0), range[0]);
 					if (!Utils.isEntityImmunePlayer(target)) {
-						Utils.pureDamageEntity(target, 4.0, "dd-soulbombdeath", false, entity);
+						Utils.pureDamageEntity(target, 4.0, "dd-soulbombdeath", false, entity, DamageCause.MAGIC);
 						target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0, true, false, false));
 						if (knockback)
 							target.setVelocity(Utils.getVectorTowards(loc, target.getLocation()).setY(0.6));
@@ -391,7 +393,7 @@ public class PumpkinKing extends CustomEntity {
 						if (Utils.rayTraceEntityConeForSolid(e, loc)) {
 							e.setVelocity(Utils.getVectorTowards(loc, e.getLocation().add(0,e.getHeight()/2.0,0)).multiply((0.05*range)*(1.0-(dist/range))));
 							if (((LivingEntity) e).getNoDamageTicks() == 0)
-								Utils.pureDamageEntity((LivingEntity) e, 2.0, "dd-soulbombdeath", false, entity);
+								Utils.pureDamageEntity((LivingEntity) e, 2.0, "dd-soulbombdeath", false, entity, DamageCause.MAGIC);
 							((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0, true, false, false));
 						}
 					} else if (Utils.rayTraceForSolid(loc, e.getLocation()))
@@ -456,7 +458,7 @@ public class PumpkinKing extends CustomEntity {
 					pumpkin.setHeadPose(new EulerAngle(Math.toRadians(360-angle), 0, 0));
 				else
 					pumpkin.setHeadPose(new EulerAngle(Math.toRadians(360+angle), 0, 0));
-				pumpkin.getWorld().spawnParticle(Particle.BLOCK_CRACK, pumpkin.getLocation().add(0,2,0), 2, .1, .1, .1, 1, Material.JACK_O_LANTERN.createBlockData());
+				pumpkin.getWorld().spawnParticle(VersionUtils.getBlockCrack(), pumpkin.getLocation().add(0,2,0), 2, .1, .1, .1, 1, Material.JACK_O_LANTERN.createBlockData());
 				if (!projectile.getLocation().getBlock().isPassable()) {
 					pumpkin.remove();
 					projectile.remove();
@@ -475,8 +477,8 @@ public class PumpkinKing extends CustomEntity {
 					new RepeatingTask(plugin, 0, 2) {
 						@Override
 						public void run() {
-							explosion.getWorld().spawnParticle(Particle.REDSTONE, explosion, 30, 4, 2, 4, .001, new DustOptions(Color.ORANGE, 1f));
-							explosion.getWorld().spawnParticle(Particle.REDSTONE, explosion, 30, 4, 2, 4, .001, new DustOptions(Color.BLACK, 1f));
+							explosion.getWorld().spawnParticle(VersionUtils.getRedstoneDust(), explosion, 30, 4, 2, 4, .001, new DustOptions(Color.ORANGE, 1f));
+							explosion.getWorld().spawnParticle(VersionUtils.getRedstoneDust(), explosion, 30, 4, 2, 4, .001, new DustOptions(Color.BLACK, 1f));
 							if (--timer[0] <= 0)
 								cancel();
 						}
@@ -504,8 +506,8 @@ public class PumpkinKing extends CustomEntity {
 						new RepeatingTask(plugin, 0, 2) {
 							@Override
 							public void run() {
-								explosion.getWorld().spawnParticle(Particle.REDSTONE, explosion, 30, 4, 2, 4, .001, new DustOptions(Color.ORANGE, 1f));
-								explosion.getWorld().spawnParticle(Particle.REDSTONE, explosion, 30, 4, 2, 4, .001, new DustOptions(Color.BLACK, 1f));
+								explosion.getWorld().spawnParticle(VersionUtils.getRedstoneDust(), explosion, 30, 4, 2, 4, .001, new DustOptions(Color.ORANGE, 1f));
+								explosion.getWorld().spawnParticle(VersionUtils.getRedstoneDust(), explosion, 30, 4, 2, 4, .001, new DustOptions(Color.BLACK, 1f));
 								if (--timer[0] <= 0)
 									cancel();
 							}
@@ -702,7 +704,7 @@ public class PumpkinKing extends CustomEntity {
 				}
 				for (FallingBlock e : blocks)
 					if (e != null)
-						world.spawnParticle(Particle.BLOCK_DUST, e.getLocation().clone().add(0,1.5,0), 1, .1, .1, .1, 0.1, bd);
+						world.spawnParticle(VersionUtils.getBlockDust(), e.getLocation().clone().add(0,1.5,0), 1, .1, .1, .1, 0.1, bd);
 			}
 		};
 		Location part = startPos.clone();
@@ -796,12 +798,12 @@ public class PumpkinKing extends CustomEntity {
 		if (spawn == null)
 			return false;
 		for (Player p : world.getPlayers())
-			p.sendMessage(Utils.chat(ChatColor.RED+Languages.getString("halloween.deathParade")));
+			p.sendMessage(Utils.convertString(ChatColor.RED+Languages.getString("halloween.deathParade")));
 		WitherSkeleton king = (WitherSkeleton) world.spawnEntity(spawn.clone().add(150, 300, 0), EntityType.WITHER_SKELETON, false);
 		king.setRemoveWhenFarAway(false);
 		king.teleport(spawn);
 		PumpkinKing kingObject = new PumpkinKing(king, plugin, plugin.random);
-		plugin.handler.addEntity(kingObject);
+		CustomEntity.handler.addEntity(kingObject);
 		if (plugin.noteBlockAPIEnabled) {
 			SongPlayer music = new SongPlayer(NBSongs.HALLOWEEN_BOSS);
 			for (Entity e : world.getNearbyEntities(block.getLocation(), 30, 30, 30))
@@ -836,7 +838,7 @@ public class PumpkinKing extends CustomEntity {
 		plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
 			pumpkinBasketBlocks.remove(block);
 			block.setType(Material.AIR);
-			world.spawnParticle(Particle.BLOCK_CRACK, block.getLocation().add(.5,.3,.5), 30, .2, .2, .2, 0.0001, Material.ORANGE_WOOL.createBlockData());
+			world.spawnParticle(VersionUtils.getBlockCrack(), block.getLocation().add(.5,.3,.5), 30, .2, .2, .2, 0.0001, Material.ORANGE_WOOL.createBlockData());
 			world.playSound(block.getLocation().add(.5,.3,.5), Sound.BLOCK_WOOL_BREAK, SoundCategory.BLOCKS, 1, 0.5f);
 			king.setRemoveWhenFarAway(true);
 			target.remove();

@@ -21,6 +21,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.Vector;
@@ -43,6 +44,8 @@ public class ExtremeWinds extends WeatherDisaster {
 	private Particle particle;
 	private int maxParticles;
 	private int blocksDestroyed;
+	private int windHeight;
+	private boolean pushEntities;
 	
 	private Queue<Entity> entities = new ArrayDeque<>();
 	
@@ -57,6 +60,8 @@ public class ExtremeWinds extends WeatherDisaster {
 		maxParticles = (configFile.getInt("extremewinds.max_particles")/6) * level;
 		breakForce = configFile.getDouble("extremewinds.block_break_force");
 		volume = configFile.getDouble("extremewinds.volume");
+		windHeight = configFile.getInt("extremewinds.wind_height");
+		pushEntities = configFile.getBoolean("extremewinds.push_entities");
 		
 		this.type = Disaster.EXTREMEWINDS;
 	}
@@ -69,8 +74,8 @@ public class ExtremeWinds extends WeatherDisaster {
 		ongoingDisasters.add(me);
 		DeathMessages.extremewinds.add(this);
 		if (broadcastAllowed && (boolean) WorldObject.findWorldObject(world).settings.get("event_broadcast")) {
-			String str = Utils.chat(plugin.getConfig().getString("messages.weather.winds.level "+level));
-			if (plugin.getConfig().getBoolean("messages.disaster_tips"))
+			String str = Utils.convertString(configFile.getString("messages.weather.winds.level "+level));
+			if (configFile.getBoolean("messages.disaster_tips"))
 				str += "\n"+type.getTip();
 			for (Player all : world.getPlayers())
 				all.sendMessage(str);
@@ -84,7 +89,7 @@ public class ExtremeWinds extends WeatherDisaster {
 		Vector reverse = vel.clone().multiply(-1).setY(0);
 		int fallOff = (8-level)*10;
 		int halfFall = fallOff/2;
-		int heightDist = plugin.getConfig().getInt("extremewinds.interior_height_distance");
+		int heightDist = configFile.getInt("extremewinds.interior_height_distance");
 		boolean CP = plugin.CProtect;
 		FixedMetadataValue fixdata = new FixedMetadataValue(plugin, "protected");
 		
@@ -110,14 +115,15 @@ public class ExtremeWinds extends WeatherDisaster {
 				Vector offset = speed.clone().multiply(-1).setY(0).multiply(force[0]*700);
 				Vector entityWindSpeed = speed.clone().setY(speed.getY()/2).multiply(10);
 				if (force[0] > 0) {
-					for (Entity e : entities) {
-						if (e instanceof LivingEntity)
-							e.setVelocity(e.getVelocity().setY(Math.min(e.getVelocity().getY(), 0.35)).add(speed));
-						else
-							e.setVelocity(entityWindSpeed);
-					}
+					if (pushEntities)
+						for (Entity e : entities) {
+							if (e instanceof LivingEntity)
+								e.setVelocity(e.getVelocity().setY(Math.min(e.getVelocity().getY(), 0.35)).add(speed));
+							else
+								e.setVelocity(entityWindSpeed);
+						}
 					for (Player p : world.getPlayers())
-						if (p.getLocation().getBlockY() > 50) {
+						if (p.getLocation().getBlockY() >= windHeight) {
 							Location pLoc = p.getLocation();
 							for (int i=0; i < maxParticles; i++)
 								p.spawnParticle(particle, (rand.nextDouble()*fallOff-halfFall)+pLoc.getX()+offset.getX(), (rand.nextDouble()*fallOff-(fallOff/4))+pLoc.getY(), (rand.nextDouble()*fallOff-halfFall)+pLoc.getZ()+offset.getZ(), 0, speed.getX(), 0.001, speed.getZ(), force[0]*150);
@@ -129,7 +135,7 @@ public class ExtremeWinds extends WeatherDisaster {
 								if (force[0] > breakForce) {
 									Block b = pLoc.clone().add(0,2,0).getBlock();
 									if (!b.getType().isSolid()) b = pLoc.clone().add(rand.nextInt(8)-4, rand.nextInt(5)-1, rand.nextInt(8)-4).getBlock();
-									if (b.getType().isSolid() && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
+									if (b.getType().isSolid() && !Utils.passStrengthTest(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
 										if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 										FallingBlock fb = world.spawnFallingBlock(b.getLocation().clone().add(0.5,0.5,0.5), b.getBlockData());
 										fb.setDropItem(false);
@@ -139,6 +145,8 @@ public class ExtremeWinds extends WeatherDisaster {
 										if (b.getState() instanceof InventoryHolder)
 											CoreListener.addBlockInventory(fb, ((InventoryHolder) b.getState()).getInventory().getContents());
 										b.setType(Material.AIR);
+										EntityChangeBlockEvent event = new EntityChangeBlockEvent(fb, b, Material.AIR.createBlockData());
+										Bukkit.getPluginManager().callEvent(event);
 										blocksDestroyed++;
 									}
 								}
@@ -150,7 +158,7 @@ public class ExtremeWinds extends WeatherDisaster {
 						if (i < 0)
 							break;
 						Entity e = tempList.get(i);
-						if (e == null) {
+						if (e == null || isEntityTypeProtected(e)) {
 							tempList.remove(i);
 							continue;
 						}

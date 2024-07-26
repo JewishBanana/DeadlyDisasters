@@ -21,8 +21,8 @@ import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 
 public class VoidGuardian extends CustomEntity {
 	
@@ -42,8 +42,8 @@ public class VoidGuardian extends CustomEntity {
 		entity.getAttribute(Attribute.GENERIC_FOLLOW_RANGE).setBaseValue(40);
 		entity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.25);
 		changeColor(50, 50, 50, CustomHead.VOIDGUARD.getHead());
-		entity.getEquipment().setItemInMainHand(ItemsHandler.voidsedge);
-		entity.getEquipment().setItemInOffHand(ItemsHandler.voidshield);
+		entity.getEquipment().setItemInMainHand(DependencyUtils.doesItemExist("ui:voids_edge") ? DependencyUtils.getItemType("ui:voids_edge").getItem() : new ItemStack(Material.IRON_SWORD));
+		entity.getEquipment().setItemInOffHand(DependencyUtils.doesItemExist("ui:abyssal_shield") ? DependencyUtils.getItemType("ui:abyssal_shield").getItem() : new ItemStack(Material.SHIELD));
 		entity.setMetadata("dd-voidguardian", new FixedMetadataValue(plugin, "protected"));
 		EntityEquipment equip = entity.getEquipment();
 		equip.setHelmetDropChance(0);
@@ -76,10 +76,10 @@ public class VoidGuardian extends CustomEntity {
 			if (entity.getKiller() != null && plugin.getConfig().getBoolean("customentities.allow_custom_drops")) {
 				entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.ROTTEN_FLESH, rand.nextInt(4)));
 				if (rand.nextInt(2) == 0) entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.BONE, rand.nextInt(3)));
-				if (rand.nextDouble() < 0.05)
-					entity.getWorld().dropItemNaturally(entity.getLocation(), ItemsHandler.voidsedge);
-				if (rand.nextDouble() < 0.075)
-					entity.getWorld().dropItemNaturally(entity.getLocation(), ItemsHandler.voidshield);
+				if (DependencyUtils.doesItemExist("ui:voids_edge") && rand.nextDouble() < 0.05)
+					entity.getWorld().dropItemNaturally(entity.getLocation(), DependencyUtils.getItemType("ui:voids_edge").getItem());
+				if (DependencyUtils.doesItemExist("ui:abyssal_shield") && rand.nextDouble() < 0.075)
+					entity.getWorld().dropItemNaturally(entity.getLocation(), DependencyUtils.getItemType("ui:abyssal_shield").getItem());
 			}
 			it.remove();
 			return;

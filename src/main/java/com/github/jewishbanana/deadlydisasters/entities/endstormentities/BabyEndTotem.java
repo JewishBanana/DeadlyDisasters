@@ -31,6 +31,7 @@ import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
 import com.github.jewishbanana.deadlydisasters.events.DestructionDisaster;
 import com.github.jewishbanana.deadlydisasters.events.WeatherDisaster;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class BabyEndTotem extends CustomEntity {
 	
@@ -40,7 +41,7 @@ public class BabyEndTotem extends CustomEntity {
 	private boolean animation;
 	private String name;
 
-	public BabyEndTotem(Mob entity, FileConfiguration file, Main plugin, Random rand) {
+	public BabyEndTotem(Mob entity, Main plugin, Random rand) {
 		super(entity, plugin);
 		this.entityType = CustomEntityType.BABYENDTOTEM;
 		this.rand = rand;
@@ -56,9 +57,9 @@ public class BabyEndTotem extends CustomEntity {
 		entity.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 999999, 0, true, false));
 		entity.setSilent(true);
 		entity.setMetadata("dd-endtotem", new FixedMetadataValue(plugin, "protected"));
-		if (file.contains("customentities."+entity.getUniqueId()+".name")) {
-			entity.setCustomName(file.getString("customentities."+entity.getUniqueId()+".name"));
-			stands[3].setCustomName(file.getString("customentities."+entity.getUniqueId()+".name"));
+		if (plugin.dataFile.contains("customentities."+entity.getUniqueId()+".name")) {
+			entity.setCustomName(plugin.dataFile.getString("customentities."+entity.getUniqueId()+".name"));
+			stands[3].setCustomName(plugin.dataFile.getString("customentities."+entity.getUniqueId()+".name"));
 		} else {
 			entity.setCustomName(Languages.langFile.getString("entities.endTotem"));
 			stands[3].setCustomName(Languages.langFile.getString("entities.endTotem"));
@@ -135,7 +136,7 @@ public class BabyEndTotem extends CustomEntity {
 				entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.CHORUS_FRUIT));
 				if (rand.nextInt(3) == 0) entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.OBSIDIAN));
 			}
-			entity.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, entity.getLocation().add(0,1.5,0), 200, .25, .25, .25, 20);
+			entity.getWorld().spawnParticle(VersionUtils.getEnchantParticle(), entity.getLocation().add(0,1.5,0), 200, .25, .25, .25, 20);
 			clean();
 			it.remove();
 			return;

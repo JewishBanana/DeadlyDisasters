@@ -7,7 +7,6 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -43,10 +42,10 @@ import com.github.jewishbanana.deadlydisasters.entities.halloweenentities.Pumpki
 import com.github.jewishbanana.deadlydisasters.entities.halloweenentities.Vampire;
 import com.github.jewishbanana.deadlydisasters.entities.purgeentities.DarkMage;
 import com.github.jewishbanana.deadlydisasters.entities.soulstormentities.SoulReaper;
+import com.github.jewishbanana.deadlydisasters.events.Disaster;
 import com.github.jewishbanana.deadlydisasters.events.disasters.BlackPlague;
-import com.github.jewishbanana.deadlydisasters.events.disasters.EndStorm;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class CustomEntitiesListener implements Listener {
@@ -62,12 +61,6 @@ public class CustomEntitiesListener implements Listener {
 	public void onAttack(EntityDamageByEntityEvent e) {
 		Entity damager = e.getDamager();
 		Entity hurtEntity = e.getEntity();
-		if (damager instanceof Arrow && damager.hasMetadata("dd-voidarrow")) {
-			if (!Utils.isZoneProtected(damager.getLocation()) || plugin.getConfig().getBoolean("customitems.items.void_wrath.allow_in_regions"))
-				EndStorm.createUnstableRift(hurtEntity.getLocation(), ItemsHandler.voidBowPortalTicks);
-			damager.remove();
-			return;
-		}
 		if (damager instanceof Projectile && hurtEntity.hasMetadata("dd-frosty")) {
 			e.setCancelled(true);
 			return;
@@ -89,7 +82,7 @@ public class CustomEntitiesListener implements Listener {
 		}
 		if (damager.hasMetadata("dd-pumpkinkingbloodfang")) {
 			e.setCancelled(true);
-			Utils.damageEntity((LivingEntity) hurtEntity, 20.0, "dd-pumpkinkingblooddeath", false);
+			Utils.damageEntity((LivingEntity) hurtEntity, 20.0, "dd-pumpkinkingblooddeath", false, DamageCause.MAGIC);
 		}
 		if (!(damager instanceof LivingEntity))
 			return;
@@ -97,7 +90,7 @@ public class CustomEntitiesListener implements Listener {
 		if (hurtEntity.hasMetadata("dd-plague") && !damager.hasMetadata("dd-plague") && BlackPlague.time.size() < BlackPlague.maxInfectedMobs) {
 			if (entity instanceof Player) {
 				if (!Utils.isPlayerImmune((Player) entity)) {
-					entity.sendMessage(Utils.chat("&c"+Languages.langFile.getString("misc.plagueCatch")));
+					entity.sendMessage(Utils.convertString("&c"+Languages.langFile.getString("misc.plagueCatch")));
 					BlackPlague.time.put(entity.getUniqueId(), 300);
 					entity.setMetadata("dd-plague", plugin.fixedData);
 				}
@@ -107,7 +100,7 @@ public class CustomEntitiesListener implements Listener {
 			}
 		}
 		if (entity.hasMetadata("dd-customentity")) {
-			CustomEntity customEntity = plugin.handler.findEntity(entity);
+			CustomEntity customEntity = CustomEntity.handler.findEntity(entity);
 			if (customEntity instanceof AnimatedEntity)
 				((AnimatedEntity) customEntity).attack();
 			if (entity.hasMetadata("dd-endtotem")) {
@@ -128,11 +121,11 @@ public class CustomEntitiesListener implements Listener {
 			else if (entity.hasMetadata("dd-ancientmummy") && hurtEntity instanceof LivingEntity)
 				((LivingEntity) hurtEntity).addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 60, 4, true));
 			else if (entity.hasMetadata("dd-endworm"))
-				((EndWorm) plugin.handler.findEntity(entity)).triggerAnimation();
-			else if (entity.hasMetadata("dd-petelf") && ((ElfPet) plugin.handler.findEntity((LivingEntity) entity)).owner.equals(hurtEntity.getUniqueId()))
+				((EndWorm) CustomEntity.handler.findEntity(entity)).triggerAnimation();
+			else if (entity.hasMetadata("dd-petelf") && ((ElfPet) CustomEntity.handler.findEntity((LivingEntity) entity)).owner.equals(hurtEntity.getUniqueId()))
 				e.setCancelled(true);
 			else if (entity.hasMetadata("dd-vampire"))
-				for (CustomEntity ce : plugin.handler.getList())
+				for (CustomEntity ce : CustomEntity.handler.getList())
 					if (ce.getType() == CustomEntityType.VAMPIRE && ((Vampire) ce).zombieUUID.equals(entity.getUniqueId())) {
 						((Vampire) ce).bite(hurtEntity);
 						break;
@@ -141,6 +134,8 @@ public class CustomEntitiesListener implements Listener {
 			if (hurtEntity instanceof Player && e.getFinalDamage() >= ((LivingEntity) hurtEntity).getHealth()) {
 				if (entity.hasMetadata("dd-sandstormmob"))
 					hurtEntity.setMetadata("dd-sandstormdeath", plugin.fixedData);
+				else if (entity.hasMetadata("dd-solarstormmob"))
+					Metrics.incrementValue(Metrics.disasterKillMap, Disaster.SOLARSTORM.getMetricsLabel());
 				else if (entity.hasMetadata("dd-purgemob"))
 					hurtEntity.setMetadata("dd-purgedeath", plugin.fixedData);
 				else if (entity.hasMetadata("dd-lostsoul")) {
@@ -154,11 +149,11 @@ public class CustomEntitiesListener implements Listener {
 			if (hurtEntity.hasMetadata("dd-darkmage") && !hurtEntity.isDead()) {
 				LivingEntity damaged = (LivingEntity) hurtEntity;
 				if (damaged.getHealth() < 12 && e.getFinalDamage() < damaged.getHealth())
-					((DarkMage) plugin.handler.findEntity(damaged)).reboundTarget = entity;
+					((DarkMage) CustomEntity.handler.findEntity(damaged)).reboundTarget = entity;
 			} else if (hurtEntity.hasMetadata("dd-soulreaper") && !hurtEntity.isDead())
-				((SoulReaper) plugin.handler.findEntity((LivingEntity) hurtEntity)).target = entity;
+				((SoulReaper) CustomEntity.handler.findEntity((LivingEntity) hurtEntity)).target = entity;
 			else if (hurtEntity.hasMetadata("dd-pumpkinking") && !hurtEntity.isDead())
-				((PumpkinKing) plugin.handler.findEntity((LivingEntity) hurtEntity)).damageTicks += 3;
+				((PumpkinKing) CustomEntity.handler.findEntity((LivingEntity) hurtEntity)).damageTicks += 3;
 		}
 	}
 	@EventHandler
@@ -173,6 +168,8 @@ public class CustomEntitiesListener implements Listener {
 			return;
 		Entity entity = e.getEntity();
 		if (entity.hasMetadata("dd-soulreaper") && e.getCause() != DamageCause.ENTITY_ATTACK)
+			e.setCancelled(true);
+		else if (entity.hasMetadata("dd-firephantom") && (e.getCause() == DamageCause.FIRE_TICK || e.getCause() == DamageCause.FIRE))
 			e.setCancelled(true);
 		else if (e.getCause() == DamageCause.FALL && entity.hasMetadata("dd-eastermobs"))
 			e.setCancelled(true);
@@ -215,7 +212,7 @@ public class CustomEntitiesListener implements Listener {
 				}
 			} else if (item.getType() == Material.NAME_TAG && (((Wolf) entity).getOwner() != null && ((Wolf) entity).getOwner().equals(e.getPlayer()))) {
 				if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
-					((BabyEndTotem) plugin.handler.findEntity(entity)).changeName(item.getItemMeta().getDisplayName());
+					((BabyEndTotem) CustomEntity.handler.findEntity(entity)).changeName(item.getItemMeta().getDisplayName());
 					if (e.getPlayer().getGameMode() != GameMode.CREATIVE)
 						item.setAmount(item.getAmount()-1);
 				}
@@ -236,7 +233,7 @@ public class CustomEntitiesListener implements Listener {
 				return;
 			}
 			((LivingEntity) e.getHitEntity()).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 40, 1, true, false));
-			Utils.damageEntity((LivingEntity) e.getHitEntity(), 8.0, "dd-frostydeath", false);
+			Utils.damageEntity((LivingEntity) e.getHitEntity(), 8.0, "dd-frostydeath", false, DamageCause.FREEZE);
 		}
 		if (e.getEntity().hasMetadata("dd-elfarrow")) {
 			e.getEntity().getWorld().createExplosion(e.getEntity().getLocation(), 1.5f, false, false, e.getEntity());
@@ -269,10 +266,10 @@ public class CustomEntitiesListener implements Listener {
 			return;
 		}
 		if (entity.hasMetadata("dd-petelf")) {
-			CustomEntity ce = plugin.handler.findEntity((LivingEntity) entity);
+			CustomEntity ce = CustomEntity.handler.findEntity((LivingEntity) entity);
 			if (ce != null) {
 				if (((ElfPet) ce).owner.equals(e.getTarget().getUniqueId()) ||
-						(e.getTarget().hasMetadata("dd-petelf") && plugin.handler.findEntity(e.getTarget()) != null && ((ElfPet) plugin.handler.findEntity(e.getTarget())).owner.equals(((ElfPet) ce).owner))) {
+						(e.getTarget().hasMetadata("dd-petelf") && CustomEntity.handler.findEntity(e.getTarget()) != null && ((ElfPet) CustomEntity.handler.findEntity(e.getTarget())).owner.equals(((ElfPet) ce).owner))) {
 					e.setCancelled(true);
 					return;
 				}

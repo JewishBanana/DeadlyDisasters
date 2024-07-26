@@ -27,6 +27,7 @@ import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Vampire extends CustomEntity {
 	
@@ -101,7 +102,7 @@ public class Vampire extends CustomEntity {
 					if (consumer.getCustomName() == null)
 						consumer.setCustomName(Languages.getString("halloween.vampire"));
 				});
-				entity.getWorld().spawnParticle(Particle.SMOKE_NORMAL, entity.getLocation(), 15, .7, .7, .7, 0.001);
+				entity.getWorld().spawnParticle(VersionUtils.getNormalSmoke(), entity.getLocation(), 15, .7, .7, .7, 0.001);
 				entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_EVOKER_CAST_SPELL, SoundCategory.HOSTILE, 2f, .5f);
 				entity.remove();
 				zombie.remove();
@@ -140,7 +141,7 @@ public class Vampire extends CustomEntity {
 					consumer.setCustomName(Languages.getString("halloween.vampire"));
 			});
 			this.zombieUUID = zombie.getUniqueId();
-			entity.getWorld().spawnParticle(Particle.SMOKE_NORMAL, entity.getLocation().add(0,1,0), 15, .7, 1, .7, 0.001);
+			entity.getWorld().spawnParticle(VersionUtils.getNormalSmoke(), entity.getLocation().add(0,1,0), 15, .7, 1, .7, 0.001);
 			entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_EVOKER_CAST_SPELL, SoundCategory.HOSTILE, 2f, .5f);
 			entity.remove();
 			this.entity = vampire;
@@ -180,7 +181,7 @@ public class Vampire extends CustomEntity {
 	public void update(FileConfiguration file) {
 	}
 	public void bite(Entity target) {
-		entity.getWorld().spawnParticle(Particle.BLOCK_DUST, entity.getLocation().clone().add(0,1.1,0).add(Utils.getVectorTowards(entity.getLocation(), target.getLocation()).multiply(.8)), 20, .2, .2, .2, 1, Material.REDSTONE_BLOCK.createBlockData());
+		entity.getWorld().spawnParticle(VersionUtils.getBlockDust(), entity.getLocation().clone().add(0,1.1,0).add(Utils.getVectorTowards(entity.getLocation(), target.getLocation()).multiply(.8)), 20, .2, .2, .2, 1, Material.REDSTONE_BLOCK.createBlockData());
 		entity.setHealth(Math.min(entity.getHealth()+(entityType.getDamage()/2), entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()));
 		if (zombie != null)
 			zombie.setHealth(entity.getHealth());

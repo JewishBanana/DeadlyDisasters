@@ -3,11 +3,11 @@ package com.github.jewishbanana.deadlydisasters.handlers;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public enum DifficultyLevel {
-	EASY(Utils.chat("&a&lEASY"), 20, 180, new int[]{40, 30, 20, 10, 0, 0}),
-	NORMAL(Utils.chat("&e&lNORMAL"), 10, 120, new int[]{30, 25, 20, 15, 9, 1}),
-	HARD(Utils.chat("&c&lHARD"), 5, 90, new int[]{25, 23, 20, 18, 14, 5}),
-	EXTREME(Utils.chat("&4&lEXTREME"), 0, 30, new int[]{0, 0, 29, 26, 25, 20}),
-	CUSTOM(Utils.chat("&f&lCUSTOM"));
+	EASY(Utils.convertString("&a&lEASY"), 20, 180, new int[]{40, 30, 20, 10, 0, 0}),
+	NORMAL(Utils.convertString("&e&lNORMAL"), 10, 120, new int[]{30, 25, 20, 15, 9, 1}),
+	HARD(Utils.convertString("&c&lHARD"), 5, 90, new int[]{25, 23, 20, 18, 14, 5}),
+	EXTREME(Utils.convertString("&4&lEXTREME"), 0, 30, new int[]{0, 0, 29, 26, 25, 20}),
+	CUSTOM(Utils.convertString("&f&lCUSTOM"));
 	
 	private String label;
 	
@@ -49,10 +49,10 @@ public enum DifficultyLevel {
 		return null;
 	}
     public static void reloadNames() {
-    	EASY.setLabel(Utils.chat("&a&l"+Languages.langFile.getString("internal.easy")));
-    	NORMAL.setLabel(Utils.chat("&e&l"+Languages.langFile.getString("internal.normal")));
-    	HARD.setLabel(Utils.chat("&c&l"+Languages.langFile.getString("internal.hard")));
-    	EXTREME.setLabel(Utils.chat("&4&l"+Languages.langFile.getString("internal.extreme")));
-    	CUSTOM.setLabel(Utils.chat("&f&l"+Languages.langFile.getString("internal.custom")));
+    	EASY.setLabel(Utils.convertString("&a&l"+Languages.langFile.getString("internal.easy")));
+    	NORMAL.setLabel(Utils.convertString("&e&l"+Languages.langFile.getString("internal.normal")));
+    	HARD.setLabel(Utils.convertString("&c&l"+Languages.langFile.getString("internal.hard")));
+    	EXTREME.setLabel(Utils.convertString("&4&l"+Languages.langFile.getString("internal.extreme")));
+    	CUSTOM.setLabel(Utils.convertString("&f&l"+Languages.langFile.getString("internal.custom")));
     }
 }

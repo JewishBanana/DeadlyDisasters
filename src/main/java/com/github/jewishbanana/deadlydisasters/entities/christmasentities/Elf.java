@@ -30,6 +30,7 @@ import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
 import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Elf extends CustomEntity {
 	
@@ -79,7 +80,7 @@ public class Elf extends CustomEntity {
 		entity.setMetadata("dd-elf", plugin.fixedData);
 		entity.setMetadata("dd-christmasmob", plugin.fixedData);
 		if (entity.getCustomName() == null)
-			entity.setCustomName(Languages.langFile.getString("entities.christmasElf"));
+			entity.setCustomName(Languages.langFile.getString("christmas.christmasElf"));
 		
 		if (rand.nextDouble()*100 < 35.0) {
 			entity.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
@@ -109,7 +110,7 @@ public class Elf extends CustomEntity {
 			entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_VILLAGER_HURT, SoundCategory.HOSTILE, 1, 2);
 		if (archer && cooldown <= 0 && entity.getTarget() != null && entity.getTarget().getLocation().distanceSquared(entity.getLocation()) <= 81 && entity.hasLineOfSight(entity.getTarget())) {
 			cooldown = 3;
-			entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 20, 10, true, false));
+			entity.addPotionEffect(new PotionEffect(VersionUtils.getSlowness(), 20, 10, true, false));
 			Arrow arrow = (Arrow) entity.getWorld().spawnEntity(entity.getLocation().add(entity.getLocation().getDirection().multiply(0.1).setY(0.7)), EntityType.ARROW);
 			arrow.addCustomEffect(new PotionEffect(PotionEffectType.BLINDNESS, 40, 1), false);
 			arrow.setShooter(entity);
@@ -153,7 +154,7 @@ public class Elf extends CustomEntity {
 						else if (e.getPassengers().get(0).isEmpty())
 							e.getPassengers().get(0).addPassenger(entity);
 			if (entity.getTarget() != null && entity.getTarget().getLocation().distanceSquared(entity.getLocation()) <= 81 && entity.hasLineOfSight(entity.getTarget()))
-				entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 30, 10, true, false));
+				entity.addPotionEffect(new PotionEffect(VersionUtils.getSlowness(), 30, 10, true, false));
 		}
 		if (rand.nextInt(6) == 0)
 			if (rand.nextInt(4) == 0)

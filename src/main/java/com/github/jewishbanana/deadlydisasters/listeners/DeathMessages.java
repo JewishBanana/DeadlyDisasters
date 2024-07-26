@@ -15,8 +15,10 @@ import org.bukkit.entity.Skeleton;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.entity.PlayerDeathEvent;
 
 import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.halloweenentities.Psyco;
 import com.github.jewishbanana.deadlydisasters.events.Disaster;
 import com.github.jewishbanana.deadlydisasters.events.disasters.AcidStorm;
@@ -31,14 +33,13 @@ import com.github.jewishbanana.deadlydisasters.events.disasters.MeteorShower;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Purge;
 import com.github.jewishbanana.deadlydisasters.events.disasters.SandStorm;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Sinkhole;
+import com.github.jewishbanana.deadlydisasters.events.disasters.SolarStorm;
 import com.github.jewishbanana.deadlydisasters.events.disasters.SoulStorm;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Supernova;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Tornado;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Tsunami;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
-
-import org.bukkit.event.entity.PlayerDeathEvent;
 
 public class DeathMessages implements Listener {
 	
@@ -57,6 +58,7 @@ public class DeathMessages implements Listener {
 	public static Set<EndStorm> endstorms = new HashSet<>();
 	public static Set<Hurricane> hurricanes = new HashSet<>();
 	public static Set<Purge> purges = new HashSet<>();
+	public static Set<SolarStorm> solarstorms = new HashSet<>();
 	public static Set<Supernova> supernovas = new HashSet<>();
 	
 	private Main plugin;
@@ -88,6 +90,10 @@ public class DeathMessages implements Listener {
 					Metrics.incrementValue(Metrics.disasterKillMap, Disaster.ENDSTORM.getMetricsLabel());
 					break;
 				}
+			if (cause == DamageCause.FIRE || cause == DamageCause.FIRE_TICK) {
+				if (solarstorms.stream().anyMatch(obj -> obj.getWorld().equals(world)))
+					Metrics.incrementValue(Metrics.disasterKillMap, Disaster.SOLARSTORM.getMetricsLabel());
+			}
 		}
 		if (p.hasMetadata("dd-plague")) {
 			p.removeMetadata("dd-plague", plugin);
@@ -208,7 +214,7 @@ public class DeathMessages implements Listener {
 			Skeleton mob = p.getWorld().spawn(p.getLocation(), Skeleton.class, false, consumer -> {
 				consumer.setCustomName(p.getName());
 			});
-			plugin.handler.addEntity(new Psyco(mob, plugin, plugin.random));
+			CustomEntity.handler.addEntity(new Psyco(mob, plugin, plugin.random));
 			mob.getEquipment().setItemInMainHand(p.getEquipment().getItemInMainHand());
 			return;
 		}

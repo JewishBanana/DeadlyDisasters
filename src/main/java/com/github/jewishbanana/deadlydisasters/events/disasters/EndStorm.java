@@ -39,7 +39,6 @@ import org.bukkit.util.Vector;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
-import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
 import com.github.jewishbanana.deadlydisasters.entities.endstormentities.BabyEndTotem;
 import com.github.jewishbanana.deadlydisasters.entities.endstormentities.EndTotem;
 import com.github.jewishbanana.deadlydisasters.entities.endstormentities.EndWorm;
@@ -53,12 +52,12 @@ import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class EndStorm extends WeatherDisaster {
 	
 	private int range,maxEntities;
 	private Random rand = new Random();
-	private EntityHandler handler;
 	
 	public Queue<CustomEntity> entities = new ArrayDeque<>();
 	public Set<UUID> mobs = new HashSet<>();
@@ -66,7 +65,6 @@ public class EndStorm extends WeatherDisaster {
 
 	public EndStorm(int level) {
 		super(level);
-		this.handler = plugin.handler;
 		if (level > 5) level = 5;
 		time = configFile.getInt("endstorm.time.level "+this.level) * 20;
 		delay = configFile.getInt("endstorm.start_delay") * 20;
@@ -85,18 +83,21 @@ public class EndStorm extends WeatherDisaster {
 		if (broadcastAllowed && (boolean) WorldObject.findWorldObject(world).settings.get("event_broadcast"))
 			Utils.broadcastEvent(level, "weather", this.type, world);
 		DeathMessages.endstorms.add(this);
+		EndStorm instance = this;
 		new RepeatingTask(plugin, delay, 20) {
 			@Override
 			public void run() {
 				if (time <= 0) {
 					cancel();
+					clearEntities();
+					DeathMessages.endstorms.remove(instance);
 					return;
 				}
 				time -= 20;
 				for (LivingEntity e : world.getLivingEntities()) {
 					if (mobs.contains(e.getUniqueId()) && ((Mob) e).getTarget() == null && Bukkit.getEntity(targets.get(e.getUniqueId())) != null)
 						((Mob) e).setTarget((LivingEntity) Bukkit.getEntity(targets.get(e.getUniqueId())));
-					if (e instanceof Enderman || e instanceof Endermite || e instanceof EnderDragon || e instanceof ArmorStand)
+					if (isEntityTypeProtected(e) || e instanceof Enderman || e instanceof Endermite || e instanceof EnderDragon || e instanceof ArmorStand)
 						continue;
 					if (e instanceof Player && (((Player) e).getGameMode() == GameMode.CREATIVE || ((Player) e).getGameMode() == GameMode.SPECTATOR))
 						continue;
@@ -157,7 +158,7 @@ public class EndStorm extends WeatherDisaster {
 					if (Utils.isZoneProtected(p.getLocation()) || p.getGameMode() == GameMode.CREATIVE || p.getGameMode() == GameMode.SPECTATOR)
 						continue;
 					p.spawnParticle(Particle.DRAGON_BREATH, p.getLocation().add(0,1.5,0), 25, 3, 1, 3, 3);
-					p.spawnParticle(Particle.SMOKE_LARGE, p.getLocation().add(0,1.5,0), 10, 3, 1, 3, 1.5);
+					p.spawnParticle(VersionUtils.getLargeSmoke(), p.getLocation().add(0,1.5,0), 10, 3, 1, 3, 1.5);
 				}
 			}
 		};
@@ -188,7 +189,7 @@ public class EndStorm extends WeatherDisaster {
 				world.spawnParticle(Particle.SQUID_INK, loc.clone().add(0,0.5,0), 30, .25, .25, .25, 0.0001);
 				world.playSound(loc, Sound.BLOCK_PORTAL_AMBIENT, SoundCategory.AMBIENT, .7f, 1);
 				for (Entity e : world.getNearbyEntities(loc, .5, .5, .5))
-					if (e instanceof Player && (((Player) e).getGameMode() == GameMode.SURVIVAL || ((Player) e).getGameMode() == GameMode.ADVENTURE))
+					if (!isEntityTypeProtected(e) && e instanceof Player && (((Player) e).getGameMode() == GameMode.SURVIVAL || ((Player) e).getGameMode() == GameMode.ADVENTURE))
 						Utils.pureDamageEntity((LivingEntity) e, 1, "dd-unstablerift", true, null);
 				if (var[0] > 0)
 					var[0]-=5;
@@ -236,7 +237,7 @@ public class EndStorm extends WeatherDisaster {
 						return;
 					entity.setMetadata("dd-endstormentity", new FixedMetadataValue(plugin, "protected"));
 					entities.add(ce);
-					handler.addEntity(ce);
+					CustomEntity.handler.addEntity(ce);
 					targets.put(entity.getUniqueId(), player.getUniqueId());
 					mobs.add(entity.getUniqueId());
 				}
@@ -272,7 +273,7 @@ public class EndStorm extends WeatherDisaster {
 							e.remove();
 					}
 				Block b = world.getBlockAt(loc.getBlockX()+(rand.nextInt(8)-4), (int) (loc.getBlockY()-var[1]), loc.getBlockZ()+(rand.nextInt(8)-4));
-				if (b.getType().isBlock() && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
+				if (b.getType().isBlock() && !Utils.passStrengthTest(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
 					FallingBlock fb = world.spawnFallingBlock(b.getLocation(), b.getBlockData());
 					fb.setHurtEntities(true);
 					fb.setDropItem(false);
@@ -338,13 +339,13 @@ public class EndStorm extends WeatherDisaster {
 						ce = new EndTotem(entity, plugin, rand);
 					} else {
 						entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.WOLF);
-						ce = new BabyEndTotem(entity, plugin.dataFile, plugin, rand);
+						ce = new BabyEndTotem(entity, plugin, rand);
 					}
 					var[1]--;
 					if (var[1] <= 0) cancel();
 					if (entity == null)
 						return;
-					handler.addEntity(ce);
+					CustomEntity.handler.addEntity(ce);
 				}
 			}
 		};
@@ -353,7 +354,6 @@ public class EndStorm extends WeatherDisaster {
 	public void clear() {
 		time = 0;
 		clearEntities();
-		DeathMessages.endstorms.remove(this);
 	}
 	public void clearEntities() {
 		for (CustomEntity e : entities) {

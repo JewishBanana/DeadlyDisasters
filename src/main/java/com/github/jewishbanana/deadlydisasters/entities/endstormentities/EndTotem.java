@@ -26,8 +26,10 @@ import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.items.VoidTear;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class EndTotem extends CustomEntity {
 	
@@ -133,10 +135,10 @@ public class EndTotem extends CustomEntity {
 				entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.CHORUS_FRUIT));
 				if (rand.nextInt(2) == 0)
 					entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.OBSIDIAN));
-				if (rand.nextInt(7) == 0)
-					entity.getWorld().dropItemNaturally(entity.getLocation(), ItemsHandler.voidshard);
+				if (DependencyUtils.isUIFrameworkEnabled() && rand.nextInt(7) == 0)
+					entity.getWorld().dropItemNaturally(entity.getLocation(), DependencyUtils.getItemType(VoidTear.REGISTERED_KEY).getBuilder().getItem());
 			}
-			entity.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, entity.getLocation().add(0,2,0), 1000, .25, .25, .25, 20);
+			entity.getWorld().spawnParticle(VersionUtils.getEnchantParticle(), entity.getLocation().add(0,2,0), 1000, .25, .25, .25, 20);
 			clean();
 			it.remove();
 			return;

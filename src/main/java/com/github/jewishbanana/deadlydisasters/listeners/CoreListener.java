@@ -13,7 +13,6 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -23,10 +22,10 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
+import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.ShulkerBullet;
@@ -44,12 +43,9 @@ import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityPortalEnterEvent;
-import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.entity.VillagerAcquireTradeEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -58,7 +54,6 @@ import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
@@ -70,14 +65,22 @@ import com.github.jewishbanana.deadlydisasters.entities.halloweenentities.Pumpki
 import com.github.jewishbanana.deadlydisasters.events.DestructionDisaster;
 import com.github.jewishbanana.deadlydisasters.events.DisasterEvent;
 import com.github.jewishbanana.deadlydisasters.events.disasters.AcidStorm;
-import com.github.jewishbanana.deadlydisasters.events.disasters.BlackPlague;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Blizzard;
 import com.github.jewishbanana.deadlydisasters.events.disasters.EndStorm;
+import com.github.jewishbanana.deadlydisasters.events.disasters.ExtremeWinds;
+import com.github.jewishbanana.deadlydisasters.events.disasters.Hurricane;
 import com.github.jewishbanana.deadlydisasters.events.disasters.MeteorShower;
+import com.github.jewishbanana.deadlydisasters.events.disasters.SandStorm;
+import com.github.jewishbanana.deadlydisasters.events.disasters.SolarStorm;
+import com.github.jewishbanana.deadlydisasters.events.disasters.SoulStorm;
 import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.handlers.TimerCheck;
 import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
+import com.github.jewishbanana.deadlydisasters.items.BasicCoatingBook;
+import com.github.jewishbanana.deadlydisasters.items.PlagueCure;
+import com.github.jewishbanana.deadlydisasters.items.SplashPlagueCure;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
@@ -89,7 +92,7 @@ public class CoreListener implements Listener {
 	private FileConfiguration dataFile;
 	private Random rand;
 	private NamespacedKey key;
-	private boolean favoredDisaster,dislikedDisaster;
+//	private boolean favoredDisaster,dislikedDisaster;
 	
 	private static boolean worldSwap;
 	private static boolean nonOpMsg;
@@ -109,6 +112,7 @@ public class CoreListener implements Listener {
 	public static boolean catalogNotifyBool;
 	
 	public static Map<UUID,DisasterEvent> fallingBlocks = new HashMap<>();
+	public static Map<Fireball, DisasterEvent> fireBalls = new HashMap<>();
 	
 	public CoreListener(Main plugin, TimerCheck tc, FileConfiguration dataFile, Random rand) {
 		this.plugin = plugin;
@@ -143,10 +147,10 @@ public class CoreListener implements Listener {
 			}
 		}, 0, 20);
 		
-		if (plugin.dataFile.contains("data.favored") && !plugin.dataFile.getString("data.favored").equals("null"))
-			favoredDisaster = true;
-		if (plugin.dataFile.contains("data.disliked") && !plugin.dataFile.getString("data.disliked").equals("null"))
-			dislikedDisaster = true;
+//		if (plugin.dataFile.contains("data.favored") && !plugin.dataFile.getString("data.favored").equals("null"))
+//			favoredDisaster = true;
+//		if (plugin.dataFile.contains("data.disliked") && !plugin.dataFile.getString("data.disliked").equals("null"))
+//			dislikedDisaster = true;
 	}
 	@EventHandler
 	public void onJoin(PlayerJoinEvent e) {
@@ -156,45 +160,45 @@ public class CoreListener implements Listener {
 			public void run() {
 				if (worldSwap && (nonOpMsg || e.getPlayer().isOp())) {
 					WorldObject obj = WorldObject.findWorldObject(e.getPlayer().getWorld());
-					String tf = Utils.chat("&c&l"+Languages.langFile.getString("internal.offWord"));
+					String tf = Utils.convertString("&c&l"+Languages.langFile.getString("internal.offWord"));
 					if (obj.naturalAllowed)
-						tf = Utils.chat("&a&l"+Languages.langFile.getString("internal.onWord"));
-					e.getPlayer().sendMessage(Utils.chat(worldMessage.replace("%difficulty%", obj.difficulty.getLabel()).replace("%world%", obj.getWorld().getName())
+						tf = Utils.convertString("&a&l"+Languages.langFile.getString("internal.onWord"));
+					e.getPlayer().sendMessage(Utils.convertString(worldMessage.replace("%difficulty%", obj.difficulty.getLabel()).replace("%world%", obj.getWorld().getName())
 							+ "\n&3- "+Languages.langFile.getString("internal.random_disasters")+": "+tf
 							+ "\n&3- "+Languages.langFile.getString("internal.min_timer")+": &6"+(obj.timer)+" &7/ &3"+Languages.langFile.getString("internal.offset")+": &6"+(obj.offset)
 							+ "\n&3- "+Languages.langFile.getString("internal.levelWord")+": &a"+(obj.table[0])+"% &2"+(obj.table[1])+"% &b"+(obj.table[2])+"% &e"+(obj.table[3])+"% &c"+(obj.table[4])+"% &4"+(obj.table[5])+"%"));
 					e.getPlayer().playSound(e.getPlayer().getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3F, 1);
 				}
 				if (e.getPlayer().hasPermission("deadlydisasters.updatenotify") && dataFile.getBoolean("data.firstStart")) {
-					e.getPlayer().sendMessage(Utils.chat(Languages.prefix+Languages.firstStart
+					e.getPlayer().sendMessage(Utils.convertString(Languages.prefix+Languages.firstStart
 							+ "\n&c"+Languages.langFile.getString("internal.allowFlight")));
 					if (plugin.mcVersion < 1.16)
-						e.getPlayer().sendMessage(Languages.prefix+Utils.chat("&c"+Languages.langFile.getString("internal.olderVersion")));
+						e.getPlayer().sendMessage(Languages.prefix+Utils.convertString("&c"+Languages.langFile.getString("internal.olderVersion")));
 				}
 				if (!notified.contains(uuid) && e.getPlayer().hasPermission("deadlydisasters.updatenotify")) {
 					if (plugin.firstAfterUpdate)
 						e.getPlayer().sendMessage(Languages.prefix+Languages.joinAfterUpdate);
 					if (plugin.updateNotify) {
-						String msg = Languages.langFile.getString("internal.playerUpdate");
-						e.getPlayer().sendMessage(Utils.chat(Languages.prefix+"&a"+msg.substring(0, msg.indexOf('^'))+plugin.latestVersion+msg.substring(msg.indexOf('^')+1)+"&c"+plugin.getDescription().getVersion()));
+						String msg = Languages.langFile.getString("internal.playerUpdate").replace("${plugin.page}", Main.pluginSpigotPage);
+						e.getPlayer().sendMessage(Utils.convertString(Languages.prefix+"&a"+msg.substring(0, msg.indexOf('^'))+plugin.latestVersion+msg.substring(msg.indexOf('^')+1)+" &c"+plugin.getDescription().getVersion()));
 					}
 					notified.add(uuid);
 				}
 				if (warnForKick.contains(uuid)) {
-					e.getPlayer().sendMessage(Utils.chat(Languages.prefix+"&c"+Languages.langFile.getString("internal.allowFlight")));
+					e.getPlayer().sendMessage(Utils.convertString(Languages.prefix+"&c"+Languages.langFile.getString("internal.allowFlight")));
 					warnForKick.remove(uuid);
 				}
 				if (catalogNotifyBool && e.getPlayer().isOp() && !catalogNotify.contains(uuid)) {
-					e.getPlayer().sendMessage(Languages.prefix+ChatColor.GREEN+Languages.langFile.getString("internal.catalogUpdate")+Utils.chat(" &3(/disasters catalog)"));
+					e.getPlayer().sendMessage(Languages.prefix+ChatColor.GREEN+Languages.langFile.getString("internal.catalogUpdate")+Utils.convertString(" &3(/disasters catalog)"));
 					catalogNotify.add(uuid);
 				}
-				if (e.getPlayer().isOp() && !joinedServer.contains(uuid)) {
-					if (!favoredDisaster)
-						e.getPlayer().sendMessage(Languages.prefix+ChatColor.AQUA+Languages.langFile.getString("internal.favorDisaster")+Utils.chat(" &3(/disasters favor <disaster>)"));
-					if (!dislikedDisaster)
-						e.getPlayer().sendMessage(Languages.prefix+ChatColor.AQUA+Languages.langFile.getString("internal.dislikeDisaster")+Utils.chat(" &3(/disasters dislike <disaster>)"));
-					joinedServer.add(uuid);
-				}
+//				if (e.getPlayer().isOp() && !joinedServer.contains(uuid)) {
+//					if (!favoredDisaster)
+//						e.getPlayer().sendMessage(Languages.prefix+ChatColor.AQUA+Languages.langFile.getString("internal.favorDisaster")+Utils.convertString(" &3(/disasters favor <disaster>)"));
+//					if (!dislikedDisaster)
+//						e.getPlayer().sendMessage(Languages.prefix+ChatColor.AQUA+Languages.langFile.getString("internal.dislikeDisaster")+Utils.convertString(" &3(/disasters dislike <disaster>)"));
+//					joinedServer.add(uuid);
+//				}
 			}
 		}, 10);
 		plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
@@ -237,38 +241,78 @@ public class CoreListener implements Listener {
 		if (e.getMessage().equalsIgnoreCase("/weather clear")) {
 			if (!e.getPlayer().hasPermission("deadlydisasters.clearweather")) return;
 			Player p = e.getPlayer();
-			DeathMessages.acidstorms.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.extremewinds.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.soulstorms.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.blizzards.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.sandstorms.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.meteorshowers.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.endstorms.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.hurricanes.stream().forEach(i -> {
-				if (i.world.equals(p.getWorld()))
-					i.clear();
-			});
+			Iterator<AcidStorm> acidStormIterator = DeathMessages.acidstorms.iterator();
+			while (acidStormIterator.hasNext()) {
+				AcidStorm storm = acidStormIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					acidStormIterator.remove();
+				}
+			}
+			Iterator<ExtremeWinds> extremeWindsIterator = DeathMessages.extremewinds.iterator();
+			while (extremeWindsIterator.hasNext()) {
+				ExtremeWinds storm = extremeWindsIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					extremeWindsIterator.remove();
+				}
+			}
+			Iterator<SoulStorm> soulstormIterator = DeathMessages.soulstorms.iterator();
+			while (soulstormIterator.hasNext()) {
+				SoulStorm storm = soulstormIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					soulstormIterator.remove();
+				}
+			}
+			Iterator<Blizzard> blizzardIterator = DeathMessages.blizzards.iterator();
+			while (blizzardIterator.hasNext()) {
+				Blizzard storm = blizzardIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					blizzardIterator.remove();
+				}
+			}
+			Iterator<SandStorm> sandstormIterator = DeathMessages.sandstorms.iterator();
+			while (sandstormIterator.hasNext()) {
+				SandStorm storm = sandstormIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					sandstormIterator.remove();
+				}
+			}
+			Iterator<MeteorShower> meteorshowerIterator = DeathMessages.meteorshowers.iterator();
+			while (meteorshowerIterator.hasNext()) {
+				MeteorShower storm = meteorshowerIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					meteorshowerIterator.remove();
+				}
+			}
+			Iterator<EndStorm> endstormIterator = DeathMessages.endstorms.iterator();
+			while (endstormIterator.hasNext()) {
+				EndStorm storm = endstormIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					endstormIterator.remove();
+				}
+			}
+			Iterator<Hurricane> hurricaneIterator = DeathMessages.hurricanes.iterator();
+			while (hurricaneIterator.hasNext()) {
+				Hurricane storm = hurricaneIterator.next();
+				if (storm.world.equals(p.getWorld())) {
+					storm.clear();
+					hurricaneIterator.remove();
+				}
+			}
+			Iterator<SolarStorm> solarstormIterator = DeathMessages.solarstorms.iterator();
+			while (solarstormIterator.hasNext()) {
+				SolarStorm storm = solarstormIterator.next();
+				if (storm.world.equals(p.getWorld())) {
+					storm.clear();
+					solarstormIterator.remove();
+				}
+			}
 		}
 	}
 	@EventHandler
@@ -311,31 +355,31 @@ public class CoreListener implements Listener {
 			e.setCancelled(true);
 		else if (e.getItemInHand().getItemMeta().getPersistentDataContainer().has(ItemsHandler.snowGlobeKey, PersistentDataType.BYTE)) {
 			if (!(e.getBlockPlaced().getBlockData() instanceof Rotatable)) {
-				e.getPlayer().sendMessage(Utils.chat("&c"+Languages.langFile.getString("internal.placeGlobeError")));
+				e.getPlayer().sendMessage(Utils.convertString("&c"+Languages.langFile.getString("internal.placeGlobeError")));
 				e.setCancelled(true);
 				return;
 			}
 			Santa.summonSanta(plugin, e.getBlock());
 		} else if (e.getItemInHand().getItemMeta().getPersistentDataContainer().has(ItemsHandler.easterBasketKey, PersistentDataType.BYTE)) {
 			if (!(e.getBlockPlaced().getBlockData() instanceof Rotatable)) {
-				e.getPlayer().sendMessage(Utils.chat("&c"+Languages.langFile.getString("internal.placeGlobeError")));
+				e.getPlayer().sendMessage(Utils.convertString("&c"+Languages.langFile.getString("internal.placeGlobeError")));
 				e.setCancelled(true);
 				return;
 			}
 			if (!EasterBunny.summonEasterBunny(plugin, e.getBlock())) {
 				e.setCancelled(true);
-				e.getPlayer().sendMessage(Utils.chat("&cCould not find possible spawn nearby!"));
+				e.getPlayer().sendMessage(Utils.convertString("&cCould not find possible spawn nearby!"));
 				return;
 			}
 		} else if (e.getItemInHand().getItemMeta().getPersistentDataContainer().has(ItemsHandler.pumpkinBasketKey, PersistentDataType.BYTE)) {
 			if (!(e.getBlockPlaced().getBlockData() instanceof Rotatable)) {
-				e.getPlayer().sendMessage(Utils.chat("&c"+Languages.getString("internal.placeGlobeError")));
+				e.getPlayer().sendMessage(Utils.convertString("&c"+Languages.getString("internal.placeGlobeError")));
 				e.setCancelled(true);
 				return;
 			}
 			if (!PumpkinKing.summonPumpkinKing(plugin, e.getBlock())) {
 				e.setCancelled(true);
-				e.getPlayer().sendMessage(Utils.chat("&cCould not find possible spawn nearby!"));
+				e.getPlayer().sendMessage(Utils.convertString("&cCould not find possible spawn nearby!"));
 				return;
 			}
 		}
@@ -396,15 +440,7 @@ public class CoreListener implements Listener {
 	public void onInteract(PlayerInteractEvent e) {
 		if (e.getItem() == null || !e.getItem().hasItemMeta())
 			return;
-		Material type = e.getItem().getType();
-		if (type == Material.GHAST_TEAR && ((plugin.customNameSupport && e.getItem().getItemMeta().getDisplayName().equals(ItemsHandler.voidShardName)) || e.getItem().getItemMeta().getPersistentDataContainer().has(ItemsHandler.voidShardKey, PersistentDataType.BYTE))) {
-			Location target = e.getPlayer().getEyeLocation().clone().add(e.getPlayer().getLocation().getDirection().multiply(6));
-			if (target.getBlock().getType() != Material.AIR)
-				return;
-			EndStorm storm = new EndStorm(1);
-			storm.createCustomRift(target);
-			e.getItem().setAmount(e.getItem().getAmount()-1);
-		} else if (type == Material.BLAZE_ROD && (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) && !mageWandCooldownMap.containsKey(e.getPlayer().getUniqueId()) &&
+		if (e.getItem().getType() == Material.BLAZE_ROD && (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) && !mageWandCooldownMap.containsKey(e.getPlayer().getUniqueId()) &&
 				e.getItem().getItemMeta().hasLore() && ((plugin.customNameSupport && e.getItem().getItemMeta().getLore().get(0).equals(ItemsHandler.mageWandLore)) || e.getItem().getItemMeta().getPersistentDataContainer().has(ItemsHandler.mageWandKey, PersistentDataType.BYTE))) {
 			mageWandCooldownMap.put(e.getPlayer().getUniqueId(), ItemsHandler.mageWandCooldown);
 			ShulkerBullet[] bullets = new ShulkerBullet[12];
@@ -450,57 +486,30 @@ public class CoreListener implements Listener {
 				}
 			};
 		}
-	}
-	@EventHandler
-	public void bowShoot(EntityShootBowEvent e) {
-		if (e.getForce() < 0.8 || !e.getBow().hasItemMeta()) return;
-		ItemMeta meta = e.getBow().getItemMeta();
-		if (!voidBowCooldownMap.containsKey(e.getEntity().getUniqueId()) && ((plugin.customNameSupport && meta.getDisplayName().equals(ItemsHandler.voidBowName)) || meta.getPersistentDataContainer().has(ItemsHandler.voidBowKey, PersistentDataType.BYTE))) {
-			voidBowCooldownMap.put(e.getEntity().getUniqueId(), ItemsHandler.voidBowCooldown);
-			Arrow arrow = (Arrow) e.getProjectile();
-			arrow.setMetadata("dd-voidarrow", fixdata);
-			arrow.setColor(Color.BLACK);
-			new RepeatingTask(plugin, 0, 10) {
-				@Override
-				public void run() {
-					if (arrow.isInBlock()) {
-						if (!Utils.isZoneProtected(arrow.getLocation()) || plugin.getConfig().getBoolean("customitems.items.void_wrath.allow_in_regions"))
-							EndStorm.createUnstableRift(arrow.getLocation().clone(), ItemsHandler.voidBowPortalTicks);
-						cancel();
-					} else if (arrow.isDead())
-						cancel();
-				}
-			};
-		}
-	}
-	@EventHandler
-	public void onConsume(PlayerItemConsumeEvent e) {
-		if (e.getItem().getType() != Material.POTION || !BlackPlague.time.containsKey(e.getPlayer().getUniqueId()))
-			return;
-		if (e.getItem().getItemMeta().getPersistentDataContainer().has(ItemsHandler.plagueCureKey, PersistentDataType.BYTE)) {
-			BlackPlague.cureEntity(e.getPlayer(), plugin);
-			e.getPlayer().sendMessage(ChatColor.GREEN+Languages.langFile.getString("misc.cureMessage"));
-			return;
-		}
-	}
-	@EventHandler
-	public void onPotionSplash(PotionSplashEvent e) {
-		if (e.getPotion().getItem().getItemMeta().getPersistentDataContainer().has(ItemsHandler.plagueCureKey, PersistentDataType.BYTE))
-			for (LivingEntity entity : e.getAffectedEntities())
-				if (BlackPlague.time.containsKey(entity.getUniqueId())) {
-					BlackPlague.cureEntity(entity, plugin);
-					if (entity instanceof Player)
-						entity.sendMessage(ChatColor.GREEN+Languages.langFile.getString("misc.cureMessage"));
+		if (DependencyUtils.isUIFrameworkEnabled())
+			for (NamespacedKey key : e.getItem().getItemMeta().getPersistentDataContainer().getKeys())
+				if (ItemsHandler.compatibilityMap.containsKey(key)) {
+					com.github.jewishbanana.uiframework.items.ItemType type = com.github.jewishbanana.uiframework.items.ItemType.getItemType(ItemsHandler.compatibilityMap.get(key));
+					if (type != null)
+						e.getPlayer().getInventory().setItem(e.getHand(), type.getBuilder().getItem());
+					break;
 				}
 	}
 	@EventHandler
 	public void onTradeAquire(VillagerAcquireTradeEvent e) {
-		if (e.getEntity() instanceof WanderingTrader)
+		if (!DependencyUtils.isUIFrameworkEnabled() || e.getEntity() instanceof WanderingTrader)
 			return;
-		if (((Villager) e.getEntity()).getProfession() == Villager.Profession.CLERIC && rand.nextDouble()*100 < 5.0) {
-			MerchantRecipe newRecipe = new MerchantRecipe(ItemsHandler.plagueCure, rand.nextInt(5)+8);
+		if (((Villager) e.getEntity()).getProfession() == Villager.Profession.LIBRARIAN && ((Villager) e.getEntity()).getVillagerLevel() >= 3 && rand.nextDouble()*100 < plugin.getConfig().getDouble("customitems.items.basic_coating_book.librarian_trade_chance")) {
+			MerchantRecipe newRecipe = new MerchantRecipe(com.github.jewishbanana.uiframework.items.ItemType.getItemType(BasicCoatingBook.REGISTERED_KEY).getBuilder().getItem(), rand.nextInt(3)+1);
+			newRecipe.addIngredient(new ItemStack(Material.EMERALD, rand.nextInt(60)+5));
+			newRecipe.addIngredient(new ItemStack(Material.BOOK, 1));
+			newRecipe.setVillagerExperience(20);
+			e.setRecipe(newRecipe);
+			return;
+		} else if (((Villager) e.getEntity()).getProfession() == Villager.Profession.CLERIC && rand.nextDouble()*100 < plugin.getConfig().getDouble("customitems.items.plague_cure.cleric_trade_chance")) {
+			MerchantRecipe newRecipe = new MerchantRecipe(com.github.jewishbanana.uiframework.items.ItemType.getItemType(PlagueCure.REGISTERED_KEY).getBuilder().getItem(), rand.nextInt(5)+8);
 			if (rand.nextInt(5) == 0)
-				newRecipe = new MerchantRecipe(ItemsHandler.plagueCureSplash, rand.nextInt(5)+8);
+				newRecipe = new MerchantRecipe(com.github.jewishbanana.uiframework.items.ItemType.getItemType(SplashPlagueCure.REGISTERED_KEY).getBuilder().getItem(), rand.nextInt(5)+8);
 			newRecipe.addIngredient(new ItemStack(Material.EMERALD, rand.nextInt(6)+3));
 			if (rand.nextInt(3) == 0)
 				newRecipe.addIngredient(new ItemStack(Material.INK_SAC, rand.nextInt(3)+1));
@@ -524,6 +533,16 @@ public class CoreListener implements Listener {
 		for (Block b : e.blockList())
 			if (Santa.snowGlobeBlocks.contains(b) || EasterBunny.easterBasketBlocks.contains(b) || PumpkinKing.pumpkinBasketBlocks.contains(b))
 				e.blockList().remove(b);
+		if (!fireBalls.containsKey(e.getEntity()))
+			return;
+		for (Block b : e.blockList()) {
+			if (Utils.isZoneProtected(b.getLocation()) || Utils.passStrengthTest(b.getType()))
+				continue;
+			if (plugin.CProtect)
+				Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
+			b.setType(Material.AIR);
+		}
+		e.blockList().clear();
 	}
 	@EventHandler
 	public void worldInit(WorldInitEvent e) {
@@ -546,10 +565,10 @@ public class CoreListener implements Listener {
 			plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
 				@Override
 				public void run() {
-					String tf = Utils.chat("&c&l"+Languages.langFile.getString("internal.offWord"));
+					String tf = Utils.convertString("&c&l"+Languages.langFile.getString("internal.offWord"));
 					if (obj.naturalAllowed)
-						tf = Utils.chat("&a&l"+Languages.langFile.getString("internal.onWord"));
-					e.getPlayer().sendMessage(Utils.chat(worldMessage.replace("%difficulty%", obj.difficulty.getLabel()).replace("%world%", e.getTo().getWorld().getName())
+						tf = Utils.convertString("&a&l"+Languages.langFile.getString("internal.onWord"));
+					e.getPlayer().sendMessage(Utils.convertString(worldMessage.replace("%difficulty%", obj.difficulty.getLabel()).replace("%world%", e.getTo().getWorld().getName())
 							+ "\n&3- "+Languages.langFile.getString("internal.random_disasters")+": "+tf
 							+ "\n&3- "+Languages.langFile.getString("internal.min_timer")+": &6"+(obj.timer)+" &7/ &3"+Languages.langFile.getString("internal.offset")+": &6"+(obj.offset)
 							+ "\n&3- "+Languages.langFile.getString("internal.levelWord")+": &a"+(obj.table[0])+"% &2"+(obj.table[1])+"% &b"+(obj.table[2])+"% &e"+(obj.table[3])+"% &c"+(obj.table[4])+"% &4"+(obj.table[5])+"%"));
@@ -565,6 +584,6 @@ public class CoreListener implements Listener {
 	public static void reload(Main plugin) {
 		worldSwap = plugin.getConfig().getBoolean("messages.misc.world_messages.allow_world_messages");
 		nonOpMsg = plugin.getConfig().getBoolean("messages.misc.world_messages.show_world_messages_to_not_opped");
-		worldMessage = Utils.chat(Languages.prefix+plugin.getConfig().getString("messages.misc.world_messages.message"));
+		worldMessage = Utils.convertString(Languages.prefix+plugin.getConfig().getString("messages.misc.world_messages.message"));
 	}
 }

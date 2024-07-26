@@ -20,8 +20,8 @@ import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class AncientMummy extends CustomEntity {
@@ -74,8 +74,8 @@ public class AncientMummy extends CustomEntity {
 				entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.ROTTEN_FLESH, plugin.random.nextInt(4)));
 				if (plugin.random.nextInt(2) == 0)
 					entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.BONE, plugin.random.nextInt(3)));
-				if (plugin.random.nextDouble() < 0.15)
-					entity.getWorld().dropItemNaturally(entity.getLocation(), ItemsHandler.ancientcloth);
+				if (DependencyUtils.doesItemExist("ui:ancient_cloth") && plugin.random.nextDouble() < 0.15)
+					entity.getWorld().dropItemNaturally(entity.getLocation(), DependencyUtils.getItemType("ui:ancient_cloth").getItem());
 			}
 			it.remove();
 			return;

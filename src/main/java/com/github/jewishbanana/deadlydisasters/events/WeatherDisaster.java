@@ -3,6 +3,7 @@ package com.github.jewishbanana.deadlydisasters.events;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
@@ -26,14 +27,16 @@ public abstract class WeatherDisaster extends DisasterEvent {
 		this.level = level;
 		if (this.level > 5 && !(this instanceof ExtremeWinds))
 			this.level = 5;
-		this.configFile = plugin.getConfig();
+		this.worldObject = WorldObject.findWorldObject(Bukkit.getWorlds().get(0));
+		this.configFile = worldObject.configFile;
 	}
 	public WeatherDisaster(int level, World world) {
 		this.plugin = Main.getInstance();
 		this.level = level;
 		if (this.level > 5 && !(this instanceof ExtremeWinds))
 			this.level = 5;
-		this.configFile = WorldObject.findWorldObject(world).configFile;
+		this.worldObject = WorldObject.findWorldObject(world);
+		this.configFile = worldObject.configFile;
 	}
 	public Disaster getType() {
 		return type;

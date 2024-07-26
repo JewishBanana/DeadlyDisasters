@@ -6,7 +6,6 @@ import java.util.Queue;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -24,6 +23,7 @@ import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class TunnellerZombie extends CustomEntity {
 	
@@ -59,7 +59,7 @@ public class TunnellerZombie extends CustomEntity {
 			return;
 		if (entity.getVelocity().getY() < -0.5 && entity.getLocation().clone().subtract(0,3,0).getBlock().getType().isSolid() && entity.getLocation().clone().subtract(0,2,0).getBlock().isPassable()) {
 			Location temp = entity.getLocation().clone().subtract(0,2,0);
-			if (!Utils.isBlockBlacklisted(temp.getBlock().getType()) && !Utils.isZoneProtected(temp)) {
+			if (!Utils.passStrengthTest(temp.getBlock().getType()) && !Utils.isZoneProtected(temp)) {
 				temp.getBlock().setType(Material.WATER);
 				entity.getEquipment().setItemInMainHand(new ItemStack(Material.WATER_BUCKET));
 				plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
@@ -92,7 +92,7 @@ public class TunnellerZombie extends CustomEntity {
 					else {
 						Block b = blocks.poll();
 						if (b.getType() == Material.COBBLESTONE) {
-							b.getWorld().spawnParticle(Particle.BLOCK_CRACK, b.getLocation().clone().add(0.5,0.5,0.5), 7, 0, 0, 0, 0.01, b.getBlockData());
+							b.getWorld().spawnParticle(VersionUtils.getBlockCrack(), b.getLocation().clone().add(0.5,0.5,0.5), 7, 0, 0, 0, 0.01, b.getBlockData());
 							b.breakNaturally(new ItemStack(Material.AIR));
 						}
 					}
@@ -113,7 +113,7 @@ public class TunnellerZombie extends CustomEntity {
 			target = entity.getTarget();
 		if (entity.getVelocity().getX() < 0.08 && entity.getVelocity().getZ() < 0.08) {
 			Location temp = entity.getLocation().clone().add(0,2,0);
-			if (!temp.getBlock().isPassable() && !Utils.isBlockBlacklisted(temp.getBlock().getType()) && !Utils.isZoneProtected(temp)) {
+			if (!temp.getBlock().isPassable() && !Utils.passStrengthTest(temp.getBlock().getType()) && !Utils.isZoneProtected(temp)) {
 				//cp
 				temp.getBlock().breakNaturally();
 				if (plugin.mcVersion >= 1.16)
@@ -126,7 +126,7 @@ public class TunnellerZombie extends CustomEntity {
 				return;
 			targetLoc.setY(loc.getY());
 			if (target.getLocation().getBlockY()-1 > loc.getBlockY() && entity.getVelocity().getY() > -0.5 && (loc.distanceSquared(targetLoc) <= 4 || (entity.getVelocity().getX() <= 0 && entity.getVelocity().getZ() <= 0))) {
-				if (!Utils.isBlockBlacklisted(temp.getBlock().getType()) && !Utils.isZoneProtected(temp)) {
+				if (!Utils.passStrengthTest(temp.getBlock().getType()) && !Utils.isZoneProtected(temp)) {
 					entity.setVelocity(new Vector(0,0.45,0));
 					//cp
 					loc.getBlock().setType(Material.COBBLESTONE);
@@ -139,7 +139,7 @@ public class TunnellerZombie extends CustomEntity {
 			} else if (entity.getVelocity().getX() <= 0 && entity.getVelocity().getZ() <= 0) {
 				if (target.getLocation().getBlockY() < loc.getBlockY()) {
 					Location b = loc.clone().subtract(0,1,0);
-					if (!Utils.isBlockBlacklisted(b.getBlock().getType()) && !Utils.isZoneProtected(b)) {
+					if (!Utils.passStrengthTest(b.getBlock().getType()) && !Utils.isZoneProtected(b)) {
 						//cp
 						b.getBlock().breakNaturally();
 						if (plugin.mcVersion >= 1.16)
@@ -149,7 +149,7 @@ public class TunnellerZombie extends CustomEntity {
 				} else {
 					temp = entity.getLocation().clone().add(new Vector(targetLoc.getX() - loc.getX(), targetLoc.getY() - loc.getY(), targetLoc.getZ() - loc.getZ()).normalize().multiply(1.25));
 					temp.setY(temp.getY()-1);
-					if (temp.getBlock().isPassable() && !Utils.isBlockBlacklisted(temp.getBlock().getType()) && !Utils.isZoneProtected(temp)) {
+					if (temp.getBlock().isPassable() && !Utils.passStrengthTest(temp.getBlock().getType()) && !Utils.isZoneProtected(temp)) {
 						//cp
 						temp.getBlock().setType(Material.COBBLESTONE);
 						entity.getWorld().playSound(temp, Sound.BLOCK_STONE_PLACE, 1, 1);
@@ -162,7 +162,7 @@ public class TunnellerZombie extends CustomEntity {
 			}
 			targetLoc = target.getLocation();
 			temp = entity.getLocation().clone().add(new Vector(targetLoc.getX() - loc.getX(), targetLoc.getY() - loc.getY(), targetLoc.getZ() - loc.getZ()).normalize().multiply(1.25));
-			if (temp.getBlock().equals(loc.getBlock()) && !Utils.isBlockBlacklisted(loc.getBlock().getType()) && !Utils.isZoneProtected(loc)) {
+			if (temp.getBlock().equals(loc.getBlock()) && !Utils.passStrengthTest(loc.getBlock().getType()) && !Utils.isZoneProtected(loc)) {
 				//cp
 				temp.getBlock().breakNaturally();
 				if (plugin.mcVersion >= 1.16)
@@ -174,7 +174,7 @@ public class TunnellerZombie extends CustomEntity {
 			else
 				temp.setY(entity.getLocation().getY()+2);
 			for (int i=0; i < 3; i++) {
-				if (!temp.getBlock().isPassable() && !Utils.isBlockBlacklisted(temp.getBlock().getType()) && !Utils.isZoneProtected(temp)) {
+				if (!temp.getBlock().isPassable() && !Utils.passStrengthTest(temp.getBlock().getType()) && !Utils.isZoneProtected(temp)) {
 					//cp
 					temp.getBlock().breakNaturally();
 					if (plugin.mcVersion >= 1.16)

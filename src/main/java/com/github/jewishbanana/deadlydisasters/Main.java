@@ -30,6 +30,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.github.jewishbanana.deadlydisasters.commands.Disasters;
 import com.github.jewishbanana.deadlydisasters.commands.TownyDisasters;
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
 import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
@@ -56,6 +57,7 @@ import com.github.jewishbanana.deadlydisasters.listeners.spawners.GlobalSpawner;
 import com.github.jewishbanana.deadlydisasters.listeners.unloaders.Loader_ver_14;
 import com.github.jewishbanana.deadlydisasters.listeners.unloaders.Loader_ver_17;
 import com.github.jewishbanana.deadlydisasters.utils.ConfigUpdater;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.NBSongs;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
@@ -65,9 +67,8 @@ public class Main extends JavaPlugin {
 	public boolean RegionProtection;
 	public boolean CProtect;
 	
-	public boolean updateNotify,firstSetup,firstAfterUpdate,debug,customNameSupport;
+	public boolean updateNotify,firstSetup,firstAfterUpdate,debug,customNameSupport,isPro;
 	private TimerCheck tc;
-	public EntityHandler handler;
 	private File dataf;
 	public FileConfiguration dataFile;
 	public String latestVersion;
@@ -84,6 +85,8 @@ public class Main extends JavaPlugin {
 	public int maxDepth;
 	
 	private static Main instance;
+	
+	public static String pluginSpigotPage = "https://www.spigotmc.org/resources/deadly-disasters.90806/";
 	
 	public void onEnable() {
 		instance = this;
@@ -105,7 +108,7 @@ public class Main extends JavaPlugin {
 				this.reloadConfig();
 			} catch (IOException e) {
 				e.printStackTrace();
-				consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cUnable to initialize config! Please report the full error above to the discord."));
+				consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cUnable to initialize config! Please report the full error above to the discord."));
 			}
 		
 		dataf = new File(getDataFolder().getAbsolutePath(), "pluginData/data.yml");
@@ -157,7 +160,7 @@ public class Main extends JavaPlugin {
 			WorldObject.worlds.add(new WorldObject(w, this));
 		
 		PluginManager pm = getServer().getPluginManager();
-		if (pm.getPlugin("WorldGuard") != null) {
+		if (pm.isPluginEnabled("WorldGuard")) {
 			Utils.WGuardB = true;
 			getLogger().info("Successfully hooked into World Guard");
 		}
@@ -165,49 +168,50 @@ public class Main extends JavaPlugin {
 			CProtect = true;
 			getLogger().info("Successfully hooked into CoreProtect");
 		}
-		if (pm.getPlugin("Towny") != null) {
+		if (pm.isPluginEnabled("Towny")) {
 			Utils.TownyB = true;
 			new TownyListener(this);
 			this.getCommand("towndisasters").setTabCompleter(new TownyDisasters(this));
 			getLogger().info("Successfully hooked into Towny");
 		}
-		if (pm.getPlugin("GriefPrevention") != null) {
+		if (pm.isPluginEnabled("GriefPrevention")) {
 			Utils.GriefB = true;
 			getLogger().info("Successfully hooked into GriefPrevention");
 		}
-		if (pm.getPlugin("Lands") != null) {
+		if (pm.isPluginEnabled("Lands")) {
 			Utils.LandsB = true;
 			getLogger().info("Successfully hooked into Lands");
 		}
-		if (pm.getPlugin("Kingdoms") != null) {
+		if (pm.isPluginEnabled("Kingdoms")) {
 			Utils.KingsB = true;
 			getLogger().info("Successfully hooked into KingdomsX");
 		}
 		if (Utils.WGuardB || Utils.TownyB || Utils.GriefB || Utils.LandsB || Utils.KingsB)
 			RegionProtection = true;
-		if (Bukkit.getPluginManager().isPluginEnabled("NoteBlockAPI")) {
+		if (pm.isPluginEnabled("NoteBlockAPI")) {
 			this.noteBlockAPIEnabled = true;
 			NBSongs.init(this);
 			getLogger().info("Successfully hooked into NoteBlockAPI");
 		}
+		new DependencyUtils(this);
 		
 		CustomEntityType.reload(this);
 
 		new ArmorListener(this);
 		tc = new TimerCheck(this, dataFile, random);
-		handler = new EntityHandler(this, dataFile);
+		CustomEntity.handler = new EntityHandler(this);
 		if (mcVersion >= 1.17)
-			new Loader_ver_17(this, handler);
+			new Loader_ver_17(this, CustomEntity.handler);
 		else
-			new Loader_ver_14(this, handler);
+			new Loader_ver_14(this, CustomEntity.handler);
 		new CoreListener(this, tc, dataFile, random);
 		enchantHandler = new CustomEnchantHandler(this);
 		new CustomEntitiesListener(this);
 		new CraftingListener(this);
-		this.getCommand("disasters").setTabCompleter(new Disasters(this, tc, handler, random, new Catalog(this)));
+		this.getCommand("disasters").setTabCompleter(new Disasters(this, tc, CustomEntity.handler, random, new Catalog(this)));
 		new DeathMessages(this);
 		new Utils(this);
-		new GlobalSpawner(this, handler);
+		new GlobalSpawner(this);
 		eventHandler = SpecialEvent.checkForEvent(this);
 		
 		Utils.easterEgg();
@@ -227,12 +231,12 @@ public class Main extends JavaPlugin {
 			try {
 				doomsday.getParentFile().mkdirs();
 				FileUtils.copyInputStreamToFile(getResource("files/doomsday.yml"), doomsday);
-				consoleSender.sendMessage(Languages.prefix+Utils.chat("&bInstalled &e'doomsday' &bsuccessfully!"));
+				consoleSender.sendMessage(Languages.prefix+Utils.convertString("&bInstalled &e'doomsday' &bsuccessfully!"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-		consoleSender.sendMessage(Languages.prefix+Utils.chat("&aEnjoying the plugin? Try the pro version which has many new features such as new &dnew disasters, new custom mobs, new custom items, regenerating worlds, block stability for bases, and much more &aupgrade now to pro here https://www.spigotmc.org/resources/deadlydisasters-pro.100918/"));
+//		consoleSender.sendMessage(Languages.prefix+Utils.convertString("&aEnjoying the plugin? Try the pro version which has many new features such as new &dnew disasters, new custom mobs, new custom items, regenerating worlds, and much more &aupgrade now to pro here https://www.spigotmc.org/resources/deadlydisasters-pro.100918/"));
 		Blizzard.refreshFrozen(this);
 		
 		Metrics.configureMetrics(this);
@@ -243,7 +247,7 @@ public class Main extends JavaPlugin {
 			DeathMessages.purges.forEach(e -> e.clearBar());
 		} catch (NoClassDefFoundError e) {}
 		tc.saveTimerValues();
-		handler.cleanEntities();
+		CustomEntity.handler.cleanEntities();
 		try {
 			BlackPlague.time.forEach((k,v) -> {
 				if (Bukkit.getEntity(k) != null)
@@ -260,14 +264,13 @@ public class Main extends JavaPlugin {
 			eventHandler.saveData();
 		Metrics.saveMetricsData(this);
 		saveDataFile();
-		/*if (!getConfig().getBoolean("general.opt-out-error-sharing") && getDescription().getVersion().equals(latestVersion))
-			sql.checkLog(new File(new File(".").getAbsolutePath()+"/logs/latest.log"));*/
 	}
 	public void removeCustomEntities() {
 		DeathMessages.endstorms.forEach(e -> e.clearEntities());
 		DeathMessages.blizzards.forEach(e -> e.clearEntities());
 		DeathMessages.sandstorms.forEach(e -> e.clearEntities());
 		DeathMessages.soulstorms.forEach(e -> e.clearEntities());
+		DeathMessages.solarstorms.forEach(e -> e.clearEntities());
 		DeathMessages.purges.forEach(e -> e.clearEntities());
 		DeathMessages.acidstorms.forEach(e -> e.clearEntities());
 		DeathMessages.supernovas.forEach(e -> e.removeCrystal());
@@ -288,10 +291,11 @@ public class Main extends JavaPlugin {
 				} catch (IOException e) {
 					return;
 				}
-				if (Double.parseDouble(getDescription().getVersion()) < Double.parseDouble(latestVersion)) {
-					String msg = Languages.langFile.getString("internal.consoleUpdate");
-					consoleSender.sendMessage(Utils.chat(Languages.prefix+"&a"+msg.substring(0, msg.indexOf('^'))+latestVersion+msg.substring(msg.indexOf('^')+1)));
-					if (getConfig().getBoolean("general.update_notify")) updateNotify = true;
+				if (!getDescription().getVersion().equals(latestVersion)) {
+					String msg = Languages.langFile.getString("internal.consoleUpdate").replace("${plugin.page}", Main.pluginSpigotPage);
+					consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&a"+msg.substring(0, msg.indexOf('^'))+latestVersion+msg.substring(msg.indexOf('^')+1)));
+					if (getConfig().getBoolean("general.update_notify"))
+						updateNotify = true;
 				}
 			}
 		});
@@ -325,10 +329,10 @@ public class Main extends JavaPlugin {
 				WorldObject.saveYamlFile(this);
 			}
 			
-			consoleSender.sendMessage(Utils.chat(Languages.prefix+"&a"+Languages.langFile.getString("internal.cfgUpdate")+" "+getDescription().getVersion()));
+			consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&a"+Languages.langFile.getString("internal.cfgUpdate")+" "+getDescription().getVersion()));
 		} catch (IOException e) {
 			e.printStackTrace();
-			consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cUnable to update config! Please report the full error above to the discord."));
+			consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cUnable to update config! Please report the full error above to the discord."));
 		}
 	}
 	public void checkWorldsYaml() {
@@ -342,7 +346,7 @@ public class Main extends JavaPlugin {
 			try {
 				worldFile.save(worldsf);
 			} catch (IOException e) {
-				consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cCould not save worlds file in first init!"));
+				consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cCould not save worlds file in first init!"));
 			}
 		} else {
 			worldFile = YamlConfiguration.loadConfiguration(worldsf);
@@ -353,7 +357,7 @@ public class Main extends JavaPlugin {
 			try {
 				worldFile.save(worldsf);
 			} catch (IOException e) {
-				consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cCould not save worlds file in init!"));
+				consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cCould not save worlds file in init!"));
 			}
 		}
 		WorldObject.yamlFile = worldFile;
@@ -457,18 +461,10 @@ public class Main extends JavaPlugin {
 		try {
 			dataFile.save(dataf);
 		} catch (IOException e) {
-			consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cError #00 Unable to save data file!"));
+			consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cError #00 Unable to save data file!"));
 		}
 	}
 	public static Main getInstance() {
 		return instance;
-	}
-	public static boolean isSpigot() {
-	    try {
-	        Class.forName("org.bukkit.entity.Player$Spigot"); //Some Spigot class
-	        return true;
-	    } catch (Throwable tr) {
-	        return false;
-	    }
 	}
 }

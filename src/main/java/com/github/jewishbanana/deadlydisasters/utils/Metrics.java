@@ -59,13 +59,13 @@ public class Metrics {
 		
 		List<Integer> disasterOccurredList = new ArrayList<>();
 		if (!plugin.dataFile.contains("metrics.occurred")) {
-			for (int i=0; i < 18; i++)
+			for (int i=0; i < 19; i++)
 				disasterOccurredList.add(0);
 			plugin.dataFile.set("metrics.occurred", disasterOccurredList);
 			plugin.saveDataFile();
 		} else {
 			List<Integer> tempList = plugin.dataFile.getIntegerList("metrics.occurred");
-			for (int i=0; i < 18; i++)
+			for (int i=0; i < 19; i++)
 				if (i < tempList.size())
 					disasterOccurredList.add(tempList.get(i));
 				else
@@ -89,6 +89,7 @@ public class Metrics {
 		disasterOccurredMap.put(Disaster.SUPERNOVA.getMetricsLabel(), disasterOccurredList.get(15));
 		disasterOccurredMap.put(Disaster.HURRICANE.getMetricsLabel(), disasterOccurredList.get(16));
 		disasterOccurredMap.put(Disaster.PURGE.getMetricsLabel(), disasterOccurredList.get(17));
+		disasterOccurredMap.put(Disaster.SOLARSTORM.getMetricsLabel(), disasterOccurredList.get(18));
 		
 		metrics.addCustomChart(new Metrics.AdvancedPie("disasters_occurred", new Callable<Map<String, Integer>>() {
 	        @Override
@@ -103,13 +104,13 @@ public class Metrics {
 		
 		List<Integer> disasterSpawnedList = new ArrayList<>();
 		if (!plugin.dataFile.contains("metrics.spawned")) {
-			for (int i=0; i < 18; i++)
+			for (int i=0; i < 19; i++)
 				disasterSpawnedList.add(0);
 			plugin.dataFile.set("metrics.spawned", disasterSpawnedList);
 			plugin.saveDataFile();
 		} else {
 			List<Integer> tempList = plugin.dataFile.getIntegerList("metrics.spawned");
-			for (int i=0; i < 18; i++)
+			for (int i=0; i < 19; i++)
 				if (i < tempList.size())
 					disasterSpawnedList.add(tempList.get(i));
 				else
@@ -133,6 +134,7 @@ public class Metrics {
 		disasterSpawnedMap.put(Disaster.SUPERNOVA.getMetricsLabel(), disasterSpawnedList.get(15));
 		disasterSpawnedMap.put(Disaster.HURRICANE.getMetricsLabel(), disasterSpawnedList.get(16));
 		disasterSpawnedMap.put(Disaster.PURGE.getMetricsLabel(), disasterSpawnedList.get(17));
+		disasterSpawnedMap.put(Disaster.SOLARSTORM.getMetricsLabel(), disasterSpawnedList.get(18));
 		
 		metrics.addCustomChart(new Metrics.AdvancedPie("disasters_spawned", new Callable<Map<String, Integer>>() {
 	        @Override
@@ -203,13 +205,13 @@ public class Metrics {
 		
 		List<Integer> disasterDestroyedList = new ArrayList<>();
 		if (!plugin.dataFile.contains("metrics.destroyed")) {
-			for (int i=0; i < 11; i++)
+			for (int i=0; i < 12; i++)
 				disasterDestroyedList.add(0);
 			plugin.dataFile.set("metrics.destroyed", disasterDestroyedList);
 			plugin.saveDataFile();
 		} else {
 			List<Integer> tempList = plugin.dataFile.getIntegerList("metrics.destroyed");
-			for (int i=0; i < 11; i++)
+			for (int i=0; i < 12; i++)
 				if (i < tempList.size())
 					disasterDestroyedList.add(tempList.get(i));
 				else
@@ -226,6 +228,7 @@ public class Metrics {
 		disasterDestroyedMap.put(Disaster.METEORSHOWERS.getMetricsLabel(), disasterDestroyedList.get(8));
 		disasterDestroyedMap.put(Disaster.SUPERNOVA.getMetricsLabel(), disasterDestroyedList.get(9));
 		disasterDestroyedMap.put(Disaster.HURRICANE.getMetricsLabel(), disasterDestroyedList.get(10));
+		disasterDestroyedMap.put(Disaster.SOLARSTORM.getMetricsLabel(), disasterDestroyedList.get(11));
 		
 		metrics.addCustomChart(new Metrics.AdvancedPie("blocks_destroyed", new Callable<Map<String, Integer>>() {
 	        @Override
@@ -240,13 +243,13 @@ public class Metrics {
 		
 		List<Integer> disasterKillList = new ArrayList<>();
 		if (!plugin.dataFile.contains("metrics.killed")) {
-			for (int i=0; i < 17; i++)
+			for (int i=0; i < 18; i++)
 				disasterKillList.add(0);
 			plugin.dataFile.set("metrics.killed", disasterKillList);
 			plugin.saveDataFile();
 		} else {
 			List<Integer> tempList = plugin.dataFile.getIntegerList("metrics.killed");
-			for (int i=0; i < 17; i++)
+			for (int i=0; i < 18; i++)
 				if (i < tempList.size())
 					disasterKillList.add(tempList.get(i));
 				else
@@ -269,6 +272,7 @@ public class Metrics {
 		disasterKillMap.put(Disaster.SUPERNOVA.getMetricsLabel(), disasterKillList.get(14));
 		disasterKillMap.put(Disaster.HURRICANE.getMetricsLabel(), disasterKillList.get(15));
 		disasterKillMap.put(Disaster.PURGE.getMetricsLabel(), disasterKillList.get(16));
+		disasterKillMap.put(Disaster.SOLARSTORM.getMetricsLabel(), disasterKillList.get(17));
 		
 		metrics.addCustomChart(new Metrics.AdvancedPie("players_killed", new Callable<Map<String, Integer>>() {
 	        @Override

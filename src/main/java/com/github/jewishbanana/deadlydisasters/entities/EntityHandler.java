@@ -68,9 +68,9 @@ public class EntityHandler {
 	
 	private Set<CustomEntity> list = ConcurrentHashMap.newKeySet();
 	
-	public EntityHandler(Main plugin, FileConfiguration file) {
+	public EntityHandler(Main plugin) {
 		this.plugin = plugin;
-		this.file = file;
+		this.file = plugin.dataFile;
 		this.rand = plugin.random;
 		this.globalKey = new NamespacedKey(plugin, "customentity");
 		removalKey = new NamespacedKey(plugin, "removalkey");
@@ -93,7 +93,7 @@ public class EntityHandler {
 				}
 		switch (species) {
 		case "babyendtotem":
-			addEntity(new BabyEndTotem((Mob) e, file, plugin, rand));
+			addEntity(new BabyEndTotem((Mob) e, plugin, rand));
 			break;
 		case "endtotem":
 			addEntity(new EndTotem((Mob) e, plugin, rand));

@@ -36,6 +36,7 @@ import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Rabbit.Type;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.entity.Slime;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -51,12 +52,13 @@ import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.utils.DDSong;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.SongMaker;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class EasterBunny extends CustomEntity {
 	
@@ -92,7 +94,7 @@ public class EasterBunny extends CustomEntity {
 		if (entity.getCustomName() == null)
 			entity.setCustomName(Languages.langFile.getString("easter.easterBunny"));
 		
-		bar = Bukkit.createBossBar(Utils.chat("&c"+Languages.langFile.getString("easter.easterBunny")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
+		bar = Bukkit.createBossBar(Utils.convertString("&c"+Languages.langFile.getString("easter.easterBunny")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
 	}
 
 	@Override
@@ -111,7 +113,7 @@ public class EasterBunny extends CustomEntity {
 			if (entity.getTarget() != null && entity.getTarget().getType() != EntityType.ARMOR_STAND && entity.getTarget().getWorld().equals(entity.getWorld())
 				&& entity.getTarget().getLocation().distanceSquared(entity.getLocation()) <= 1.25) {
 				biteTicks = 8;
-				Utils.damageEntity(entity.getTarget(), 20.0, "dd-easterbunnybite", false, entity);
+				Utils.damageEntity(entity.getTarget(), 20.0, "dd-easterbunnybite", false, entity, DamageCause.ENTITY_ATTACK);
 			}
 		} else
 			biteTicks--;
@@ -131,8 +133,8 @@ public class EasterBunny extends CustomEntity {
 			return;
 		}
 		if (entity.isDead()) {
-			if (plugin.getConfig().getBoolean("customentities.allow_custom_drops")) {
-				Item item = entity.getWorld().dropItemNaturally(entity.getLocation(), ItemsHandler.goldenEasterEgg);
+			if (plugin.getConfig().getBoolean("customentities.allow_custom_drops") && DependencyUtils.doesItemExist("ui:golden_egg")) {
+				Item item = entity.getWorld().dropItemNaturally(entity.getLocation(), DependencyUtils.getItemType("ui:golden_egg").getBuilder().getItem());
 				item.setInvulnerable(true);
 			}
 			bar.removeAll();
@@ -162,7 +164,7 @@ public class EasterBunny extends CustomEntity {
 			new RepeatingTask(plugin, 0, 20) {
 				@Override
 				public void run() {
-					if ((entity.getHealth() >= entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/2.0 && eggLay <= 17) || eggLay <= 15 || entity == null || entity.isDead()
+					if (entity == null || entity.isDead() || (entity.getHealth() >= entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/2.0 && eggLay <= 17) || eggLay <= 15
 							|| chickens.size() >= 10) {
 						cancel();
 						return;
@@ -192,7 +194,7 @@ public class EasterBunny extends CustomEntity {
 							flowers.addAll(Tag.FLOWERS.getValues());
 							flowers.addAll(Tag.SMALL_FLOWERS.getValues());
 							flowers.addAll(Tag.TALL_FLOWERS.getValues());
-							flowers.addAll(Set.of(Material.GRASS, Material.TALL_GRASS));
+							flowers.addAll(Set.of(VersionUtils.getShortGrass(), Material.TALL_GRASS));
 							entity.getWorld().playSound(entity.getLocation(), Sound.BLOCK_GRASS_BREAK, SoundCategory.HOSTILE, 2f, 0f);
 							World world = entity.getWorld();
 							for (int x = -4; x < 4; x++)
@@ -219,15 +221,15 @@ public class EasterBunny extends CustomEntity {
 											if (!b.isPassable())
 												continue;
 										}
-										world.spawnParticle(Particle.BLOCK_CRACK, b.getLocation().clone().add(0.5, 0.5, 0.5), 6, .3, .5, .3, 0.001, Material.COARSE_DIRT.createBlockData());
-										if (flowers.contains(b.getType()) && !Utils.isZoneProtected(b.getLocation()) && !Utils.isBlockBlacklisted(b.getType()))
+										world.spawnParticle(VersionUtils.getBlockCrack(), b.getLocation().clone().add(0.5, 0.5, 0.5), 6, .3, .5, .3, 0.001, Material.COARSE_DIRT.createBlockData());
+										if (flowers.contains(b.getType()) && !Utils.isZoneProtected(b.getLocation()) && !Utils.isBlockImmune(b.getType()))
 											b.breakNaturally(new ItemStack(Material.AIR));
 										for (Entity e : world.getNearbyEntities(b.getLocation().clone().add(0.5, 0.5, 0.5), 0.5, 1, 0.5)) {
 											if (e.equals(entity))
 												continue;
 											e.setVelocity(new Vector(e.getLocation().getX() - entity.getLocation().getX(), 0, e.getLocation().getZ() - entity.getLocation().getZ()).normalize().multiply(0.7).setY(1.5));
 											if (e instanceof LivingEntity && !(e instanceof Player && Utils.isPlayerImmune((Player) e))) {
-												Utils.damageEntity((LivingEntity) e, 15.0, "dd-easterbunny", false, entity);
+												Utils.damageEntity((LivingEntity) e, 15.0, "dd-easterbunny", false, entity, DamageCause.ENTITY_ATTACK);
 											}
 										}
 									}
@@ -243,7 +245,7 @@ public class EasterBunny extends CustomEntity {
 		if (entity.getTarget() != null && entity.getTarget().getType() != EntityType.ARMOR_STAND && entity.getTarget().getWorld().equals(entity.getWorld())
 				&& entity.getTarget().getLocation().distanceSquared(entity.getLocation()) <= 325 && entity.getTarget().getLocation().distanceSquared(entity.getLocation()) >= 16) {
 			cooldown = 10;
-			entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 60, 10, true, false));
+			entity.addPotionEffect(new PotionEffect(VersionUtils.getSlowness(), 60, 10, true, false));
 			int[] index = {0,2};
 			if (entity.getHealth() <= entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() / 2.0)
 				index[1] = 4;
@@ -264,7 +266,7 @@ public class EasterBunny extends CustomEntity {
 					slimes[index[0]].teleport(entity);
 					slimes[index[0]].setVelocity(new Vector(0,1,0));
 					
-					Firework fire = (Firework) slimes[index[0]].getWorld().spawnEntity(slimes[index[0]].getLocation(), EntityType.FIREWORK);
+					Firework fire = (Firework) slimes[index[0]].getWorld().spawn(slimes[index[0]].getLocation(), Firework.class);
 					FireworkMeta meta = fire.getFireworkMeta();
 					meta.addEffect(FireworkEffect.builder().with(FireworkEffect.Type.BURST).withColor(Color.fromRGB(rand.nextInt(125)+25, 255, rand.nextInt(55)+25), Color.fromRGB(25, rand.nextInt(155)+100, 255), Color.fromRGB(rand.nextInt(105)+150, 25, 255)).build());
 					fire.setFireworkMeta(meta);
@@ -386,7 +388,7 @@ public class EasterBunny extends CustomEntity {
 		bunny.setRemoveWhenFarAway(false);
 		bunny.teleport(spawn);
 		EasterBunny bunnyObject = new EasterBunny(bunny, plugin, plugin.random);
-		plugin.handler.addEntity(bunnyObject);
+		CustomEntity.handler.addEntity(bunnyObject);
 		SongMaker music = new SongMaker(DDSong.EASTER_THEME);
 		for (Entity e : world.getNearbyEntities(block.getLocation(), 30, 30, 30))
 			if (e instanceof Player)
@@ -417,7 +419,7 @@ public class EasterBunny extends CustomEntity {
 		plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
 			easterBasketBlocks.remove(block);
 			block.setType(Material.AIR);
-			world.spawnParticle(Particle.BLOCK_CRACK, block.getLocation().add(.5,.3,.5), 30, .2, .2, .2, 0.0001, Material.BLUE_WOOL.createBlockData());
+			world.spawnParticle(VersionUtils.getBlockCrack(), block.getLocation().add(.5,.3,.5), 30, .2, .2, .2, 0.0001, Material.BLUE_WOOL.createBlockData());
 			world.playSound(block.getLocation().add(.5,.3,.5), Sound.BLOCK_WOOL_BREAK, SoundCategory.BLOCKS, 1, 0.5f);
 			bunny.setRemoveWhenFarAway(true);
 			target.remove();

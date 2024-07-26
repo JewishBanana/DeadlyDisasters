@@ -27,6 +27,7 @@ import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Geyser extends DestructionDisaster {
 	
@@ -84,7 +85,7 @@ public class Geyser extends DestructionDisaster {
 				if (version >= 1.14)
 					this.particleType = Particle.FALLING_WATER;
 				else
-					this.particleType = Particle.WATER_SPLASH;
+					this.particleType = VersionUtils.getWaterSplash();
 			}
 			if (minReach == 0 || maxReach == 0) {
 				minReach = 100;
@@ -152,7 +153,7 @@ public class Geyser extends DestructionDisaster {
 							for (int z=pz[0]; z <= pz[1]; z++) {
 								Location block = new Location(loc.getWorld(), x, loc.getY(), z);
 								Block b = block.getBlock();
-								if (b.getType() != material && !Utils.isBlockBlacklisted(block.getBlock().getType()) && !Utils.isZoneProtected(block)) {
+								if (b.getType() != material && !Utils.passStrengthTest(block.getBlock().getType()) && !Utils.isZoneProtected(block)) {
 									if (plugin.CProtect) Utils.getCoreProtect().logRemoval("Deadly-Disasters", block, b.getType(), b.getBlockData());
 									b.setType(material);
 									blocksDestroyed++;
@@ -172,7 +173,7 @@ public class Geyser extends DestructionDisaster {
 												if (bc.getType() == material) {
 													bc.setType(Material.AIR);
 													blocksDestroyed++;
-												} else if (rand.nextInt(3) == 0 && bc.getType() != Material.AIR && !Utils.isBlockBlacklisted(bc.getType()) && !Utils.isZoneProtected(bc.getLocation())) {
+												} else if (rand.nextInt(3) == 0 && bc.getType() != Material.AIR && !Utils.passStrengthTest(bc.getType()) && !Utils.isZoneProtected(bc.getLocation())) {
 													if (plugin.CProtect) Utils.getCoreProtect().logRemoval("Deadly-Disasters", bc.getLocation(), bc.getType(), bc.getBlockData());
 													bc.setType(Material.AIR);
 													blocksDestroyed++;
@@ -219,7 +220,7 @@ public class Geyser extends DestructionDisaster {
 			@Override
 			public void run() {
 				for (Entity all : loc.getWorld().getNearbyEntities(loc, 2, loc.getY(), 2))
-					if (all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
+					if (!isEntityTypeProtected(all) && all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
 							&& all.getLocation().getBlockY() <= loc.getBlockY() && all.getLocation().getBlockY() >= mem.getBlockY()) all.setVelocity(velocity);
 				if (push) cancel();
 			}
@@ -228,7 +229,7 @@ public class Geyser extends DestructionDisaster {
 			@Override
 			public void run() {
 				for (Entity all : loc.getWorld().getNearbyEntities(loc, 2, loc.getY(), 2))
-					if (all instanceof LivingEntity && all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
+					if (!isEntityTypeProtected(all) && all instanceof LivingEntity && all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
 					&& all.getLocation().getBlockY() <= loc.getBlockY() && all.getLocation().getBlockY() >= mem.getBlockY() && !((LivingEntity) all).hasPotionEffect(PotionEffectType.FIRE_RESISTANCE))
 						Utils.pureDamageEntity((LivingEntity) all, damageAmount, "dd-geyserdeath", false, null);
 				if (finished) cancel();
@@ -266,7 +267,7 @@ public class Geyser extends DestructionDisaster {
 						for (int z=pz[0]; z <= pz[1]; z++) {
 							Location block = new Location(loc.getWorld(), x, loc.getY(), z);
 							Block b = block.getBlock();
-							if (b.getType() != material && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(block)) {
+							if (b.getType() != material && !Utils.passStrengthTest(b.getType()) && !Utils.isZoneProtected(block)) {
 								if (plugin.CProtect) Utils.getCoreProtect().logRemoval("Deadly-Disasters", block, b.getType(), b.getBlockData());
 								b.setType(material);
 								blocksDestroyed++;
@@ -274,7 +275,7 @@ public class Geyser extends DestructionDisaster {
 						}
 					}
 					for (Entity all : loc.getWorld().getNearbyEntities(loc, 2, 128, 2)) {
-						if (all.getLocation().getBlockX() >= px[0] && all.getLocation().getBlockX() <= px[1] && all.getLocation().getBlockZ() >= pz[0] && all.getLocation().getBlockZ() <= pz[1]
+						if (!isEntityTypeProtected(all) && all.getLocation().getBlockX() >= px[0] && all.getLocation().getBlockX() <= px[1] && all.getLocation().getBlockZ() >= pz[0] && all.getLocation().getBlockZ() <= pz[1]
 								&& all.getLocation().getBlockY() <= loc.getBlockY() && all.getLocation().getBlockY() >= mem.getBlockY()) {
 							all.setVelocity(new Vector(0,1,0));
 						}
@@ -291,7 +292,7 @@ public class Geyser extends DestructionDisaster {
 										if (block.getBlock().getType() == material) {
 											block.getBlock().setType(Material.AIR);
 											blocksDestroyed++;
-										} else if (rand.nextInt(3) == 0 && block.getBlock().getType() != Material.AIR && !Utils.isBlockBlacklisted(block.getBlock().getType()) && !Utils.isZoneProtected(block)) {
+										} else if (rand.nextInt(3) == 0 && block.getBlock().getType() != Material.AIR && !Utils.passStrengthTest(block.getBlock().getType()) && !Utils.isZoneProtected(block)) {
 											if (plugin.CProtect) Utils.getCoreProtect().logRemoval("Deadly-Disasters", block, block.getBlock().getType(), block.getBlock().getBlockData());
 											block.getBlock().setType(Material.AIR);
 											blocksDestroyed++;
@@ -335,7 +336,7 @@ public class Geyser extends DestructionDisaster {
 			@Override
 			public void run() {
 				for (Entity all : loc.getWorld().getNearbyEntities(loc, 2, loc.getY(), 2))
-					if (all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
+					if (!isEntityTypeProtected(all) && all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
 							&& all.getLocation().getBlockY() <= loc.getBlockY() && all.getLocation().getBlockY() >= mem.getBlockY()) all.setVelocity(velocity);
 				if (push) cancel();
 			}

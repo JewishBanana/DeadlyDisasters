@@ -30,6 +30,7 @@ import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class KillerChicken extends CustomEntity {
 	
@@ -115,7 +116,7 @@ public class KillerChicken extends CustomEntity {
 		plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
 			if (egg == null || egg.isDead())
 				return;
-			loc.getWorld().spawnParticle(Particle.ITEM_CRACK, egg.getLocation(), 5, .3, .3, .3, 0.001, new ItemStack(Material.EGG));
+			loc.getWorld().spawnParticle(VersionUtils.getItemCrack(), egg.getLocation(), 5, .3, .3, .3, 0.001, new ItemStack(Material.EGG));
 			loc.getWorld().playSound(egg.getLocation(), Sound.ENTITY_TURTLE_EGG_HATCH, SoundCategory.HOSTILE, 1f, 0.7f);
 			for (int i=0; i < 8; i++) {
 				DustTransition dust = new DustTransition(Color.fromRGB(plugin.random.nextInt(125)+25, 255, plugin.random.nextInt(55)+25), Color.fromRGB(25, plugin.random.nextInt(155)+100, 255), plugin.random.nextFloat());
@@ -127,7 +128,7 @@ public class KillerChicken extends CustomEntity {
 			egg.remove();
 			KillerChicken kc = new KillerChicken(zombie, plugin);
 			kc.chickenList = list;
-			plugin.handler.addEntity(kc);
+			CustomEntity.handler.addEntity(kc);
 			zombie.setTarget(initialTarget);
 		}, 60);
 	}

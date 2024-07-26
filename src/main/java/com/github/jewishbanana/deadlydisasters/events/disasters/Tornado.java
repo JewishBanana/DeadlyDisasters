@@ -179,10 +179,10 @@ public class Tornado extends DestructionDisaster {
 						if (e instanceof Player) {
 							((Player) e).spawnParticle(particleType, temp.add(0,1,0), 30, 1, 1, 1, 0.3);
 							Location area = e.getLocation().clone().add(e.getVelocity());
-							if (!pickedUp.contains(area.getBlock()) && area.getBlock().getType().isSolid() && !Utils.isBlockBlacklisted(area.getBlock().getType()) && !Utils.isZoneProtected(area))
+							if (!pickedUp.contains(area.getBlock()) && area.getBlock().getType().isSolid() && !Utils.passStrengthTest(area.getBlock().getType()) && !Utils.isZoneProtected(area))
 								tempList.add(addBlock(area.getBlock(), fixdata, pullForce, rand));
 							area.add(0,1,0);
-							if (!pickedUp.contains(area.getBlock()) && area.getBlock().getType().isSolid() && !Utils.isBlockBlacklisted(area.getBlock().getType()) && !Utils.isZoneProtected(area))
+							if (!pickedUp.contains(area.getBlock()) && area.getBlock().getType().isSolid() && !Utils.passStrengthTest(area.getBlock().getType()) && !Utils.isZoneProtected(area))
 								tempList.add(addBlock(area.getBlock(), fixdata, pullForce, rand));
 						}
 						if (rand.nextDouble() < particles)
@@ -194,10 +194,10 @@ public class Tornado extends DestructionDisaster {
 							else
 								e.setVelocity(e.getVelocity().add(new Vector(temp.getX() - loc.getX(), 0, temp.getZ() - loc.getZ()).normalize().multiply(pullForce).add(entityVel).multiply((size+1-temp.distance(loc))*growth)));
 							Location area = e.getLocation().clone().add(e.getVelocity().clone().setY(0.3));
-							if (!pickedUp.contains(area.getBlock()) && area.getBlock().getType().isSolid() && !Utils.isBlockBlacklisted(area.getBlock().getType()) && !Utils.isZoneProtected(area))
+							if (!pickedUp.contains(area.getBlock()) && area.getBlock().getType().isSolid() && !Utils.passStrengthTest(area.getBlock().getType()) && !Utils.isZoneProtected(area))
 								tempList.add(addBlock(area.getBlock(), fixdata, pullForce, rand));
 							area.add(0,1,0);
-							if (!pickedUp.contains(area.getBlock()) && area.getBlock().getType().isSolid() && !Utils.isBlockBlacklisted(area.getBlock().getType()) && !Utils.isZoneProtected(area))
+							if (!pickedUp.contains(area.getBlock()) && area.getBlock().getType().isSolid() && !Utils.passStrengthTest(area.getBlock().getType()) && !Utils.isZoneProtected(area))
 								tempList.add(addBlock(area.getBlock(), fixdata, pullForce, rand));
 						} else
 							e.setVelocity(new Vector(temp.getX() - loc.getX(), 0, temp.getZ() - loc.getZ()).normalize().multiply(pullForce*3).add(velocity));
@@ -209,7 +209,7 @@ public class Tornado extends DestructionDisaster {
 						Location spot = loc.clone().add(rand.nextInt((int) (pickupRange*2))-pickupRange, rand.nextInt((int) (size/2))+(size/3), rand.nextInt((int) (pickupRange*2))-pickupRange);
 						for (int i=1; i < 40; i++) {
 							Block b = spot.getBlock();
-							if (!pickedUp.contains(b) && b.getType().isSolid() && !bannedBlocks.contains(b.getType()) && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(spot)) {
+							if (!pickedUp.contains(b) && b.getType().isSolid() && !bannedBlocks.contains(b.getType()) && !Utils.passStrengthTest(b.getType()) && !Utils.isZoneProtected(spot)) {
 								entities.add(addBlock(b, fixdata, pullForce, rand));
 								break;
 							}
@@ -240,10 +240,12 @@ public class Tornado extends DestructionDisaster {
 				for (int y=(int) size; y >= 0; y--)
 					for (int x=-y/5; x < y/5; x++) {
 						Block b = forward.clone().add(new Vector(vec.getZ(), 0, -vec.getX()).normalize().multiply(x).add(new Vector(0,y,0))).getBlock();
-						if (!pickedUp.contains(b) && b.getType().isSolid() && !bannedBlocks.contains(b.getType()) && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation()))
+						if (!pickedUp.contains(b) && b.getType().isSolid() && !bannedBlocks.contains(b.getType()) && !Utils.passStrengthTest(b.getType()) && !Utils.isZoneProtected(b.getLocation()))
 							addBlock(b, fixdata, pullForce, rand);
 					}
 				for (Entity e : world.getNearbyEntities(loc.clone().add(0,size-5,0), size, size, size)) {
+					if (isEntityTypeProtected(e))
+						continue;
 					if (!(entities.size() > max_blocks && !(e instanceof LivingEntity)) && !cooldownEntities.containsKey(e.getUniqueId()) && !(e instanceof Player && ((Player) e).isFlying())) {
 						entities.add(e.getUniqueId());
 						holdEntities.putIfAbsent(e.getUniqueId(), holdTicks);

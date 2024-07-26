@@ -19,6 +19,8 @@ public abstract class CustomEntity {
 	protected Main plugin;
 	protected CustomEntityType entityType;
 	
+	public static EntityHandler handler;
+	
 	public CustomEntity(Mob entity, Main plugin) {
 		if (entity != null) {
 			this.entity = entity;

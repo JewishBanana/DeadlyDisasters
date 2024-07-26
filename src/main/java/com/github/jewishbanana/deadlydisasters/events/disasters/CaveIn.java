@@ -23,6 +23,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.BlockVector;
@@ -149,8 +150,8 @@ public class CaveIn extends DestructionDisaster {
 						continue;
 					}
 					for (Entity e : world.getNearbyEntities(fb.getLocation().add(.5,.5,.5), .5, .5, .5))
-						if (e instanceof LivingEntity && !(e instanceof Player && Utils.isPlayerImmune((Player) e)))
-							Utils.damageEntity((LivingEntity) e, damage, "dd-caveincrush", false);
+						if (e instanceof LivingEntity && !isEntityTypeProtected(e) && !(e instanceof Player && Utils.isPlayerImmune((Player) e)))
+							Utils.damageEntity((LivingEntity) e, damage, "dd-caveincrush", false, DamageCause.FALLING_BLOCK);
 				}
 				iterator = placements.iterator();
 				while (iterator.hasNext()) {
@@ -256,7 +257,7 @@ class CaveInBlock {
 	public void fall(BlockData material, double speed) {
 		if (depth > 0) {
 			Block b = loc.getBlock();
-			if (!Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(loc)) {
+			if (!Utils.passStrengthTest(b.getType()) && !Utils.isZoneProtected(loc)) {
 				if (material == null)
 					material = b.getBlockData();
 				FallingBlock fb = b.getWorld().spawnFallingBlock(loc.clone().add(0.5,0.5,0.5), material);

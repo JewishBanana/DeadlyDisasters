@@ -14,7 +14,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -29,6 +28,7 @@ import com.github.jewishbanana.deadlydisasters.commands.Disasters;
 import com.github.jewishbanana.deadlydisasters.events.disasters.CustomDisaster;
 import com.github.jewishbanana.deadlydisasters.listeners.CoreListener;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Catalog implements Listener {
 	
@@ -98,7 +98,7 @@ public class Catalog implements Listener {
 			if (!(plugin.dataFile.contains("data.catalogVersion") && plugin.dataFile.getInt("data.catalogVersion") >= catalogFile.getInt("version")) && plugin.getConfig().getBoolean("general.catalog_notify")) {
 				for (Player p : Bukkit.getOnlinePlayers())
 					if (p.isOp())
-						p.sendMessage(Languages.prefix+ChatColor.GREEN+Languages.langFile.getString("internal.catalogUpdate")+Utils.chat(" &3(/disasters catalog)"));
+						p.sendMessage(Languages.prefix+ChatColor.GREEN+Languages.langFile.getString("internal.catalogUpdate")+Utils.convertString(" &3(/disasters catalog)"));
 				plugin.dataFile.set("data.catalogVersion", catalogFile.getInt("version"));
 				plugin.saveDataFile();
 				CoreListener.catalogNotifyBool = true;
@@ -112,7 +112,7 @@ public class Catalog implements Listener {
 		int id = 0;
 		itemMap.clear();
 		
-		featuredPage = Bukkit.createInventory(null, 54, Utils.chat("&3&lDeadlyDisasters Catalog"));
+		featuredPage = Bukkit.createInventory(null, 54, Utils.convertString("&3&lDeadlyDisasters Catalog"));
 		
 		for (String name : catalogFile.getConfigurationSection("disasters").getKeys(false)) {
 			String path = "disasters."+name+'.';
@@ -120,10 +120,10 @@ public class Catalog implements Listener {
 			id++;
 		}
 		
-		featuredPage.setItem(4, createItem(Material.NETHER_STAR, "&6&lFeatured Disasters", Arrays.asList(Utils.chat("&bFeatured disasters made by the community!"))));
-		featuredPage.setItem(47, createItem(Material.CHEST_MINECART, "&b&lInstalled Disasters", Arrays.asList(Utils.chat("&a-View and &cdelete &ainstalled disasters"))));
-		featuredPage.setItem(49, createItem(Material.ENDER_CHEST, "&f&l[COMING SOON]", Arrays.asList(Utils.chat("&d&lChallenge Packs"), Utils.chat("&a-Play challenging packs of custom"), Utils.chat("&adisasters made by the community"))));
-		featuredPage.setItem(51, createItem(Material.BOOK, "&6&lDisaster Browser", Arrays.asList(Utils.chat("&a-Browse community made custom disasters"), Utils.chat("&a-Install new custom disasters"))));
+		featuredPage.setItem(4, createItem(Material.NETHER_STAR, "&6&lFeatured Disasters", Arrays.asList(Utils.convertString("&bFeatured disasters made by the community!"))));
+		featuredPage.setItem(47, createItem(Material.CHEST_MINECART, "&b&lInstalled Disasters", Arrays.asList(Utils.convertString("&a-View and &cdelete &ainstalled disasters"))));
+		featuredPage.setItem(49, createItem(Material.ENDER_CHEST, "&f&l[COMING SOON]", Arrays.asList(Utils.convertString("&d&lChallenge Packs"), Utils.convertString("&a-Play challenging packs of custom"), Utils.convertString("&adisasters made by the community"))));
+		featuredPage.setItem(51, createItem(Material.BOOK, "&6&lDisaster Browser", Arrays.asList(Utils.convertString("&a-Browse community made custom disasters"), Utils.convertString("&a-Install new custom disasters"))));
 	
 		refreshBrowserItems();
 		refreshInstalled();
@@ -229,7 +229,7 @@ public class Catalog implements Listener {
 						f.createNewFile();
 					Utils.copyUrlToFile(new URL(invItem.url), f);
 					CustomDisaster.loadDisaster(f);
-					Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&bDownloaded and installed &e'"+invItem.name+"&e'"));
+					Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&bDownloaded and installed &e'"+invItem.name+"&e'"));
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
@@ -255,7 +255,7 @@ public class Catalog implements Listener {
 			}
 		pages = new Inventory[Math.max((int) Math.ceil((double) itemMap.size() / 36.0), 1)];
 		for (int i=0; i < pages.length; i++) {
-			pages[i] = Bukkit.createInventory(null, 54, Utils.chat("&9&lDisaster Browser: Page "+(i+1)));
+			pages[i] = Bukkit.createInventory(null, 54, Utils.convertString("&9&lDisaster Browser: Page "+(i+1)));
 			int spot = 9;
 			for (int c=(i*36); c < Math.min(itemMap.size(), (i*36)+36); c++) {
 				pages[i].setItem(spot, itemMap.get(c).getItem());
@@ -265,7 +265,7 @@ public class Catalog implements Listener {
 				pages[i].setItem(45, createItem(Material.ARROW, "&aPage "+i, Arrays.asList("")));
 			if (pages.length < i+1)
 				pages[i].setItem(54, createItem(Material.ARROW, "&aPage "+i+2, Arrays.asList("")));
-			pages[i].setItem(4, createItem(Material.NETHER_STAR, "&6&lFeatured Page", Arrays.asList(Utils.chat("&bCLICK to return to the featured page"))));
+			pages[i].setItem(4, createItem(Material.NETHER_STAR, "&6&lFeatured Page", Arrays.asList(Utils.convertString("&bCLICK to return to the featured page"))));
 		}
 	}
 	public void refreshInstalled() {
@@ -273,7 +273,7 @@ public class Catalog implements Listener {
 		installed = new Inventory[Math.max((int) Math.ceil((double) downloadedDisasters.size() / 36.0), 1)];
 		List<Integer> keySet = new ArrayList<>(downloadedDisasters.keySet());
 		for (int i=0; i < installed.length; i++) {
-			installed[i] = Bukkit.createInventory(null, 54, Utils.chat("&9&lInstalled Page : "+(i+1)));
+			installed[i] = Bukkit.createInventory(null, 54, Utils.convertString("&9&lInstalled Page : "+(i+1)));
 			int spot = 9;
 			for (int c=(i*36); c < Math.min(downloadedDisasters.size(), (i*36)+36); c++) {
 				installed[i].setItem(spot, itemMap.get(keySet.get(c)).getInstalledItem());
@@ -284,13 +284,13 @@ public class Catalog implements Listener {
 				installed[i].setItem(45, createItem(Material.ARROW, "&aPage "+i, Arrays.asList("")));
 			if (installed.length < i+1)
 				installed[i].setItem(54, createItem(Material.ARROW, "&aPage "+i+2, Arrays.asList("")));
-			installed[i].setItem(4, createItem(Material.NETHER_STAR, "&6&lFeatured Page", Arrays.asList(Utils.chat("&bCLICK to return to the featured page"))));
+			installed[i].setItem(4, createItem(Material.NETHER_STAR, "&6&lFeatured Page", Arrays.asList(Utils.convertString("&bCLICK to return to the featured page"))));
 		}
 	}
 	public ItemStack createItem(Material mat, String name, List<String> lore) {
 		ItemStack item = new ItemStack(mat);
 		ItemMeta meta = item.getItemMeta();
-		meta.setDisplayName(Utils.chat(name));
+		meta.setDisplayName(Utils.convertString(name));
 		meta.setLore(lore);
 		item.setItemMeta(meta);
 		return item;
@@ -317,30 +317,30 @@ class InventoryItem {
 		fileName = yaml.getString(path+"file");
 		item = new ItemStack(Material.valueOf(yaml.getString(path+"item").toUpperCase()));
 		ItemMeta meta = item.getItemMeta();
-		meta.setDisplayName(Utils.chat(yaml.getString(path+"name")+" &8| Version: "+yaml.getString(path+"version")));
+		meta.setDisplayName(Utils.convertString(yaml.getString(path+"name")+" &8| Version: "+yaml.getString(path+"version")));
 		List<String> lore = new ArrayList<>();
-		lore.add(Utils.chat(yaml.getString(path+"description")));
-		lore.add(Utils.chat("&8Author: "+yaml.getString(path+"author")));
+		lore.add(Utils.convertString(yaml.getString(path+"description")));
+		lore.add(Utils.convertString("&8Author: "+yaml.getString(path+"author")));
 		lore.add(" ");
 		if (yaml.getDouble(path+"game_version") <= plugin.mcVersion)
-			lore.add(Utils.chat("&7MC Version: &a"+yaml.getDouble(path+"game_version")));
+			lore.add(Utils.convertString("&7MC Version: &a"+yaml.getDouble(path+"game_version")));
 		else {
-			lore.add(Utils.chat("&7MC Version: &c"+yaml.getDouble(path+"game_version")));
+			lore.add(Utils.convertString("&7MC Version: &c"+yaml.getDouble(path+"game_version")));
 			downloadable = false;
 		}
 		if (yaml.getDouble(path+"plugin_version") <= Double.parseDouble(plugin.getDescription().getVersion()))
-			lore.add(Utils.chat("&7Plugin Version: &a"+yaml.getDouble(path+"plugin_version")));
+			lore.add(Utils.convertString("&7Plugin Version: &a"+yaml.getDouble(path+"plugin_version")));
 		else {
-			lore.add(Utils.chat("&7Plugin Version: &c"+yaml.getDouble(path+"plugin_version")));
+			lore.add(Utils.convertString("&7Plugin Version: &c"+yaml.getDouble(path+"plugin_version")));
 			downloadable = false;
 		}
 		if (downloadable) {
 			if (Catalog.downloadedDisasters.containsKey(id)) {
-				lore.add(Utils.chat("&bInstalled!"));
-				meta.addEnchant(Enchantment.DURABILITY, 1, false);
+				lore.add(Utils.convertString("&bInstalled!"));
+				meta.addEnchant(VersionUtils.getUnbreaking(), 1, false);
 				meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 			} else
-				lore.add(Utils.chat("&aCLICK to download and install!!"));
+				lore.add(Utils.convertString("&aCLICK to download and install!!"));
 		}
 		meta.setLore(lore);
 		item.setItemMeta(meta);
@@ -353,27 +353,27 @@ class InventoryItem {
 		ItemMeta meta = newItem.getItemMeta();
 		List<String> lore = meta.getLore();
 		lore.remove(lore.get(lore.size()-1));
-		lore.add(Utils.chat("&cCLICK to delete"));
+		lore.add(Utils.convertString("&cCLICK to delete"));
 		meta.setLore(lore);
 		newItem.setItemMeta(meta);
 		return newItem;
 	}
 	public void uninstallItem() {
 		ItemMeta meta = item.getItemMeta();
-		meta.removeEnchant(Enchantment.DURABILITY);
+		meta.removeEnchant(VersionUtils.getUnbreaking());
 		List<String> lore = meta.getLore();
 		lore.remove(lore.get(lore.size()-1));
-		lore.add(Utils.chat("&aCLICK to download and install!!"));
+		lore.add(Utils.convertString("&aCLICK to download and install!!"));
 		meta.setLore(lore);
 		item.setItemMeta(meta);
 	}
 	public void installItem() {
 		ItemMeta meta = item.getItemMeta();
-		meta.addEnchant(Enchantment.DURABILITY, 1, false);
+		meta.addEnchant(VersionUtils.getUnbreaking(), 1, false);
 		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		List<String> lore = meta.getLore();
 		lore.remove(lore.get(lore.size()-1));
-		lore.add(Utils.chat("&bInstalled!"));
+		lore.add(Utils.convertString("&bInstalled!"));
 		meta.setLore(lore);
 		item.setItemMeta(meta);
 	}

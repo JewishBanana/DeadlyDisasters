@@ -67,7 +67,7 @@ public class ConfigSwapper {
 				break;
 			}
 		} catch (FileNotFoundException e) {
-			Main.consoleSender.sendMessage(Utils.chat("&c[DeadlyDisasters]: File '"+template+"' does not exist in configs folder!"));
+			Main.consoleSender.sendMessage(Utils.convertString("&c[DeadlyDisasters]: File '"+template+"' does not exist in configs folder!"));
 			return false;
 		}
 		if (currentConfig != null && new File(plugin.getDataFolder().getAbsolutePath(), "pluginData/configs/"+currentConfig+".yml").exists()) {
@@ -127,7 +127,7 @@ public class ConfigSwapper {
 			} catch (IOException e) {
 				if (plugin.debug) {
 					e.printStackTrace();
-					Main.consoleSender.sendMessage(Utils.chat("&c[DeadlyDisasters]: Could not update config template '"+f.getName()+"' please report this bug to the discord!"));
+					Main.consoleSender.sendMessage(Utils.convertString("&c[DeadlyDisasters]: Could not update config template '"+f.getName()+"' please report this bug to the discord!"));
 				}
 			}
 	}

@@ -26,6 +26,7 @@ import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
 import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class LostSoul extends CustomEntity {
 	
@@ -85,7 +86,7 @@ public class LostSoul extends CustomEntity {
 		stand.setHeadPose(new EulerAngle(Math.toRadians(entity.getLocation().getPitch()),0,0));
 		if (plugin.mcVersion >= 1.16)
 			entity.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, entity.getLocation(), 1, .2, .2, .2, 0.05);
-		entity.getWorld().spawnParticle(Particle.SMOKE_NORMAL, entity.getLocation().clone().add(0,0.4,0), 2, .025, .1, .025, 0.015);
+		entity.getWorld().spawnParticle(VersionUtils.getNormalSmoke(), entity.getLocation().clone().add(0,0.4,0), 2, .025, .1, .025, 0.015);
 	}
 	@Override
 	public void function(Iterator<CustomEntity> it) {

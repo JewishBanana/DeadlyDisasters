@@ -31,6 +31,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Slime;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -44,6 +45,7 @@ import com.github.jewishbanana.deadlydisasters.events.WeatherDisaster;
 import com.github.jewishbanana.deadlydisasters.events.WeatherDisasterEvent;
 import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
@@ -64,6 +66,7 @@ public class AcidStorm extends WeatherDisaster {
 	public static Set<Block> poisonedCrops = ConcurrentHashMap.newKeySet();
 	public static BukkitTask cropsMonitor;
 
+	@SuppressWarnings("deprecation")
 	public AcidStorm(int level) {
 		super(level);
 		meltItems = configFile.getBoolean("acidstorm.melt_dropped_items");
@@ -89,9 +92,9 @@ public class AcidStorm extends WeatherDisaster {
 				else if (configFile.getString("acidstorm.block_changes."+material).toLowerCase().equals("air"))
 					blockChanges.putIfAbsent(Material.getMaterial(material.toUpperCase()), Material.AIR);
 				else
-					Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Could not find material &c'"+configFile.getString("acidstorm.block_changes."+material)+"' &eon line &d'"+material+" : "+configFile.getString("acidstorm.block_changes."+material)+"' &ein acidstorm block changes section in the config!"));
+					Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: Could not find material &c'"+configFile.getString("acidstorm.block_changes."+material)+"' &eon line &d'"+material+" : "+configFile.getString("acidstorm.block_changes."+material)+"' &ein acidstorm block changes section in the config!"));
 			} else
-				Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Could not find material &c'"+material+"' &eon line &d'"+material+" : "+configFile.getString("acidstorm.block_changes."+material)+"' &ein acidstorm block changes section in the config!"));
+				Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: Could not find material &c'"+material+"' &eon line &d'"+material+" : "+configFile.getString("acidstorm.block_changes."+material)+"' &ein acidstorm block changes section in the config!"));
 		
 		this.type = Disaster.ACIDSTORM;
 	}
@@ -135,9 +138,11 @@ public class AcidStorm extends WeatherDisaster {
 						if (temp.getBlock().getTemperature() <= 0.15 || temp.getBlock().getTemperature() > 0.95) continue;
 						if (Utils.isWeatherDisabled(temp, instance)) continue;
 						if (all instanceof LivingEntity) {
-							if (all instanceof Slime || all.isDead())
+							if (all instanceof Slime || all.isDead() || isEntityTypeProtected(all))
 								continue;
 							LivingEntity e = (LivingEntity) all;
+							if (DependencyUtils.getBasicCoatingLevel(e.getEquipment().getHelmet()) != 0)
+								continue;
 							if (all instanceof Player) {
 								if (Utils.isPlayerImmune((Player) all))
 									continue;
@@ -145,7 +150,7 @@ public class AcidStorm extends WeatherDisaster {
 							}
 							for (Map.Entry<PotionEffectType, Integer> entry : potionEffects.entrySet())
 								e.addPotionEffect(new PotionEffect(entry.getKey(), entry.getValue(), 1, true, false, false));
-							Utils.pureDamageEntity(e, damage, "dd-acidstormdeath", false, null);
+							Utils.pureDamageEntity(e, damage, "dd-acidstormdeath", false, DamageCause.POISON);
 							if (!meltArmor) continue;
 							ItemStack helmet = e.getEquipment().getHelmet(),chest = e.getEquipment().getChestplate(),boots = e.getEquipment().getBoots(),pants = e.getEquipment().getLeggings();
 							if (helmet != null && (helmet.getType() == Material.IRON_HELMET || helmet.getType() == Material.GOLDEN_HELMET || helmet.getType() == Material.CHAINMAIL_HELMET)) {
@@ -176,7 +181,7 @@ public class AcidStorm extends WeatherDisaster {
 								else boots.setItemMeta(meta);
 								e.getEquipment().setBoots(boots);
 							}
-						} else if (meltItems && all.getType().equals(EntityType.DROPPED_ITEM)) {
+						} else if (meltItems && all.getClass().equals(Item.class)) {
 							ItemStack item = ((Item) all).getItemStack();
 							if (item.getType() == Material.IRON_INGOT || item.getType() == Material.IRON_BLOCK || item.getType() == Material.IRON_HORSE_ARMOR || item.getType() == Material.IRON_NUGGET || item.getType() == Material.IRON_DOOR || item.getType() == Material.IRON_TRAPDOOR
 									|| item.getType() == Material.GOLD_INGOT || item.getType() == Material.GOLD_BLOCK || item.getType() == Material.GOLDEN_HORSE_ARMOR || item.getType() == Material.GOLD_NUGGET || item.getType() == Material.GOLDEN_CARROT || item.getType() == Material.GOLDEN_APPLE) {
@@ -266,7 +271,7 @@ public class AcidStorm extends WeatherDisaster {
 								if (cropsMonitor == null)
 									startCropsMonitor(plugin);
 							}
-							if (!blockChanges.containsKey(b.getType()) || Utils.isZoneProtected(b.getLocation()) || Utils.isBlockBlacklisted(b.getType()) || Utils.isWeatherDisabled(b.getLocation(), instance))
+							if (!blockChanges.containsKey(b.getType()) || Utils.isZoneProtected(b.getLocation()) || Utils.passStrengthTest(b.getType()) || Utils.isWeatherDisabled(b.getLocation(), instance))
 								continue;
 							Material material = blockChanges.get(b.getType());
 							if (plugin.CProtect) {
@@ -274,7 +279,7 @@ public class AcidStorm extends WeatherDisaster {
 								Utils.getCoreProtect().logPlacement("Deadly-Disasters", b.getLocation(), material, material.createBlockData());
 							}
 							changes.put(b, material);
-							world.playSound(b.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, (float) (0.1*volume), 2);
+							plugin.getServer().getScheduler().runTask(plugin, () -> world.playSound(b.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, (float) (0.1*volume), 2));
 						}
 				}
 				plugin.getServer().getScheduler().runTask(plugin, new Runnable() {

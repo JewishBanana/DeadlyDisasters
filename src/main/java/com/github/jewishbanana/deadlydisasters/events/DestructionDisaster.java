@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -28,12 +29,14 @@ public abstract class DestructionDisaster extends DisasterEvent {
 	public DestructionDisaster(int level) {
 		this.plugin = Main.getInstance();
 		this.level = level;
-		this.configFile = plugin.getConfig();
+		this.worldObject = WorldObject.findWorldObject(Bukkit.getWorlds().get(0));
+		this.configFile = worldObject.configFile;
 	}
 	public DestructionDisaster(int level, World world) {
 		this.plugin = Main.getInstance();
 		this.level = level;
-		this.configFile = WorldObject.findWorldObject(world).configFile;
+		this.worldObject = WorldObject.findWorldObject(world);
+		this.configFile = worldObject.configFile;
 	}
 	public Disaster getType() {
 		return type;

@@ -35,8 +35,10 @@ import com.github.jewishbanana.deadlydisasters.events.WeatherDisasterEvent;
 import com.github.jewishbanana.deadlydisasters.handlers.SeasonsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Blizzard extends WeatherDisaster {
 	
@@ -100,10 +102,8 @@ public class Blizzard extends WeatherDisaster {
 				for (LivingEntity all : world.getLivingEntities()) {
 					if (entities.contains(all.getUniqueId()) && ((Mob) all).getTarget() == null && Bukkit.getEntity(targets.get(all.getUniqueId())) != null)
 						((Mob) all).setTarget((LivingEntity) Bukkit.getEntity(targets.get(all.getUniqueId())));
-					if (!all.hasMetadata("dd-yeti")
-							&& ((!seasonsAllowed && all.getLocation().getBlock().getTemperature() <= 0.15)
-									|| (seasonsAllowed && all instanceof Player
-											&& seasons.getTemperature((Player) all) <= minTemp))) {
+					if (!all.hasMetadata("dd-yeti") && !isEntityTypeProtected(all) && ((!seasonsAllowed && all.getLocation().getBlock().getTemperature() <= 0.15)
+							|| (seasonsAllowed && all instanceof Player && seasons.getTemperature((Player) all) <= minTemp))) {
 						if (Utils.isWeatherDisabled(all.getLocation(), obj))
 							continue;
 						Block b = all.getLocation().getBlock();
@@ -129,7 +129,7 @@ public class Blizzard extends WeatherDisaster {
 								}
 							}
 						} else {
-							all.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 20, 2, true, false));
+							all.addPotionEffect(new PotionEffect(VersionUtils.getSlowness(), 20, 2, true, false));
 							if (all.getType() == EntityType.STRAY || all.getType() == EntityType.POLAR_BEAR)
 								continue;
 							double tempDamage = damage;
@@ -142,6 +142,9 @@ public class Blizzard extends WeatherDisaster {
 								if (armor[2] != null) {
 									if (armor[2].getType() == Material.LEATHER_CHESTPLATE)
 										tempDamage -= damage / 4;
+									int level = DependencyUtils.getYetisBlessingLevel(armor[2]);
+									if (level > 0)
+										tempDamage -= (damage / 4) * (level + 1);
 								}
 								if (armor[3] != null && armor[3].getType() == Material.LEATHER_HELMET)
 									tempDamage -= damage / 4;
@@ -170,7 +173,7 @@ public class Blizzard extends WeatherDisaster {
 									all.teleport(tp);
 									Block eb = all.getLocation().getBlock();
 									for (int i = 0; i < all.getHeight(); i++) {
-										if (!Utils.isBlockBlacklisted(eb.getType())) {
+										if (!Utils.passStrengthTest(eb.getType())) {
 											if (plugin.CProtect)
 												Utils.getCoreProtect().logPlacement("Deadly-Disasters",
 														eb.getLocation(), Material.ICE, eb.getBlockData());

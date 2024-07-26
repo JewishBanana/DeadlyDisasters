@@ -22,6 +22,7 @@ import org.bukkit.entity.Vex;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.soulstormentities.LostSoul;
 import com.github.jewishbanana.deadlydisasters.entities.soulstormentities.SoulReaper;
@@ -32,6 +33,7 @@ import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class SoulStorm extends WeatherDisaster {
 	
@@ -80,7 +82,7 @@ public class SoulStorm extends WeatherDisaster {
 							if (rand.nextInt(8) == 0) p.spawnParticle(Particle.FLASH, (double)loc.getX(), (double)loc.getY()+1, (double)loc.getZ(), 1, 1, 1, 1, 1);
 						} else {
 							p.spawnParticle(Particle.SQUID_INK, (double)loc.getX(), (double)loc.getY()+2, (double)loc.getZ(), 5, 2, 1, 2, 0.1);
-							p.spawnParticle(Particle.REDSTONE, (double)loc.getX(), (double)loc.getY()+1, (double)loc.getZ(), 30, 2, 1, 2, 0.1, dust);
+							p.spawnParticle(VersionUtils.getRedstoneDust(), (double)loc.getX(), (double)loc.getY()+1, (double)loc.getZ(), 30, 2, 1, 2, 0.1, dust);
 						}
 						p.playSound(new Location(p.getWorld(), p.getLocation().getX(), p.getLocation().getY()+3, p.getLocation().getZ()), Sound.WEATHER_RAIN_ABOVE, (float) (0.017*volume), 0.5F);
 					}
@@ -124,11 +126,11 @@ public class SoulStorm extends WeatherDisaster {
 										if (rand.nextInt(100) < 3 && CustomEntityType.mobsEnabled) {
 											vex.remove();
 											Mob reaper = (Mob) world.spawnEntity(place, EntityType.SKELETON);
-											plugin.handler.addEntity(new SoulReaper(reaper, plugin, rand));
+											CustomEntity.handler.addEntity(new SoulReaper(reaper, plugin, rand));
 											souls.add(reaper.getUniqueId());
 											break breakthis;
 										} else if (CustomEntityType.mobsEnabled)
-											plugin.handler.addEntity(new LostSoul(vex, plugin, rand));
+											CustomEntity.handler.addEntity(new LostSoul(vex, plugin, rand));
 									}
 									vex.setTarget(p);
 									souls.add(vex.getUniqueId());
@@ -148,7 +150,6 @@ public class SoulStorm extends WeatherDisaster {
 	public void clear() {
 		time = 0;
 		clearEntities();
-		DeathMessages.soulstorms.remove(this);
 	}
 	public void clearEntities() {
 		for (UUID e : souls)

@@ -31,6 +31,7 @@ import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class SwampBeast extends CustomEntity {
 	
@@ -66,7 +67,7 @@ public class SwampBeast extends CustomEntity {
 	public void tick() {
 		if (entity == null)
 			return;
-		entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, entity.getLocation().add(0,1.1,0), 10, .3, .3, .3, 1, mud.createBlockData());
+		entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation().add(0,1.1,0), 10, .3, .3, .3, 1, mud.createBlockData());
 		entity.getWorld().spawnParticle(Particle.FALLING_DUST, entity.getLocation().add(0,1.2,0), 7, .3, .3, .3, 1, Material.SOUL_SAND.createBlockData());
 	}
 	@Override
@@ -113,7 +114,7 @@ public class SwampBeast extends CustomEntity {
 			entity.setRotation(yaw, 70);
 			Block b = entity.getLocation().getBlock().getRelative(BlockFace.DOWN);
 			final Material prevMaterial = b.getType();
-			if (!(b.getState() instanceof InventoryHolder) && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation()))
+			if (!(b.getState() instanceof InventoryHolder) && !Utils.isBlockImmune(b.getType()) && !Utils.isZoneProtected(b.getLocation()))
 				b.setType(mud);
 			int[] timer = {0};
 			new RepeatingTask(plugin, 0, 1) {
@@ -130,20 +131,20 @@ public class SwampBeast extends CustomEntity {
 					timer[0]++;
 					if (timer[0] <= 30) {
 						entity.teleport(entity.getLocation().add(0,-0.07,0));
-						entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, b.getLocation().add(.5,1,.5), 7, .3, .2, .3, 1, mud.createBlockData());
+						entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), b.getLocation().add(.5,1,.5), 7, .3, .2, .3, 1, mud.createBlockData());
 						if (timer[0] % 5 == 0 && plugin.mcVersion >= 1.19)
 							entity.getWorld().playSound(b.getLocation(), Sound.BLOCK_MUD_HIT, SoundCategory.HOSTILE, 1f, .5f);
 						return;
 					}
 					if (timer[0] == 40) {
-						if (!(b.getState() instanceof InventoryHolder) && !Utils.isBlockBlacklisted(spot.getBlock().getType()) && !Utils.isZoneProtected(spot.getBlock().getLocation()))
+						if (!(b.getState() instanceof InventoryHolder) && !Utils.isBlockImmune(spot.getBlock().getType()) && !Utils.isZoneProtected(spot.getBlock().getLocation()))
 							spot.getBlock().setType(mud);
 						entity.teleport(spot.getBlock().getRelative(BlockFace.DOWN).getLocation().add(0.5,0,0.5));
 						return;
 					}
 					if (timer[0] > 40 && timer[0] <= 60) {
 						entity.teleport(entity.getLocation().add(0,0.0666,0));
-						entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, spot.clone().add(.5,1,.5), 7, .3, .2, .3, 1, mud.createBlockData());
+						entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), spot.clone().add(.5,1,.5), 7, .3, .2, .3, 1, mud.createBlockData());
 						if (timer[0] % 5 == 0 && plugin.mcVersion >= 1.19)
 							entity.getWorld().playSound(spot, Sound.BLOCK_MUD_HIT, SoundCategory.HOSTILE, 1f, .5f);
 						if (target != null && target.getWorld().equals(entity.getWorld()))
@@ -188,20 +189,20 @@ public class SwampBeast extends CustomEntity {
 					if (timer[0] <= 1 || timer[0] == radius+2) {
 						for (int i=1; i < 4; i++) {
 							Block b = Utils.getHighestExposedBlock(spot.clone().add(angle.clone().multiply(i)), 3);
-							if (b == null || patches.containsKey(b) || (b.getState() instanceof InventoryHolder) || Utils.isBlockBlacklisted(b.getType()) || Utils.isZoneProtected(b.getLocation()))
+							if (b == null || patches.containsKey(b) || (b.getState() instanceof InventoryHolder) || Utils.isBlockImmune(b.getType()) || Utils.isZoneProtected(b.getLocation()))
 								continue;
 							patches.put(b, b.getType());
 							b.setType(mud);
-							world.spawnParticle(Particle.BLOCK_CRACK, b.getLocation().add(.5,1,.5), 5, .4, .3, .4, 1, mud.createBlockData());
+							world.spawnParticle(VersionUtils.getBlockCrack(), b.getLocation().add(.5,1,.5), 5, .4, .3, .4, 1, mud.createBlockData());
 						}
 					} else {
 						for (int i=0; i < 5; i++) {
 							Block b = Utils.getHighestExposedBlock(spot.clone().add(angle.clone().multiply(i)), 3);
-							if (b == null || patches.containsKey(b) || (b.getState() instanceof InventoryHolder) || Utils.isBlockBlacklisted(b.getType()) || Utils.isZoneProtected(b.getLocation()))
+							if (b == null || patches.containsKey(b) || (b.getState() instanceof InventoryHolder) || Utils.isBlockImmune(b.getType()) || Utils.isZoneProtected(b.getLocation()))
 								continue;
 							patches.put(b, b.getType());
 							b.setType(mud);
-							world.spawnParticle(Particle.BLOCK_CRACK, b.getLocation().add(.5,1,.5), 5, .4, .3, .4, 1, mud.createBlockData());
+							world.spawnParticle(VersionUtils.getBlockCrack(), b.getLocation().add(.5,1,.5), 5, .4, .3, .4, 1, mud.createBlockData());
 						}
 					}
 					if (plugin.mcVersion >= 1.19)

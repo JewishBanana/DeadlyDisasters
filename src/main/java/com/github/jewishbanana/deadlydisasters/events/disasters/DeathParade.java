@@ -25,6 +25,7 @@ import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 
 import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.halloweenentities.Ghoul;
 import com.github.jewishbanana.deadlydisasters.entities.halloweenentities.Psyco;
 import com.github.jewishbanana.deadlydisasters.entities.halloweenentities.Scarecrow;
@@ -151,61 +152,61 @@ public class DeathParade extends DestructionDisaster {
 						if (!custom)
 							break;
 						entity = (Mob) player.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-						plugin.handler.addEntity(new TunnellerZombie((Zombie) entity, player, plugin));
+						CustomEntity.handler.addEntity(new TunnellerZombie((Zombie) entity, player, plugin));
 						break;
 					case 3:
 						if (!custom)
 							break;
 						entity = (Mob) player.getWorld().spawnEntity(temp, EntityType.SKELETON);
-						plugin.handler.addEntity(new SkeletonKnight((Skeleton) entity, plugin));
+						CustomEntity.handler.addEntity(new SkeletonKnight((Skeleton) entity, plugin));
 						break;
 					case 4:
 						if (!custom)
 							break;
 						entity = (Mob) player.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-						plugin.handler.addEntity(new DarkMage(entity, plugin));
+						CustomEntity.handler.addEntity(new DarkMage(entity, plugin));
 						break;
 					case 5:
 						if (!custom)
 							break;
 						entity = (Mob) player.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-						plugin.handler.addEntity(new ShadowLeech((Zombie) entity, plugin, rand));
+						CustomEntity.handler.addEntity(new ShadowLeech((Zombie) entity, plugin, rand));
 						break;
 					case 6:
 						if (!custom)
 							break;
 						entity = (Mob) player.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-						plugin.handler.addEntity(new SwampBeast(entity, plugin));
+						CustomEntity.handler.addEntity(new SwampBeast(entity, plugin));
 						break;
 					case 7:
 						if (!custom)
 							break;
 						entity = (Mob) player.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-						plugin.handler.addEntity(new ZombieKnight(entity, plugin));
+						CustomEntity.handler.addEntity(new ZombieKnight(entity, plugin));
 						break;
 					case 8:
 						if (!custom)
 							break;
 						entity = (Mob) player.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-						plugin.handler.addEntity(new Ghoul((Zombie) entity, temp.getBlock().getRelative(BlockFace.DOWN), plugin, true));
+						CustomEntity.handler.addEntity(new Ghoul((Zombie) entity, temp.getBlock().getRelative(BlockFace.DOWN), plugin, true));
 						break;
 					case 9:
 						if (!custom)
 							break;
 						entity = (Mob) player.getWorld().spawnEntity(temp, EntityType.SKELETON);
-						plugin.handler.addEntity(new Psyco(entity, plugin, rand));
+						CustomEntity.handler.addEntity(new Psyco(entity, plugin, rand));
 						break;
 					case 10:
 						if (!custom)
 							break;
 						entity = (Mob) player.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-						plugin.handler.addEntity(new Scarecrow((Zombie) entity, plugin, rand));
+						CustomEntity.handler.addEntity(new Scarecrow((Zombie) entity, plugin, rand));
 						break;
 					case 11:
 						if (!custom)
 							break;
 						entity = (Mob) player.getWorld().spawnEntity(temp, EntityType.EVOKER);
-						plugin.handler.addEntity(new Vampire(entity, plugin));
+						CustomEntity.handler.addEntity(new Vampire(entity, plugin));
 						break;
 					}
 					if (entity == null)
@@ -265,7 +266,7 @@ public class DeathParade extends DestructionDisaster {
 				str = "&c"+str;
 			else if (level == 6)
 				str = "&4"+str;
-			str = Utils.chat(str.replace("%level%", level+"").replace("%player%", p.getName()));
+			str = Utils.convertString(str.replace("%level%", level+"").replace("%player%", p.getName()));
 			if (configFile.getBoolean("messages.disaster_tips"))
 				str += "\n"+type.getTip();
 			for (Player all : location.getWorld().getPlayers())

@@ -17,6 +17,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Slime;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -34,6 +35,7 @@ import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Grinch extends CustomEntity {
 	
@@ -82,7 +84,7 @@ public class Grinch extends CustomEntity {
 		entity.setMetadata("dd-grinch", plugin.fixedData);
 		entity.setMetadata("dd-christmasmob", plugin.fixedData);
 		if (entity.getCustomName() == null)
-			entity.setCustomName(Languages.langFile.getString("entities.grinch"));
+			entity.setCustomName(Languages.langFile.getString("christmas.grinch"));
 	}
 
 	@Override
@@ -125,7 +127,7 @@ public class Grinch extends CustomEntity {
 		if (stand == null && entity.getTarget() != null && entity.getTarget().getWorld().equals(entity.getWorld()) && entity.getTarget().getLocation().distanceSquared(entity.getLocation()) >= 30
 				&& entity.getTarget().getLocation().distanceSquared(entity.getLocation()) <= 350) {
 			cooldown = 4;
-			entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 15, 10, true, false));
+			entity.addPotionEffect(new PotionEffect(VersionUtils.getSlowness(), 15, 10, true, false));
 			stand = Utils.lockArmorStand((ArmorStand) entity.getWorld().spawnEntity(entity.getLocation().add(100,100,0), EntityType.ARMOR_STAND), true, false, true);
 			stand.getEquipment().setItemInMainHand(weapon);
 			stand.setRightArmPose(new EulerAngle(0, 0, 0));
@@ -165,13 +167,13 @@ public class Grinch extends CustomEntity {
 					else
 						stand.setRightArmPose(new EulerAngle(Math.toRadians(360+angle), 0, 0));
 					if (cursed)
-						stand.getWorld().spawnParticle(Particle.BLOCK_CRACK, stand.getLocation().add(0,1,0), 2, .1, .1, .1, 1, Material.PURPLE_WOOL.createBlockData());
+						stand.getWorld().spawnParticle(VersionUtils.getBlockCrack(), stand.getLocation().add(0,1,0), 2, .1, .1, .1, 1, Material.PURPLE_WOOL.createBlockData());
 					else
-						stand.getWorld().spawnParticle(Particle.BLOCK_CRACK, stand.getLocation().add(0,1,0), 2, .1, .1, .1, 1, Material.RED_WOOL.createBlockData());
-					stand.getWorld().spawnParticle(Particle.BLOCK_CRACK, stand.getLocation().add(0,1,0), 2, .1, .1, .1, 1, Material.SNOW.createBlockData());
+						stand.getWorld().spawnParticle(VersionUtils.getBlockCrack(), stand.getLocation().add(0,1,0), 2, .1, .1, .1, 1, Material.RED_WOOL.createBlockData());
+					stand.getWorld().spawnParticle(VersionUtils.getBlockCrack(), stand.getLocation().add(0,1,0), 2, .1, .1, .1, 1, Material.SNOW.createBlockData());
 					if (projectile.isOnGround()) {
-						entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, entity.getLocation().add(0,1.2,0), 30, .4, .6, .4, 1, Material.SNOW.createBlockData());
-						entity.getWorld().spawnParticle(Particle.BLOCK_DUST, entity.getLocation().add(0,1.2,0), 30, .4, .6, .4, 1, Material.SNOW.createBlockData());
+						entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation().add(0,1.2,0), 30, .4, .6, .4, 1, Material.SNOW.createBlockData());
+						entity.getWorld().spawnParticle(VersionUtils.getBlockDust(), entity.getLocation().add(0,1.2,0), 30, .4, .6, .4, 1, Material.SNOW.createBlockData());
 						entity.teleport(projectile);
 						stand.remove();
 						projectile.remove();
@@ -182,13 +184,13 @@ public class Grinch extends CustomEntity {
 					}
 					for (Entity e : projectile.getNearbyEntities(.5, .5, .5))
 						if (e instanceof LivingEntity && !e.equals(entity) && !(e instanceof Player && Utils.isPlayerImmune((Player) e))) {
-							Utils.pureDamageEntity((LivingEntity) e, 7.0, "dd-candycane", false, entity);
+							Utils.pureDamageEntity((LivingEntity) e, 7.0, "dd-candycane", false, entity, DamageCause.PROJECTILE);
 							((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 40, 1, true, false));
 							if (cursed)
 								((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 80, 2, true, false));
 							entity.setHealth(Math.min(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue(), entity.getHealth()+12.0));
-							entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, entity.getLocation().add(0,1.2,0), 30, .4, .6, .4, 1, Material.SNOW.createBlockData());
-							entity.getWorld().spawnParticle(Particle.BLOCK_DUST, entity.getLocation().add(0,1.2,0), 30, .4, .6, .4, 1, Material.SNOW.createBlockData());
+							entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation().add(0,1.2,0), 30, .4, .6, .4, 1, Material.SNOW.createBlockData());
+							entity.getWorld().spawnParticle(VersionUtils.getBlockDust(), entity.getLocation().add(0,1.2,0), 30, .4, .6, .4, 1, Material.SNOW.createBlockData());
 							entity.teleport(projectile);
 							entity.getWorld().spawnParticle(Particle.COMPOSTER, entity.getLocation().add(0,1.2,0), 10, .3, .5, .3, .001);
 							stand.remove();

@@ -35,6 +35,7 @@ import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Frosty extends CustomEntity {
 	
@@ -60,14 +61,14 @@ public class Frosty extends CustomEntity {
 		entity.setMetadata("dd-frosty", plugin.fixedData);
 		entity.setMetadata("dd-christmasmob", plugin.fixedData);
 		if (entity.getCustomName() == null)
-			entity.setCustomName(Languages.langFile.getString("entities.frosty"));
+			entity.setCustomName(Languages.langFile.getString("christmas.frosty"));
 		entity.getPersistentDataContainer().set(EntityHandler.removalKey, PersistentDataType.BYTE, (byte) 0);
 	}
 	@Override
 	public void tick() {
 		if (entity == null)
 			return;
-		entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, entity.getLocation().add(0,1.1,0), 5, .3, .3, .3, 1, Material.PACKED_ICE.createBlockData());
+		entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation().add(0,1.1,0), 5, .3, .3, .3, 1, Material.PACKED_ICE.createBlockData());
 		entity.getWorld().spawnParticle(Particle.FALLING_DUST, entity.getLocation().add(0,1.2,0), 2, .3, .4, .3, 1, Material.PACKED_ICE.createBlockData());
 	}
 	@Override
@@ -124,7 +125,7 @@ public class Frosty extends CustomEntity {
 			entity.setRotation(yaw, 70);
 			Block b = entity.getLocation().getBlock().getRelative(BlockFace.DOWN);
 			final Material prevMaterial = b.getType();
-			if (!(b.getState() instanceof InventoryHolder) && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation()))
+			if (!(b.getState() instanceof InventoryHolder) && !Utils.isBlockImmune(b.getType()) && !Utils.isZoneProtected(b.getLocation()))
 				b.setType(Material.PACKED_ICE);
 			int[] timer = {0};
 			new RepeatingTask(plugin, 0, 1) {
@@ -141,20 +142,20 @@ public class Frosty extends CustomEntity {
 					timer[0]++;
 					if (timer[0] <= 30) {
 						entity.teleport(entity.getLocation().add(0,-0.07,0));
-						entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, b.getLocation().add(.5,1,.5), 7, .3, .2, .3, 1, Material.PACKED_ICE.createBlockData());
+						entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), b.getLocation().add(.5,1,.5), 7, .3, .2, .3, 1, Material.PACKED_ICE.createBlockData());
 						if (timer[0] % 5 == 0)
 							entity.getWorld().playSound(b.getLocation(), Sound.BLOCK_GLASS_HIT, SoundCategory.HOSTILE, 1f, .5f);
 						return;
 					}
 					if (timer[0] == 40) {
-						if (!(b.getState() instanceof InventoryHolder) && !Utils.isBlockBlacklisted(spot.getBlock().getType()) && !Utils.isZoneProtected(spot.getBlock().getLocation()))
+						if (!(b.getState() instanceof InventoryHolder) && !Utils.isBlockImmune(spot.getBlock().getType()) && !Utils.isZoneProtected(spot.getBlock().getLocation()))
 							spot.getBlock().setType(Material.PACKED_ICE);
 						entity.teleport(spot.getBlock().getRelative(BlockFace.DOWN).getLocation().add(0.5,0,0.5));
 						return;
 					}
 					if (timer[0] > 40 && timer[0] <= 60) {
 						entity.teleport(entity.getLocation().add(0,0.0666,0));
-						entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, spot.clone().add(.5,1,.5), 7, .3, .2, .3, 1, Material.PACKED_ICE.createBlockData());
+						entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), spot.clone().add(.5,1,.5), 7, .3, .2, .3, 1, Material.PACKED_ICE.createBlockData());
 						if (timer[0] % 5 == 0)
 							entity.getWorld().playSound(spot, Sound.BLOCK_GLASS_HIT, SoundCategory.HOSTILE, 1f, .5f);
 						if (target != null && target.getWorld().equals(entity.getWorld()))
@@ -199,20 +200,20 @@ public class Frosty extends CustomEntity {
 					if (timer[0] <= 4 || timer[0] >= radius) {
 						for (int i=2; i < 6; i++) {
 							Block b = Utils.getHighestExposedBlock(spot.clone().add(angle.clone().multiply(i)), 3);
-							if (b == null || patches.containsKey(b) || (b.getState() instanceof InventoryHolder) || Utils.isBlockBlacklisted(b.getType()) || Utils.isZoneProtected(b.getLocation()))
+							if (b == null || patches.containsKey(b) || (b.getState() instanceof InventoryHolder) || Utils.isBlockImmune(b.getType()) || Utils.isZoneProtected(b.getLocation()))
 								continue;
 							patches.put(b, b.getState());
 							b.setType(Material.PACKED_ICE);
-							world.spawnParticle(Particle.BLOCK_CRACK, b.getLocation().add(.5,1,.5), 5, .4, .3, .4, 1, Material.PACKED_ICE.createBlockData());
+							world.spawnParticle(VersionUtils.getBlockCrack(), b.getLocation().add(.5,1,.5), 5, .4, .3, .4, 1, Material.PACKED_ICE.createBlockData());
 						}
 					} else {
 						for (int i=0; i < 9; i++) {
 							Block b = Utils.getHighestExposedBlock(spot.clone().add(angle.clone().multiply(i)), 3);
-							if (b == null || patches.containsKey(b) || (b.getState() instanceof InventoryHolder) || Utils.isBlockBlacklisted(b.getType()) || Utils.isZoneProtected(b.getLocation()))
+							if (b == null || patches.containsKey(b) || (b.getState() instanceof InventoryHolder) || Utils.isBlockImmune(b.getType()) || Utils.isZoneProtected(b.getLocation()))
 								continue;
 							patches.put(b, b.getState());
 							b.setType(Material.PACKED_ICE);
-							world.spawnParticle(Particle.BLOCK_CRACK, b.getLocation().add(.5,1,.5), 5, .4, .3, .4, 1, Material.PACKED_ICE.createBlockData());
+							world.spawnParticle(VersionUtils.getBlockCrack(), b.getLocation().add(.5,1,.5), 5, .4, .3, .4, 1, Material.PACKED_ICE.createBlockData());
 						}
 					}
 					if (plugin.mcVersion >= 1.17)

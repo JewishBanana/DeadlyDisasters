@@ -23,6 +23,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BlockVector;
@@ -38,6 +39,7 @@ import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class MeteorShower extends WeatherDisaster {
 	
@@ -81,7 +83,7 @@ public class MeteorShower extends WeatherDisaster {
 		me = this;
 		version = plugin.mcVersion;
 		fixdata = new FixedMetadataValue(plugin, "protected");
-		particle = Particle.SMOKE_LARGE;
+		particle = VersionUtils.getLargeSmoke();
 		if (plugin.mcVersion >= 1.17)
 			normalMaterial = Material.DEEPSLATE;
 		else
@@ -412,14 +414,14 @@ class Meteor {
 			blocks[i].setVelocity(vec);
 			for (int v=1; v < speed+2; v++) {
 				Block b = blocks[i].getLocation().clone().add(off.clone().multiply(v)).getBlock();
-				if (b.getType() != Material.AIR && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
+				if (b.getType() != Material.AIR && !Utils.passStrengthTest(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
 					if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 					b.setType(Material.AIR);
 					classInstance.blocksDestroyed++;
 					depth--;
 				}
 				b = b.getRelative(BlockFace.DOWN);
-				if (b.getType() != Material.AIR && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
+				if (b.getType() != Material.AIR && !Utils.passStrengthTest(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
 					if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 					b.setType(Material.AIR);
 					classInstance.blocksDestroyed++;
@@ -428,13 +430,12 @@ class Meteor {
 			}
 		}
 		for (Entity e : blocks[0].getWorld().getNearbyEntities(blocks[0].getLocation(), size, size, size))
-			if (e instanceof LivingEntity && !e.isDead()) {
+			if (e instanceof LivingEntity && !e.isDead() && !classInstance.isEntityTypeProtected(e)) {
 				if (e instanceof Player && Utils.isPlayerImmune((Player) e))
 					continue;
 				if (Utils.rayTraceForSolidBlock(blocks[0].getLocation(), e.getLocation().clone().add(0,.5,0)))
 					continue;
-				e.setMetadata("dd-meteorcrush", classInstance.fixdata);
-				((LivingEntity) e).setHealth(0);
+				Utils.damageEntity((LivingEntity) e, 20.0, "dd-meteorcrush", false, DamageCause.FALLING_BLOCK);
 			}
 		for (Entity e : blocks[0].getWorld().getNearbyEntities(blocks[0].getLocation(), size*5, size*5, size*5))
 			if (e instanceof Player) ((Player) e).playSound(blocks[0].getLocation(), Sound.BLOCK_FIRE_AMBIENT, (float) (1*volume), 2);
@@ -454,7 +455,7 @@ class Meteor {
 							Vector position = block.clone().add(new Vector(x, y, z));
 							if (block.distanceSquared(position) > squared) continue;
 							Block b = loc.getWorld().getBlockAt(position.toLocation(loc.getWorld()));
-							if (Utils.isBlockBlacklisted(b.getType()) || Utils.isZoneProtected(b.getLocation())) continue;
+							if (Utils.passStrengthTest(b.getType()) || Utils.isZoneProtected(b.getLocation())) continue;
 							if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 							if (block.distanceSquared(position) > squared-offset) {
 								b.setType(bd.getMaterial());
@@ -488,7 +489,7 @@ class Meteor {
 				for (Entity e : loc.getWorld().getNearbyEntities(loc, size*6, size*6, size*6))
 					if (e instanceof Player) ((Player) e).playSound(e.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, (float) (1*volume), 0.5F);
 				int width = size*3, widthSquared = width * width, distOff = widthSquared / (width/2);
-				loc.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, loc, size/2, size*1.5, size*1.5, size*1.5, 0.01);
+				loc.getWorld().spawnParticle(VersionUtils.getHugeExplosion(), loc, size/2, size*1.5, size*1.5, size*1.5, 0.01);
 				BlockVector block = new BlockVector(loc.getX(), loc.getY(), loc.getZ());
 				for (double x = width; x > -width; x--)
 					for (double y = width; y > -width; y--)
@@ -497,7 +498,7 @@ class Meteor {
 							double distance = block.distanceSquared(position);
 							if (distance > widthSquared) continue;
 							Block b = loc.getWorld().getBlockAt(position.toLocation(loc.getWorld()));
-							if (b.getType() == Material.AIR || Utils.isBlockBlacklisted(b.getType()) || Utils.isZoneProtected(b.getLocation())) continue;
+							if (b.getType() == Material.AIR || Utils.passStrengthTest(b.getType()) || Utils.isZoneProtected(b.getLocation())) continue;
 							if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 							if (distance > widthSquared-distOff && rand.nextInt(3) == 1) {
 								if (rand.nextInt(4) == 1) {
@@ -512,12 +513,12 @@ class Meteor {
 						}
 				double damage = classInstance.explosionDamage;
 				for (Entity e : loc.getWorld().getNearbyEntities(loc, width, width, width))
-					if (e instanceof LivingEntity && !e.isDead()) {
+					if (e instanceof LivingEntity && !e.isDead() && !classInstance.isEntityTypeProtected(e)) {
 						if (e instanceof Player && (((Player) e).getGameMode() == GameMode.CREATIVE || ((Player) e).getGameMode() == GameMode.SPECTATOR)) continue;
 						LivingEntity entity = (LivingEntity) e;
 						if (Utils.rayTraceForSolidBlock(loc, e.getLocation().clone().add(0,.5,0)))
 							continue;
-						Utils.damageEntity(entity, damage, "dd-meteorcrush", false);
+						Utils.damageEntity(entity, damage, "dd-meteorcrush", false, DamageCause.FALLING_BLOCK);
 					}
 				classInstance.smoke.put(loc.clone().subtract(0,width,0), Arrays.asList(classInstance.smokeTime, width/2));
 			} else {
@@ -539,7 +540,7 @@ class Meteor {
 						for (int i = 0; i < blocks.length; i++) {
 							if (blocks[i].isDead()) continue;
 							for (Entity e : world.getNearbyEntities(blocks[i].getLocation(), .5, .5, .5))
-								if (e instanceof LivingEntity && !e.isDead())
+								if (e instanceof LivingEntity && !e.isDead() && !classInstance.isEntityTypeProtected(e))
 									Utils.pureDamageEntity((LivingEntity) e, 6, "dd-meteorcrush", true, null);
 						}
 						depth++;

@@ -3,7 +3,6 @@ package com.github.jewishbanana.deadlydisasters.events.disasters;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -19,10 +18,11 @@ import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
+import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -46,12 +46,9 @@ public class Hurricane extends DestructionDisaster {
 	private double lvl,blockForce,minForce,maxForce;
 	private Particle particle;
 	private int blocksDestroyed;
+	private int windHeight;
 	
 	public static Set<Biome> oceans = new HashSet<>();
-	
-	public Map<FallingBlock,Block> regenPreState = new HashMap<>();
-	public Map<Block,Block> regenStates = new HashMap<>();
-	public Map<Block,Material[]> fallenBlocks = new LinkedHashMap<>();
 	
 	public Hurricane(int level) {
 		super(level);
@@ -63,6 +60,7 @@ public class Hurricane extends DestructionDisaster {
 		minForce = (double) level / 100.0;
 		maxForce = (double) level / 50.0;
 		particle = Particle.CLOUD;
+		windHeight = configFile.getInt("hurricane.wind_height");
 		
 		this.type = Disaster.HURRICANE;
 	}
@@ -126,7 +124,7 @@ public class Hurricane extends DestructionDisaster {
 				}
 				for (int i=ticker[0]; i < ticker[0]+divided; i++)
 					for (Entity e : world.getNearbyEntities(loc, i, i, i))
-						if (!storage.containsKey(e) && e.getLocation().getY() > 60 && !Utils.isZoneProtected(e.getLocation()))
+						if (!isEntityTypeProtected(e) && !storage.containsKey(e) && e.getLocation().getY() >= windHeight && !Utils.isZoneProtected(e.getLocation()))
 							storage.put(e, loc.distance(e.getLocation()));
 				ticker[0] += divided;
 				if (ticker[0] >= size) {
@@ -148,13 +146,6 @@ public class Hurricane extends DestructionDisaster {
 			@Override
 			public void run() {
 				if (time <= 0) {
-					if (!regenPreState.isEmpty()) {
-						Iterator<Entry<FallingBlock, Block>> it = regenPreState.entrySet().iterator();
-						while (it.hasNext())
-							if (it.next().getKey().isDead())
-								it.remove();
-						return;
-					}
 					DisasterEvent.ongoingDisasters.remove(obj);
 					Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 					id[0].cancel();
@@ -190,7 +181,7 @@ public class Hurricane extends DestructionDisaster {
 								@Override
 								public void run() {
 									if (rand.nextInt(lightning) == 0)
-										world.spawnEntity(world.getHighestBlockAt(temp.clone().add(rand.nextInt(6)-3, 0, rand.nextInt(6)-3)).getLocation().add(0,1,0), EntityType.LIGHTNING);
+										world.spawn(world.getHighestBlockAt(temp.clone().add(rand.nextInt(6)-3, 0, rand.nextInt(6)-3)).getLocation().add(0,1,0), LightningStrike.class);
 									if (wind[0] < blockForce)
 										return;
 									if (temp.clone().add(0,2,0).getBlock().getType().isSolid()) {
@@ -204,13 +195,15 @@ public class Hurricane extends DestructionDisaster {
 										if (b.getState() instanceof InventoryHolder)
 											CoreListener.addBlockInventory(fb, ((InventoryHolder) b.getState()).getInventory().getContents());
 										b.setType(Material.AIR);
+										EntityChangeBlockEvent event = new EntityChangeBlockEvent(fb, b, Material.AIR.createBlockData());
+										Bukkit.getPluginManager().callEvent(event);
 										blocksDestroyed++;
 									}
 									temp.add(move.clone().multiply(-6)).add(0,2,0);
 									int radius = 12-level;
 									for (int i=0; i < ((size-entry.getValue())/10)/(7-level); i++) {
 										Block b = temp.clone().add(rand.nextInt(radius)-(radius/2), rand.nextInt(radius/2)-(radius/4), rand.nextInt(radius)-(radius/2)).getBlock();
-										if (!b.getType().isSolid() || Utils.isBlockBlacklisted(b.getType()) || Utils.isZoneProtected(b.getLocation()))
+										if (!b.getType().isSolid() || Utils.passStrengthTest(b.getType()) || Utils.isZoneProtected(b.getLocation()))
 											continue;
 										if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 										FallingBlock fb = world.spawnFallingBlock(b.getLocation().clone().add(0.5,0.5,0.5), b.getBlockData());
@@ -221,6 +214,8 @@ public class Hurricane extends DestructionDisaster {
 										if (b.getState() instanceof InventoryHolder)
 											CoreListener.addBlockInventory(fb, ((InventoryHolder) b.getState()).getInventory().getContents());
 										b.setType(Material.AIR);
+										EntityChangeBlockEvent event = new EntityChangeBlockEvent(fb, b, Material.AIR.createBlockData());
+										Bukkit.getPluginManager().callEvent(event);
 										blocksDestroyed++;
 									}
 								}

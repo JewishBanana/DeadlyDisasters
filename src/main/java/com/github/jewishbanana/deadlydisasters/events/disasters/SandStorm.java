@@ -33,6 +33,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.sandstormentities.AncientMummy;
 import com.github.jewishbanana.deadlydisasters.entities.sandstormentities.AncientSkeleton;
@@ -43,6 +44,7 @@ import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class SandStorm extends WeatherDisaster {
 	
@@ -129,7 +131,7 @@ public class SandStorm extends WeatherDisaster {
 								p.spawnParticle(Particle.FALLING_DUST, b.clone().add(0,3,0), 1, .5, 1, .5, 1, bd);
 							else {
 								p.spawnParticle(Particle.FALLING_DUST, b.clone().add(0,3,0), 1, .5, 2, .5, 1, bd);
-								p.spawnParticle(Particle.REDSTONE, b.clone().add(0,3,0), 1, .5, 2, .5, 1, dust);
+								p.spawnParticle(VersionUtils.getRedstoneDust(), b.clone().add(0,3,0), 1, .5, 2, .5, 1, dust);
 							}
 						}
 					if (current[0] >= 60 && plugin.mcVersion >= 1.16 && closest != null) {
@@ -140,7 +142,7 @@ public class SandStorm extends WeatherDisaster {
 					}
 					if (sandStormBiomes.contains(p.getLocation().getBlock().getBiome()) && p.getWorld().getHighestBlockYAt(location) <= location.getBlockY()+1)
 						for (int i=0; i < 10; i++)
-							p.spawnParticle(Particle.SMOKE_NORMAL, location.getX()+((rand.nextDouble()*4)-2), location.getY()+((rand.nextDouble()*2.5)-0.5), location.getZ()+((rand.nextDouble()*4)-2), 0, (rand.nextDouble()*10)-5, (rand.nextDouble()*10)-5, (rand.nextDouble()*10)-5, 1);
+							p.spawnParticle(VersionUtils.getNormalSmoke(), location.getX()+((rand.nextDouble()*4)-2), location.getY()+((rand.nextDouble()*2.5)-0.5), location.getZ()+((rand.nextDouble()*4)-2), 0, (rand.nextDouble()*10)-5, (rand.nextDouble()*10)-5, (rand.nextDouble()*10)-5, 1);
 				}
 				if (current[0] > 60)
 					current[0] = 0;
@@ -153,6 +155,7 @@ public class SandStorm extends WeatherDisaster {
 			public void run() {
 				if (time <= 0) {
 					clear();
+					DeathMessages.sandstorms.remove(obj);
 					for (UUID uuid : mobs) {
 						Mob mob = (Mob) Bukkit.getEntity(uuid);
 						if (mob == null)
@@ -175,7 +178,7 @@ public class SandStorm extends WeatherDisaster {
 				for (LivingEntity all : world.getLivingEntities()) {
 					if (mobs.contains(all.getUniqueId()) && ((Mob) all).getTarget() == null && Bukkit.getEntity(targets.get(all.getUniqueId())) != null)
 						((Mob) all).setTarget((LivingEntity) Bukkit.getEntity(targets.get(all.getUniqueId())));
-					if (all.getLocation().getY() < 50 || !sandStormBiomes.contains(all.getLocation().getBlock().getBiome()) || Utils.isWeatherDisabled(all.getLocation(), obj)
+					if (isEntityTypeProtected(all) || all.getLocation().getY() < 50 || !sandStormBiomes.contains(all.getLocation().getBlock().getBiome()) || Utils.isWeatherDisabled(all.getLocation(), obj)
 							|| all instanceof Husk || all instanceof Stray || all instanceof Skeleton || all instanceof Zombie) continue;
 					if (wither && spawnTick[0] >= 60 && rand.nextInt(4) == 0 && world.getHighestBlockYAt(all.getLocation()) <= all.getLocation().getBlockY()+1)
 						Utils.pureDamageEntity(all, 1D, "dd-sandstormdeath", false, null);
@@ -195,14 +198,14 @@ public class SandStorm extends WeatherDisaster {
 								r = 3;
 							if (r == 0) {
 								Skeleton skel = (Skeleton) world.spawnEntity(loc, EntityType.SKELETON);
-								plugin.handler.addEntity(new AncientSkeleton(skel, plugin, rand));
+								CustomEntity.handler.addEntity(new AncientSkeleton(skel, plugin, rand));
 								mobs.add(skel.getUniqueId());
 								skel.setTarget(all);
 								targets.put(skel.getUniqueId(), all.getUniqueId());
 								skel.setMetadata("dd-sandstormmob", plugin.fixedData);
 							} else if (r == 1) {
 								Husk husk = (Husk) world.spawnEntity(loc, EntityType.HUSK);
-								plugin.handler.addEntity(new AncientMummy(husk, plugin, rand));
+								CustomEntity.handler.addEntity(new AncientMummy(husk, plugin, rand));
 								mobs.add(husk.getUniqueId());
 								husk.setTarget(all);
 								targets.put(husk.getUniqueId(), all.getUniqueId());
@@ -243,7 +246,6 @@ public class SandStorm extends WeatherDisaster {
 	public void clear() {
 		time = 0;
 		clearEntities();
-		DeathMessages.sandstorms.remove(this);
 	}
 	public void clearEntities() {
 		for (UUID e : mobs)

@@ -55,6 +55,7 @@ import com.github.jewishbanana.deadlydisasters.utils.DDSong;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.SongMaker;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Santa extends CustomEntity {
 	
@@ -101,9 +102,9 @@ public class Santa extends CustomEntity {
 		entity.setMetadata("dd-santa", plugin.fixedData);
 		entity.setMetadata("dd-christmasmob", plugin.fixedData);
 		if (entity.getCustomName() == null)
-			entity.setCustomName(Languages.langFile.getString("entities.santa"));
+			entity.setCustomName(Languages.langFile.getString("christmas.santa"));
 		
-		bar = Bukkit.createBossBar(Utils.chat("&c"+Languages.langFile.getString("entities.santa")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
+		bar = Bukkit.createBossBar(Utils.convertString("&c"+Languages.langFile.getString("entities.santa")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
 	}
 
 	@Override
@@ -156,7 +157,7 @@ public class Santa extends CustomEntity {
 		}
 		if (entity.getTarget() != null && entity.getTarget().getWorld().equals(entity.getWorld()) && entity.getTarget().getLocation().distanceSquared(entity.getLocation()) <= 225) {
 			cooldown = 15;
-			entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 40, 10, true, false));
+			entity.addPotionEffect(new PotionEffect(VersionUtils.getSlowness(), 40, 10, true, false));
 			entity.swingMainHand();
 			entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_SNOW_GOLEM_SHOOT, SoundCategory.HOSTILE, 2, 0.5f);
 			clean();
@@ -239,26 +240,26 @@ public class Santa extends CustomEntity {
 						return;
 					}
 					stand.teleport(projectile.getLocation().add(0,-2,0));
-					stand.getWorld().spawnParticle(Particle.BLOCK_CRACK, stand.getLocation().add(0,2,0), 2, .1, .1, .1, 1, trail);
+					stand.getWorld().spawnParticle(VersionUtils.getBlockCrack(), stand.getLocation().add(0,2,0), 2, .1, .1, .1, 1, trail);
 					if (projectile.isOnGround()) {
-						stand.getWorld().spawnParticle(Particle.BLOCK_CRACK, stand.getLocation().add(0,2,0), 30, .7, .7, .7, 1, trail);
+						stand.getWorld().spawnParticle(VersionUtils.getBlockCrack(), stand.getLocation().add(0,2,0), 30, .7, .7, .7, 1, trail);
 						switch (type) {
 						case 4:
 							Mob grinch = (Mob) projectile.getWorld().spawnEntity(projectile.getLocation(), EntityType.ZOMBIE);
-							plugin.handler.addEntity(new Grinch(grinch, plugin, rand));
+							CustomEntity.handler.addEntity(new Grinch(grinch, plugin, rand));
 							if (entity.getTarget() != null && !entity.getTarget().isDead())
 								grinch.setTarget(entity.getTarget());
 							break;
 						case 3:
-							Snowman frosty = (Snowman) projectile.getWorld().spawnEntity(projectile.getLocation(), EntityType.SNOWMAN);
-							plugin.handler.addEntity(new Frosty(frosty, plugin, rand));
+							Snowman frosty = (Snowman) projectile.getWorld().spawn(projectile.getLocation(), Snowman.class);
+							CustomEntity.handler.addEntity(new Frosty(frosty, plugin, rand));
 							if (entity.getTarget() != null && !entity.getTarget().isDead())
 								frosty.setTarget(entity.getTarget());
 							break;
 						case 2:
 							for (int i=0; i < 3; i++) {
 								Zombie elf = (Zombie) projectile.getWorld().spawnEntity(projectile.getLocation(), EntityType.ZOMBIE);
-								plugin.handler.addEntity(new Elf(elf, plugin, rand));
+								CustomEntity.handler.addEntity(new Elf(elf, plugin, rand));
 								if (entity.getTarget() != null && !entity.getTarget().isDead())
 									elf.setTarget(entity.getTarget());
 							}
@@ -295,11 +296,11 @@ public class Santa extends CustomEntity {
 								if (dist > timer[0] || dist < timer[0]-1)
 									continue;
 								Block b = Utils.getHighestExposedBlock(position.toLocation(loc.getWorld()), 3);
-								if (b == null || patches.containsKey(b) || Utils.isBlockBlacklisted(b.getType()) || Utils.isZoneProtected(b.getLocation()))
+								if (b == null || patches.containsKey(b) || Utils.isBlockImmune(b.getType()) || Utils.isZoneProtected(b.getLocation()))
 									continue;
 								patches.put(b, b.getState());
 								b.setType(Material.PACKED_ICE);
-								world.spawnParticle(Particle.BLOCK_CRACK, b.getLocation().add(.5,1,.5), 5, .4, .3, .4, 1, Material.PACKED_ICE.createBlockData());
+								world.spawnParticle(VersionUtils.getBlockCrack(), b.getLocation().add(.5,1,.5), 5, .4, .3, .4, 1, Material.PACKED_ICE.createBlockData());
 							}
 						if (plugin.mcVersion >= 1.17)
 							world.playSound(loc, Sound.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.BLOCKS, 0.6f, .5f);
@@ -344,7 +345,7 @@ public class Santa extends CustomEntity {
 		santa.setRemoveWhenFarAway(false);
 		santa.teleport(spawn.clone().add(0, 0, -9.5));
 		Santa santaObject = new Santa(santa, plugin, plugin.random);
-		plugin.handler.addEntity(santaObject);
+		CustomEntity.handler.addEntity(santaObject);
 		Location[] deerSpawns = {spawn.clone().add(1, 0, -7), spawn.clone().add(-1, 0, -7), spawn.clone().add(1, 0, -2), spawn.clone().add(-1, 0, -2)};
 		Location outside = spawn.clone().add(150, 300, 0);
 		Horse[] deer = {(Horse) world.spawnEntity(outside, EntityType.HORSE, false), (Horse) world.spawnEntity(outside, EntityType.HORSE, false),
@@ -367,7 +368,7 @@ public class Santa extends CustomEntity {
 			public void run() {
 				world.spawnParticle(Particle.SNOWFLAKE, block.getLocation().add(.5,.3,.5), 1, .2, .2, .2, 0.0001);
 				if (!dismounted[0] && boat.getLocation().getZ() >= block.getLocation().getZ()) {
-					santa.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 80, 100, true, false));
+					santa.addPotionEffect(new PotionEffect(VersionUtils.getResistance(), 80, 100, true, false));
 					dismounted[0] = true;
 					santaObject.songMaker = music;
 				} else if (boat == null || boat.isDead() || boat.getLocation().getZ() >= block.getLocation().getZ()+150) {
@@ -378,7 +379,7 @@ public class Santa extends CustomEntity {
 						boat.remove();
 					cancel();
 					block.setType(Material.AIR);
-					world.spawnParticle(Particle.BLOCK_CRACK, block.getLocation().add(.5,.3,.5), 30, .2, .2, .2, 0.0001, Material.SNOW.createBlockData());
+					world.spawnParticle(VersionUtils.getBlockCrack(), block.getLocation().add(.5,.3,.5), 30, .2, .2, .2, 0.0001, Material.SNOW.createBlockData());
 					world.playSound(block.getLocation().add(.5,.3,.5), Sound.BLOCK_GLASS_BREAK, SoundCategory.BLOCKS, 1, 0.5f);
 					snowGlobeBlocks.remove(block);
 					santa.setRemoveWhenFarAway(true);

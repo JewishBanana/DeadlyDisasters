@@ -16,6 +16,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Goat;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.WanderingTrader;
@@ -41,7 +42,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.easterentities.KillerChicken;
+import com.github.jewishbanana.deadlydisasters.entities.easterentities.RampagingGoat;
 import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.listeners.spawners.GlobalSpawner;
@@ -99,13 +102,13 @@ public class EasterEventHandler extends SpecialEvent implements Listener {
 		}
 	}
 	public void openGUI(Player player) {
-		Inventory inv = Bukkit.createInventory(null, 18, Utils.chat("&9DeadlyDisasters Easter Event"));
-		inv.setItem(4, Utils.createItem(Material.NETHER_STAR, 1, Utils.chat("&6"+Languages.getString("easter.infoItem")), Arrays.asList(Utils.chat("&a"+Languages.getString("easter.infoItemLore"))), false, true));
+		Inventory inv = Bukkit.createInventory(null, 18, Utils.convertString("&9DeadlyDisasters Easter Event"));
+		inv.setItem(4, Utils.createItem(Material.NETHER_STAR, 1, Utils.convertString("&6"+Languages.getString("easter.infoItem")), Arrays.asList(Utils.convertString("&a"+Languages.getString("easter.infoItemLore"))), false, true));
 		for (int i=0; i < 5; i++) {
 			List<String> lore = new ArrayList<>();
 			lore.add(eggs[i].description);
 			lore.add(" ");
-			lore.add(Utils.chat("&b"+progress+": "+eggs[i].getProgress(player.getUniqueId())+'/'+eggs[i].goal));
+			lore.add(Utils.convertString("&b"+progress+": "+eggs[i].getProgress(player.getUniqueId())+'/'+eggs[i].goal));
 			ItemStack item = Utils.createItem(Material.TURTLE_EGG, 1, eggs[i].name, lore, false, true);
 			ItemMeta meta = item.getItemMeta();
 			meta.setCustomModelData(eggs[i].cmd);
@@ -123,7 +126,7 @@ public class EasterEventHandler extends SpecialEvent implements Listener {
 	public void onJoin(PlayerJoinEvent e) {
 		if (notify)
 			plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-				e.getPlayer().sendMessage(Languages.prefix+Utils.chat("&a"+Languages.getString("easter.eventMessage")));
+				e.getPlayer().sendMessage(Languages.prefix+Utils.convertString("&a"+Languages.getString("easter.eventMessage")));
 			}, 20);
 	}
 	@EventHandler
@@ -137,7 +140,7 @@ public class EasterEventHandler extends SpecialEvent implements Listener {
 		if (e.getClickedInventory() instanceof MerchantInventory && e.getCurrentItem().hasItemMeta()
 				&& e.getCurrentItem().getItemMeta().getPersistentDataContainer().has(ItemsHandler.purpleEasterEggKey, PersistentDataType.BYTE)) {
 			if (eggs[4].hasAchieved(e.getWhoClicked().getUniqueId())) {
-				e.getWhoClicked().sendMessage(Utils.chat("&c"+Languages.getString("easter.restrictAction")));
+				e.getWhoClicked().sendMessage(Utils.convertString("&c"+Languages.getString("easter.restrictAction")));
 				e.setCancelled(true);
 				return;
 			}
@@ -196,7 +199,7 @@ public class EasterEventHandler extends SpecialEvent implements Listener {
 		if (e.getEntity() instanceof Player && droppedEggs.containsKey(e.getItem().getUniqueId())) {
 			if (eggs[0].hasAchieved(e.getEntity().getUniqueId())) {
 				if (!droppedEggs.get(e.getItem().getUniqueId()).contains(e.getEntity().getUniqueId())) {
-					e.getEntity().sendMessage(Utils.chat("&c"+Languages.getString("easter.restrictAction")));
+					e.getEntity().sendMessage(Utils.convertString("&c"+Languages.getString("easter.restrictAction")));
 					droppedEggs.get(e.getItem().getUniqueId()).add(e.getEntity().getUniqueId());
 				}
 				e.setCancelled(true);
@@ -217,11 +220,19 @@ public class EasterEventHandler extends SpecialEvent implements Listener {
 	}
 	@EventHandler(priority=EventPriority.LOWEST)
 	public void onCreatureSpawn(CreatureSpawnEvent e) {
-		if (e.isCancelled() || e.getEntityType() != EntityType.CHICKEN || !(e.getSpawnReason() == SpawnReason.NATURAL || e.getSpawnReason() == SpawnReason.BREEDING || e.getSpawnReason() == SpawnReason.EGG) || GlobalSpawner.noSpawnWorlds.contains(e.getLocation().getWorld())
+		if (e.isCancelled())
+			return;
+		if (e.getLocation().getBlockY() > 150 && plugin.random.nextDouble()*100 < 20.0) {
+			Goat goat = (Goat) e.getLocation().getWorld().spawnEntity(e.getLocation(), EntityType.GOAT);
+			CustomEntity.handler.addEntity(new RampagingGoat(goat, plugin));
+			e.getEntity().remove();
+			return;
+		}
+		if (e.getEntityType() != EntityType.CHICKEN || !(e.getSpawnReason() == SpawnReason.NATURAL || e.getSpawnReason() == SpawnReason.BREEDING || e.getSpawnReason() == SpawnReason.EGG) || GlobalSpawner.noSpawnWorlds.contains(e.getLocation().getWorld())
 				|| plugin.random.nextDouble()*100 >= 10.0)
 			return;
 		Zombie zombie = (Zombie) e.getEntity().getWorld().spawnEntity(e.getLocation(), EntityType.ZOMBIE, false);
-		plugin.handler.addEntity(new KillerChicken(zombie, plugin));
+		CustomEntity.handler.addEntity(new KillerChicken(zombie, plugin));
 		e.getEntity().remove();
 	}
 	public class EggGoal {
@@ -235,28 +246,28 @@ public class EasterEventHandler extends SpecialEvent implements Listener {
 			this.path = "easterevent."+year+".egg"+index;
 			switch (index) {
 			case 0:
-				name = Utils.chat(ChatColor.GREEN+Languages.getString("easter.greenEgg"));
-				description = Utils.chat(ChatColor.YELLOW+Languages.getString("easter.greenEggGoal"));
+				name = Utils.convertString(ChatColor.GREEN+Languages.getString("easter.greenEgg"));
+				description = Utils.convertString(ChatColor.YELLOW+Languages.getString("easter.greenEggGoal"));
 				cmd = 100023;
 				break;
 			case 1:
-				name = Utils.chat(ChatColor.BLUE+Languages.getString("easter.blueEgg"));
-				description = Utils.chat(ChatColor.YELLOW+Languages.getString("easter.blueEggGoal"));
+				name = Utils.convertString(ChatColor.BLUE+Languages.getString("easter.blueEgg"));
+				description = Utils.convertString(ChatColor.YELLOW+Languages.getString("easter.blueEggGoal"));
 				cmd = 100024;
 				break;
 			case 2:
-				name = Utils.chat(ChatColor.RED+Languages.getString("easter.redEgg"));
-				description = Utils.chat(ChatColor.YELLOW+Languages.getString("easter.redEggGoal"));
+				name = Utils.convertString(ChatColor.RED+Languages.getString("easter.redEgg"));
+				description = Utils.convertString(ChatColor.YELLOW+Languages.getString("easter.redEggGoal"));
 				cmd = 100025;
 				break;
 			case 3:
-				name = Utils.chat(ChatColor.GOLD+Languages.getString("easter.orangeEgg"));
-				description = Utils.chat(ChatColor.YELLOW+Languages.getString("easter.orangeEggGoal"));
+				name = Utils.convertString(ChatColor.GOLD+Languages.getString("easter.orangeEgg"));
+				description = Utils.convertString(ChatColor.YELLOW+Languages.getString("easter.orangeEggGoal"));
 				cmd = 100026;
 				break;
 			case 4:
-				name = Utils.chat(ChatColor.LIGHT_PURPLE+Languages.getString("easter.purpleEgg"));
-				description = Utils.chat(ChatColor.YELLOW+Languages.getString("easter.purpleEggGoal"));
+				name = Utils.convertString(ChatColor.LIGHT_PURPLE+Languages.getString("easter.purpleEgg"));
+				description = Utils.convertString(ChatColor.YELLOW+Languages.getString("easter.purpleEggGoal"));
 				cmd = 100027;
 				break;
 			}
@@ -276,7 +287,7 @@ public class EasterEventHandler extends SpecialEvent implements Listener {
 			else
 				progress.put(uuid, Math.min(goal, amount));
 			if (hasAchieved(uuid) && Bukkit.getPlayer(uuid) != null)
-				Bukkit.getPlayer(uuid).sendMessage(Languages.prefix+Utils.chat("&a"+Languages.getString("easter.discoverEgg")+" "+name+"!"));
+				Bukkit.getPlayer(uuid).sendMessage(Languages.prefix+Utils.convertString("&a"+Languages.getString("easter.discoverEgg")+" "+name+"!"));
 		}
 		public int getProgress(UUID uuid) {
 			return progress.containsKey(uuid) ? progress.get(uuid) : 0;

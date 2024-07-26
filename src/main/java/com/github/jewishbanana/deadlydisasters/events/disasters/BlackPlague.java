@@ -15,7 +15,6 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
-import org.bukkit.Particle;
 import org.bukkit.Particle.DustOptions;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -36,6 +35,7 @@ import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class BlackPlague extends WeatherDisaster {
 	
@@ -62,7 +62,7 @@ public class BlackPlague extends WeatherDisaster {
 			if (typeList.contains(s.toUpperCase()))
 				blacklisted.add(EntityType.valueOf(s.toUpperCase()));
 			else if (plugin.debug)
-				Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: Unreconized entity &d'"+s+"' &ein config under \nplague:\n    blacklisted_mobs:\n        "+s));
+				Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: Unreconized entity &d'"+s+"' &ein config under \nplague:\n    blacklisted_mobs:\n        "+s));
 		priorities.addAll(Arrays.asList(EntityType.VILLAGER, EntityType.ZOMBIE));
 		if (plugin.mcVersion >= 1.14)
 			priorities.add(EntityType.WANDERING_TRADER);
@@ -75,7 +75,7 @@ public class BlackPlague extends WeatherDisaster {
 		this.world = world;
 		updateWeatherSettings();
 		if (broadcastAllowed && (boolean) WorldObject.findWorldObject(world).settings.get("event_broadcast")) {
-			String str = Utils.chat(plugin.getConfig().getString("messages.misc.plague.started"));
+			String str = Utils.convertString(plugin.getConfig().getString("messages.misc.plague.started"));
 			if (plugin.getConfig().getBoolean("messages.disaster_tips"))
 				str += "\n"+type.getTip();
 			for (Player players : world.getPlayers())
@@ -115,7 +115,7 @@ public class BlackPlague extends WeatherDisaster {
 				while (iterator.hasNext()) {
 					Entry<UUID,Integer> entry = iterator.next();
 					LivingEntity e = (LivingEntity) Bukkit.getEntity(entry.getKey());
-					if (e == null || e.isDead()) {
+					if (e == null || e.isDead() || isEntityTypeProtected(e)) {
 						if (e == null && infectedPlayers.contains(entry.getKey()))
 							continue;
 						if (e != null && e.hasMetadata("dd-plague"))
@@ -138,21 +138,21 @@ public class BlackPlague extends WeatherDisaster {
 						iterator.remove();
 						continue;
 					}
-					e.getWorld().spawnParticle(Particle.REDSTONE, e.getLocation().clone().add(0,e.getHeight()/2,0), 8, 0.4, e.getHeight()/4, 0.4, 1, dust);
+					e.getWorld().spawnParticle(VersionUtils.getRedstoneDust(), e.getLocation().clone().add(0,e.getHeight()/2,0), 8, 0.4, e.getHeight()/4, 0.4, 1, dust);
 					if (t <= 250) e.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 40, 1, true, false));
 					if (t <= 200) e.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 40, 3, true, false));
-					if (t <= 150) e.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 40, 2, true, false));
-					if (t <= 100) e.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 40, 2, true));
-					if (t <= 60) e.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 1, true));
+					if (t <= 150) e.addPotionEffect(new PotionEffect(VersionUtils.getSlowDigging(), 40, 2, true, false));
+					if (t <= 100) e.addPotionEffect(new PotionEffect(VersionUtils.getSlowness(), 40, 2, true));
+					if (t <= 60) e.addPotionEffect(new PotionEffect(VersionUtils.getConfusion(), 100, 1, true));
 					if (t <= 20) e.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 40, 2, true));
 					if (t <= 150 && e instanceof Player && rand.nextInt(4) == 0) ((Player) e).playSound(e.getLocation(), Sound.ENTITY_HORSE_BREATHE, 0.3F, 0.5F);
 					if (time.size() < maxInfectedMobs)
 						for (Entity near : e.getNearbyEntities(1, 1, 1)) {
-							if (near instanceof LivingEntity && !near.isDead() && !blacklisted.contains(near.getType()) && !near.hasMetadata("dd-plague")) {
+							if (near instanceof LivingEntity && !near.isDead() && !blacklisted.contains(near.getType()) && !isEntityTypeProtected(near) && !near.hasMetadata("dd-plague")) {
 								if (near instanceof Player) {
 									if (Utils.isPlayerImmune((Player) near))
 										continue;
-									((Player) near).sendMessage(Utils.chat("&c"+Languages.langFile.getString("misc.plagueCatch")));
+									((Player) near).sendMessage(Utils.convertString("&c"+Languages.langFile.getString("misc.plagueCatch")));
 									infectedPlayers.add(near.getUniqueId());
 								}
 								temp.put(near.getUniqueId(), 300);
@@ -167,7 +167,7 @@ public class BlackPlague extends WeatherDisaster {
 	}
 	public boolean isMobAvailable(World world) {
 		for (LivingEntity e : world.getLivingEntities()) {
-			if (blacklisted.contains(e.getType())) continue;
+			if (blacklisted.contains(e.getType()) || isEntityTypeProtected(e)) continue;
 			if (e.hasMetadata("dd-plague")) continue;
 			if (e instanceof Player) continue;
 			if (e.isInvulnerable()) continue;
@@ -179,7 +179,8 @@ public class BlackPlague extends WeatherDisaster {
 	public void infectNearTarget(LivingEntity target, double x, double y, double z, EntityType priority) {
 		List<LivingEntity> list = new ArrayList<>();
 		for (Entity e : target.getNearbyEntities(x, y, z))
-			if (e instanceof LivingEntity && !(e instanceof Player) && !blacklisted.contains(e.getType()) && !e.hasMetadata("dd-plague")) list.add((LivingEntity) e);
+			if (e instanceof LivingEntity && !(e instanceof Player) && !blacklisted.contains(e.getType()) && !e.hasMetadata("dd-plague") && !isEntityTypeProtected(e))
+				list.add((LivingEntity) e);
 		for (LivingEntity e : list)
 			if (e.getType() == priority) {
 				time.put(e.getUniqueId(), 300);
@@ -196,7 +197,7 @@ public class BlackPlague extends WeatherDisaster {
 	}
 	public void infectRandomMobs(int amount, World w) {
 		for (LivingEntity e : w.getLivingEntities()) {
-			if (blacklisted.contains(e.getType())) continue;
+			if (blacklisted.contains(e.getType()) || isEntityTypeProtected(e)) continue;
 			if (e.hasMetadata("dd-plague")) continue;
 			if (e instanceof Player) continue;
 			if (e.isInvulnerable()) continue;
@@ -215,9 +216,9 @@ public class BlackPlague extends WeatherDisaster {
 		if (e instanceof Player)
 			infectedPlayers.add(e.getUniqueId());
 	}
-	public static void cureEntity(LivingEntity e, Main plugin) {
+	public static void cureEntity(LivingEntity e) {
 		time.remove(e.getUniqueId());
-		e.removeMetadata("dd-plague", plugin);
+		e.removeMetadata("dd-plague", Main.getInstance());
 		if (e instanceof Player)
 			infectedPlayers.remove(e.getUniqueId());
 	}

@@ -22,6 +22,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
+import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
@@ -30,7 +31,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BarColor;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Flying;
@@ -83,7 +83,7 @@ public class CustomDisaster {
 		File folder = new File(plugin.getDataFolder().getAbsolutePath(), "custom disasters");
 		folder.mkdirs();
 		if (!folder.exists()) {
-			Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&cCould not create custom disasters directory plugin was denied access?! Please create this folder manually in the plugins directory next to the config file &d'custom disasters'"));
+			Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&cCould not create custom disasters directory plugin was denied access?! Please create this folder manually in the plugins directory next to the config file &d'custom disasters'"));
 			return;
 		}
 		disasterFiles.clear();
@@ -100,7 +100,7 @@ public class CustomDisaster {
 			disasterFiles.put(temp.getString("settings.name"), temp);
 			Disasters.addDisaster(temp.getString("settings.name"));
 		} catch (InvalidConfigurationException e) {
-			Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&cCould not load &e'"+f.getName()+"' &cinvalid disaster configuration!\n"+e.getMessage()));
+			Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&cCould not load &e'"+f.getName()+"' &cinvalid disaster configuration!\n"+e.getMessage()));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -184,26 +184,26 @@ public class CustomDisaster {
 		}, delaySeconds * 20);
 	}
 	public void broadcastEndingMessage(World world) {
-		String msg = Utils.chat(yaml.getString("settings.ending_message"));
+		String msg = Utils.convertString(yaml.getString("settings.ending_message"));
 		for (Player p : world.getPlayers())
 			p.sendMessage(msg);
-		Main.consoleSender.sendMessage(Languages.prefix+msg+Utils.chat(" &a("+world.getName()+")"));
+		Main.consoleSender.sendMessage(Languages.prefix+msg+Utils.convertString(" &a("+world.getName()+")"));
 	}
 	public void broadcastMessage(Location loc, Player p) {
 		if (yaml.contains("settings.start_message")) {
 			String str = yaml.getString("settings.start_message");
 			char character = Utils.getLevelChar(level);
 			str = str.replace("%level%", level+"").replace("%level_char%", "&"+character);
-			str = Utils.chat(str.replace("%disaster%", yaml.getString("settings.title")).replace("%location%", loc.getBlockX()+" "+loc.getBlockY()+" "+loc.getBlockZ()).replace("%player%", p.getName()));
+			str = Utils.convertString(str.replace("%disaster%", yaml.getString("settings.title")).replace("%location%", loc.getBlockX()+" "+loc.getBlockY()+" "+loc.getBlockZ()).replace("%player%", p.getName()));
 			for (Player all : loc.getWorld().getPlayers())
 				all.sendMessage(str);
-			Main.consoleSender.sendMessage(Utils.chat(str+" &a("+loc.getWorld().getName()+")"));
+			Main.consoleSender.sendMessage(Utils.convertString(str+" &a("+loc.getWorld().getName()+")"));
 		} else {
 			String str = plugin.getConfig().getString("messages.destructive.level "+level);
-			str = Utils.chat(str.replace("%disaster%", yaml.getString("settings.title")).replace("%location%", loc.getBlockX()+" "+loc.getBlockY()+" "+loc.getBlockZ()).replace("%player%", p.getName()));
+			str = Utils.convertString(str.replace("%disaster%", yaml.getString("settings.title")).replace("%location%", loc.getBlockX()+" "+loc.getBlockY()+" "+loc.getBlockZ()).replace("%player%", p.getName()));
 			for (Player all : loc.getWorld().getPlayers())
 				all.sendMessage(str);
-			Main.consoleSender.sendMessage(Utils.chat(str+" &a("+loc.getWorld().getName()+")"));
+			Main.consoleSender.sendMessage(Utils.convertString(str+" &a("+loc.getWorld().getName()+")"));
 		}
 	}
 	public void updateValues(World world, Player p) {
@@ -218,17 +218,17 @@ public class CustomDisaster {
 				ItemStack item = new ItemStack(Material.valueOf(yaml.getString(path+"type").toUpperCase()));
 				ItemMeta meta = item.getItemMeta();
 				if (yaml.contains(path+"name"))
-					meta.setDisplayName(Utils.chat(yaml.getString(path+"name")));
+					meta.setDisplayName(Utils.convertString(yaml.getString(path+"name")));
 				if (yaml.contains(path+"lore")) {
 					List<String> lore = new ArrayList<>();
 					for (String line : yaml.getStringList(path+"lore"))
-						lore.add(Utils.chat(line));
+						lore.add(Utils.convertString(line));
 					meta.setLore(lore);
 				}
 				if (yaml.contains(path+"enchantments"))
 					for (String temp : yaml.getConfigurationSection(path+"enchantments").getKeys(false)) {
 						String tempPath = path+"enchantments."+temp+'.';
-						meta.addEnchant(Enchantment.getByKey(NamespacedKey.minecraft(yaml.getString(tempPath+"enchantment").toLowerCase())), yaml.getInt(tempPath+"level"), true);
+						meta.addEnchant(Registry.ENCHANTMENT.get(NamespacedKey.minecraft(yaml.getString(tempPath+"enchantment").toLowerCase())), yaml.getInt(tempPath+"level"), true);
 					}
 				if (yaml.contains(path+"hide_enchants") && yaml.getBoolean(path+"hide_enchants"))
 					meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -294,7 +294,7 @@ public class CustomDisaster {
 					despawn = yaml.getBoolean(path+"despawn");
 				String customName = null;
 				if (yaml.contains(path+"name"))
-					customName = Utils.chat(yaml.getString(path+"name"));
+					customName = Utils.convertString(yaml.getString(path+"name"));
 				CustomDisasterMob mob = new CustomDisasterMob(EntityType.valueOf(yaml.getString(path+"type").toUpperCase()), health, range, speed, damage, knockback, resistance, armor, mainHand, offHand, dropChances,
 						silent, customName, pickUp, despawn);
 				entityMap.put(entityName, mob);
@@ -739,7 +739,7 @@ public class CustomDisaster {
 						List<Material> materials = new ArrayList<>();
 						strings.forEach(k -> {
 							Material mat = Material.valueOf(k.toUpperCase());
-							if (!Utils.isBlockBlacklisted(mat))
+							if (!Utils.passStrengthTest(mat))
 								materials.add(mat);
 						});
 						ignored.addAll(materials);
@@ -801,7 +801,7 @@ public class CustomDisaster {
 					if (yaml.contains(path+"type")) {
 						String type = yaml.getString(path+"type").toUpperCase();
 						if (type.equals("BLOCK_CRACK") || type.equals("BLOCK_DUST") || type.equals("BLOCK_MARKER") || type.equals("FALLING_DUST") || type.equals("REDSTONE") || type.equals("ITEM_CRACK") || type.equals("DUST_COLOR_TRANSITION")) {
-							Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eWARNING in '"+nameID+"' file! &f'"+type+"' &eparticle is not supported! Error at &fLevel "+level+" in "+eventSection+"&e! Ignoring this action.."));
+							Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&eWARNING in '"+nameID+"' file! &f'"+type+"' &eparticle is not supported! Error at &fLevel "+level+" in "+eventSection+"&e! Ignoring this action.."));
 							continue;
 						}
 						particle = Particle.valueOf(type);
@@ -859,11 +859,11 @@ public class CustomDisaster {
 					listOfEvents.add(new CustomEvent("n", targets, sound, data, points));
 					continue;
 				} else {
-					Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eWARNING in '"+nameID+"' file! &f'"+event+"' &eis not reconized as an action at &fLevel "+level+" in "+eventSection+"&e! Ignoring this entry.."));
+					Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&eWARNING in '"+nameID+"' file! &f'"+event+"' &eis not reconized as an action at &fLevel "+level+" in "+eventSection+"&e! Ignoring this entry.."));
 				}
 			}
 			if (eventSection.length() < 7) {
-				Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eWARNING in '"+nameID+"' file! &f'"+eventSection+" &eis not a valid event format! Ignoring this section.. Format should be as follows"
+				Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&eWARNING in '"+nameID+"' file! &f'"+eventSection+" &eis not a valid event format! Ignoring this section.. Format should be as follows"
 						+ "\n    events:\n        event 1:\n            <actions>\n        event 2:\n            <actions>..."));
 				continue;
 			}
@@ -1157,7 +1157,7 @@ class CustomEvent {
 			((WeatherDisaster) event).start(world, p, broadcastAllowed);
 			return;
 		} else if (operation.equals("b")) {
-			String str = Utils.chat((String) event);
+			String str = Utils.convertString((String) event);
 			if (targets == 0) {
 				if (p != null && world.equals(p.getWorld()))
 					p.sendMessage(str);

@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
@@ -53,10 +54,10 @@ public class Languages {
 	public static YamlConfiguration defaultLang;
 	private static InputStream cfgFile;
 	
-	public static String prefix = Utils.chat("&6&l[DeadlyDisasters]: ");
+	public static String prefix = Utils.convertString("&6&l[DeadlyDisasters]: ");
 	public static String firstStart;
 	
-	public static String joinAfterUpdate = Utils.chat("&bUpdate log for &4&lV10.4 \\n&3- Small bug fixes\\n- Limited time easter event till 16th\\n- Custom world support");
+	public static String joinAfterUpdate = Utils.convertString("&bUpdate log for &4&lV12.0 \\n&3- Block Stability \n- New Disaster &cSolarStorms \n&3- New item framework UIFramework \n- Bug fixes \n- More config features \n- New custom mobs \n- Language file now in plugin directory");
 	
 	public static String getString(String path) {
 		return langFile.contains(path) ? langFile.getString(path) : defaultLang.getString(path);
@@ -65,71 +66,83 @@ public class Languages {
 		langID = tempID;
 		if (langID == 0) {
 			if (sender != null)
-				sender.sendMessage(Utils.chat("&bInstalling language files..."));
-			langFile = YamlConfiguration.loadConfiguration(new InputStreamReader(plugin.getResource("lang/langEnglish.yml")));
+				sender.sendMessage(Utils.convertString("&bInstalling language files..."));
+			File langLocation = new File(plugin.getDataFolder().getAbsolutePath(), "lang/language.yml");
+			if (!langLocation.exists()) {
+				langLocation.getParentFile().mkdirs();
+				try {
+					FileUtils.copyInputStreamToFile(plugin.getResource("lang/langEnglish.yml"), langLocation);
+					langFile = YamlConfiguration.loadConfiguration(langLocation);
+				} catch (IOException e) {
+					langFile = YamlConfiguration.loadConfiguration(new InputStreamReader(plugin.getResource("lang/langEnglish.yml")));
+					e.printStackTrace();
+				}
+			} else
+				langFile = YamlConfiguration.loadConfiguration(langLocation);
+			updateLanguageFile(langLocation, plugin.getResource("lang/langEnglish.yml"));
 			cfgFile = plugin.getResource("config.yml");
 			if (sender != null)
-				sender.sendMessage(Utils.chat("&aSuccessfully installed!"));
+				sender.sendMessage(Utils.convertString("&aSuccessfully installed!"));
 		} else if (langID == 1) {
 			//chinese simp
 			try {
 				fetchNewConfig(plugin, sender);
 				if (sender != null)
-					sender.sendMessage(Utils.chat("&bInstalling language files..."));
+					sender.sendMessage(Utils.convertString("&bInstalling language files..."));
 				langFile = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langChinesePRO.yml"));
 				cfgFile = FileUtils.openInputStream(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langChineseCfgPRO.yml"));
 				if (sender != null)
-					sender.sendMessage(Utils.chat("&aSuccessfully installed!"));
+					sender.sendMessage(Utils.convertString("&aSuccessfully installed!"));
 			} catch (IOException e) {
 				e.printStackTrace();
-				Main.consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cUnable to update language! Please report the full error above to the discord!"));
+				Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cUnable to update language! Please report the full error above to the discord!"));
 			}
 		} else if (langID == 2) {
 			//russian
 			try {
 				fetchNewConfig(plugin, sender);
 				if (sender != null)
-					sender.sendMessage(Utils.chat("&bInstalling language files..."));
+					sender.sendMessage(Utils.convertString("&bInstalling language files..."));
 				langFile = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langRussian.yml"));
 				cfgFile = FileUtils.openInputStream(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langRussianCfg.yml"));
 				if (sender != null)
-					sender.sendMessage(Utils.chat("&aSuccessfully installed!"));
+					sender.sendMessage(Utils.convertString("&aSuccessfully installed!"));
 			} catch (IOException e) {
 				e.printStackTrace();
-				Main.consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cUnable to update language! Please report the full error above to the discord!"));
+				Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cUnable to update language! Please report the full error above to the discord!"));
 			}
 		} else if (langID == 3) {
 			//czech
 			try {
 				fetchNewConfig(plugin, sender);
 				if (sender != null)
-					sender.sendMessage(Utils.chat("&bInstalling language files..."));
+					sender.sendMessage(Utils.convertString("&bInstalling language files..."));
 				langFile = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langCzech.yml"));
 				cfgFile = FileUtils.openInputStream(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langCzechCfg.yml"));
 				if (sender != null)
-					sender.sendMessage(Utils.chat("&aSuccessfully installed!"));
+					sender.sendMessage(Utils.convertString("&aSuccessfully installed!"));
 			} catch (IOException e) {
 				e.printStackTrace();
-				Main.consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cUnable to update language! Please report the full error above to the discord!"));
+				Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cUnable to update language! Please report the full error above to the discord!"));
 			}
 		} else if (langID == 4) {
 			//french
 			try {
 				fetchNewConfig(plugin, sender);
 				if (sender != null)
-					sender.sendMessage(Utils.chat("&bInstalling language files..."));
+					sender.sendMessage(Utils.convertString("&bInstalling language files..."));
 				langFile = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langFrench.yml"));
 				cfgFile = FileUtils.openInputStream(new File(plugin.getDataFolder().getAbsolutePath()+File.separator+"languages", "langFrenchCfg.yml"));
 				if (sender != null)
-					sender.sendMessage(Utils.chat("&aSuccessfully installed!"));
+					sender.sendMessage(Utils.convertString("&aSuccessfully installed!"));
 			} catch (IOException e) {
 				e.printStackTrace();
-				Main.consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cUnable to update language! Please report the full error above to the discord!"));
+				Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cUnable to update language! Please report the full error above to the discord!"));
 			}
 		}
 		
-		prefix = Utils.chat("&6&l["+ langFile.getString("misc.prefix") +"]: ");
-		firstStart = Utils.chat("&b"+langFile.getString("internal.firstStart.line 1")
+		prefix = Utils.convertString("&6&l["+ langFile.getString("misc.prefix") +"]: ");
+		firstStart = Utils.convertString("&b"+langFile.getString("internal.firstStart.line 1")
 				+ "\n&a/disasters disable randomdisasters"
 				+ "\n&b"+langFile.getString("internal.firstStart.line 2")+" &a/disasters difficulty <world> <difficulty>"
 				+ "\n&b"+langFile.getString("internal.firstStart.line 3")
@@ -157,7 +170,7 @@ public class Languages {
 			Disaster.reload(plugin);
 		} catch (IOException e) {
 			e.printStackTrace();
-			Main.consoleSender.sendMessage(Utils.chat(Languages.prefix+"&cUnable to change config language! Please report the full error above to the discord."));
+			Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cUnable to change config language! Please report the full error above to the discord."));
 		}
 	}
 	public static InputStream fetchNewConfig(Main plugin, Player sender) throws IOException {
@@ -172,7 +185,7 @@ public class Languages {
 				try {
 					plugin.getLogger().info("Downloading config translation file...");
 					if (sender != null)
-						sender.sendMessage(Utils.chat("&eDownloading files..."));
+						sender.sendMessage(Utils.convertString("&eDownloading files..."));
 					tempFile.createNewFile();
 					//Utils.copyUrlToFile(langFileLink.CHINESELANG.getLink(), tempFile);
 					FileUtils.copyInputStreamToFile(plugin.getResource("lang/langChinesePRO.yml"), tempFile);
@@ -195,7 +208,7 @@ public class Languages {
 				try {
 					plugin.getLogger().info("Downloading config translation file...");
 					if (sender != null)
-						sender.sendMessage(Utils.chat("&eDownloading files..."));
+						sender.sendMessage(Utils.convertString("&eDownloading files..."));
 					tempFile.createNewFile();
 					Utils.copyUrlToFile(langFileLink.RUSSIANLANG.getLink(), tempFile);
 					
@@ -216,7 +229,7 @@ public class Languages {
 				try {
 					plugin.getLogger().info("Downloading config translation file...");
 					if (sender != null)
-						sender.sendMessage(Utils.chat("&eDownloading files..."));
+						sender.sendMessage(Utils.convertString("&eDownloading files..."));
 					tempFile.createNewFile();
 					Utils.copyUrlToFile(langFileLink.CZECHLANG.getLink(), tempFile);
 					
@@ -237,7 +250,7 @@ public class Languages {
 				try {
 					plugin.getLogger().info("Downloading config translation file...");
 					if (sender != null)
-						sender.sendMessage(Utils.chat("&eDownloading files..."));
+						sender.sendMessage(Utils.convertString("&eDownloading files..."));
 					tempFile.createNewFile();
 					Utils.copyUrlToFile(langFileLink.FRENCHLANG.getLink(), tempFile);
 					
@@ -251,5 +264,23 @@ public class Languages {
 			return new FileInputStream(cfg);
 		}
 		return null;
+	}
+	public static void updateLanguageFile(File file, InputStream resource) {
+		YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+		YamlConfiguration source = YamlConfiguration.loadConfiguration(new InputStreamReader(resource));
+		Map<String, Object> keys = new LinkedHashMap<>(cfg.getValues(true));
+		source.getValues(true).forEach((k, v) -> {
+			if (!keys.containsKey(k))
+				cfg.set(k, v);
+		});
+		keys.forEach((k, v) -> {
+			if (!source.contains(k))
+				cfg.set(k, null);
+		});
+		try {
+			cfg.save(file);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

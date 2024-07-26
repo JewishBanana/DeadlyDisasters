@@ -32,6 +32,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 
 import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.purgeentities.DarkMage;
 import com.github.jewishbanana.deadlydisasters.entities.purgeentities.PrimedCreeper;
@@ -76,7 +77,7 @@ public class Purge extends DestructionDisaster {
 		barColor = BarColor.RED;
 		spawnDistance = configFile.getInt("purge.spawn_distance");
 		despawnSpeed = configFile.getInt("purge.despawn_speed");
-		endMessage = Utils.chat(configFile.getString("messages.misc.purge.ended"));
+		endMessage = Utils.convertString(configFile.getString("messages.misc.purge.ended"));
 		volume = configFile.getDouble("purge.volume");
 		spawnSpeed = 60 - (8 * (level - 1));
 		
@@ -112,7 +113,7 @@ public class Purge extends DestructionDisaster {
 		if (!targetedPlayers.contains(playerUUID))
 			targetedPlayers.add(playerUUID);
 		if (showBar) {
-			bar = Bukkit.createBossBar(Utils.chat(barTitle), barColor, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
+			bar = Bukkit.createBossBar(Utils.convertString(barTitle), barColor, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
 			bar.addPlayer(p);
 		}
 		p.playSound(p.getLocation(), Sound.EVENT_RAID_HORN, (float) (100 * volume), 0.1f);
@@ -142,7 +143,7 @@ public class Purge extends DestructionDisaster {
 					bar.removeAll();
 					targetedPlayers.remove(playerUUID);
 					DeathMessages.purges.remove(instance);
-					player.sendMessage(Utils.chat(endMessage));
+					player.sendMessage(Utils.convertString(endMessage));
 					for (Entity e : player.getNearbyEntities(30, 30, 30))
 						if (e instanceof Player)
 							e.sendMessage(endMessage);
@@ -237,44 +238,44 @@ public class Purge extends DestructionDisaster {
 					entity = (Creeper) temp.getWorld().spawnEntity(temp, EntityType.CREEPER);
 					if (rand.nextInt(5) == 0)
 						((Creeper) entity).setPowered(true);
-					plugin.handler.addEntity(new PrimedCreeper(entity, plugin));
+					CustomEntity.handler.addEntity(new PrimedCreeper(entity, plugin));
 					entity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.35);
 					break;
 				case 11:
 					if (!custom)
 						break;
 					entity = (Mob) p.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-					plugin.handler.addEntity(new TunnellerZombie((Zombie) entity, player, plugin));
+					CustomEntity.handler.addEntity(new TunnellerZombie((Zombie) entity, player, plugin));
 					break;
 				case 12:
 					if (!custom)
 						break;
 					entity = (Mob) p.getWorld().spawnEntity(temp, EntityType.SKELETON);
-					plugin.handler.addEntity(new SkeletonKnight((Skeleton) entity, plugin));
+					CustomEntity.handler.addEntity(new SkeletonKnight((Skeleton) entity, plugin));
 					break;
 				case 13:
 					if (!custom)
 						break;
 					entity = (Mob) p.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-					plugin.handler.addEntity(new DarkMage(entity, plugin));
+					CustomEntity.handler.addEntity(new DarkMage(entity, plugin));
 					break;
 				case 14:
 					if (!custom)
 						break;
 					entity = (Mob) p.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-					plugin.handler.addEntity(new ShadowLeech((Zombie) entity, plugin, rand));
+					CustomEntity.handler.addEntity(new ShadowLeech((Zombie) entity, plugin, rand));
 					break;
 				case 15:
 					if (!custom)
 						break;
 					entity = (Mob) p.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-					plugin.handler.addEntity(new SwampBeast(entity, plugin));
+					CustomEntity.handler.addEntity(new SwampBeast(entity, plugin));
 					break;
 				case 16:
 					if (!custom)
 						break;
 					entity = (Mob) p.getWorld().spawnEntity(temp, EntityType.ZOMBIE);
-					plugin.handler.addEntity(new ZombieKnight(entity, plugin));
+					CustomEntity.handler.addEntity(new ZombieKnight(entity, plugin));
 					break;
 				}
 				if (entity == null)
@@ -336,7 +337,7 @@ public class Purge extends DestructionDisaster {
 				str = "&c"+str;
 			else if (level == 6)
 				str = "&4"+str;
-			str = Utils.chat(str.replace("%level%", level+"").replace("%player%", p.getName()));
+			str = Utils.convertString(str.replace("%level%", level+"").replace("%player%", p.getName()));
 			if (plugin.getConfig().getBoolean("messages.disaster_tips"))
 				str += "\n"+type.getTip();
 			for (Player all : location.getWorld().getPlayers())

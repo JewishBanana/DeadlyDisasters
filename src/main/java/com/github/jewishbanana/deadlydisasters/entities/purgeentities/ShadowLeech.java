@@ -38,6 +38,7 @@ import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
 import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class ShadowLeech extends CustomEntity {
 	
@@ -94,13 +95,13 @@ public class ShadowLeech extends CustomEntity {
 			entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_FOX_SCREECH, SoundCategory.HOSTILE, 1f, 1.8f);
 		if (entity.isDead()) {
 			entity.remove();
-			entity.getWorld().spawnParticle(Particle.SMOKE_NORMAL, entity.getLocation().add(0,.25,0), 30, .15, .15, .15, .000001);
+			entity.getWorld().spawnParticle(VersionUtils.getNormalSmoke(), entity.getLocation().add(0,.25,0), 30, .15, .15, .15, .000001);
 			entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_VEX_DEATH, SoundCategory.HOSTILE, 0.25f, .7f);
 			clean();
 			return;
 		}
 		if (bloodleech)
-			entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, entity.getLocation(), 1, 0, 0, 0, 1, Material.REDSTONE_BLOCK.createBlockData());
+			entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation(), 1, 0, 0, 0, 1, Material.REDSTONE_BLOCK.createBlockData());
 		if (attached) {
 			if (attachedTo == null || attachedTo.isDead()) {
 				attachedTo = null;
@@ -192,9 +193,9 @@ public class ShadowLeech extends CustomEntity {
 				return;
 			}
 			if (!bloodleech)
-				entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, entity.getLocation(), 3, .1, .1, .1, 1, Material.REDSTONE_BLOCK.createBlockData());
+				entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation(), 3, .1, .1, .1, 1, Material.REDSTONE_BLOCK.createBlockData());
 			else
-				entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, entity.getLocation(), 8, .1, .1, .1, 1, Material.REDSTONE_BLOCK.createBlockData());
+				entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation(), 8, .1, .1, .1, 1, Material.REDSTONE_BLOCK.createBlockData());
 			attachedTo.damage(0.0001);
 			if (attachedTo.getHealth()-damage <= 0) {
 				if (!bloodleech)

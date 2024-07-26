@@ -28,6 +28,7 @@ public enum CustomEntityType {
 	LOSTSOUL("customentities.soulstorm_mobs.lostsoul", "lostsoul", '3', 14, 5),
 	TAMEDLOSTSOUL("customentities.pets.tamed_lostsoul", "tamedlostsoul", '3', 14, 5),
 	SOULREAPER("customentities.soulstorm_mobs.soulreaper", "soulreaper", '3', 40, 25),
+	FIREPHANTOM("customentities.solarstorm_mobs.firephantom", "firephantom", 'c', 20.0, 8.0),
 	CHRISTMASELF("customentities.christmas_mobs.elf", "elf", 'c', 12, 4),
 	PETCHRISTMASELF("customentities.pets.pet_elf", "petelf", 'c', 12, 4),
 	FROSTY("customentities.christmas_mobs.frosty", "frosty", 'c', 30, 8),

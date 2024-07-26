@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -20,9 +19,7 @@ import org.bukkit.Particle;
 import org.bukkit.Particle.DustTransition;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
-import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -34,14 +31,9 @@ import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -57,7 +49,6 @@ import com.github.jewishbanana.deadlydisasters.entities.soulstormentities.TamedL
 import com.github.jewishbanana.deadlydisasters.events.DisasterEvent;
 import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.listeners.customevents.ArmorEquipEvent;
-import com.github.jewishbanana.deadlydisasters.listeners.customevents.ArmorUnequipEvent;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
@@ -66,17 +57,13 @@ public class CustomEnchantHandler implements Listener {
 	private Main plugin;
 	private Random rand;
 	
-	private Map<UUID,Integer> ancientBladeCooldownMap = new HashMap<UUID,Integer>();
 	private Map<UUID,Integer> soulRipperCooldownMap = new HashMap<UUID,Integer>();
 	private Map<UUID,Integer> etheralLanternCooldown = new HashMap<UUID,Integer>();
 	
-	private boolean bunnyHopParticles;
 	private int etherealLanternLifeTicks = 300;
 	private int etherealLanternGhoulCount = 2;
 	
 	public static Map<UUID, ElfPet[]> santaHatPlayers = new HashMap<>();
-	private Set<UUID> bunnyHopPlayers = new HashSet<>();
-	private Set<UUID> hoppingPlayers = new HashSet<>();
 	
 	public CustomEnchantHandler(Main plugin) {
 		this.plugin = plugin;
@@ -88,23 +75,13 @@ public class CustomEnchantHandler implements Listener {
 			ItemStack item = p.getEquipment().getHelmet();
 			if (item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(ItemsHandler.santaHatKey, PersistentDataType.INTEGER))
 				santaHatPlayers.put(p.getUniqueId(), null);
-			item = p.getEquipment().getBoots();
-			if (item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(ItemsHandler.bunnyHopKey, PersistentDataType.BYTE))
-				bunnyHopPlayers.add(p.getUniqueId());
 		}
 		
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 		plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, new Runnable() {
 			@Override
 			public void run() {
-				Iterator<Entry<UUID, Integer>> it = ancientBladeCooldownMap.entrySet().iterator();
-				while (it.hasNext()) {
-					Entry<UUID, Integer> entry = it.next();
-					entry.setValue(entry.getValue() - 1);
-					if (entry.getValue() <= 0)
-						it.remove();
-				}
-				it = soulRipperCooldownMap.entrySet().iterator();
+				Iterator<Entry<UUID, Integer>> it = soulRipperCooldownMap.entrySet().iterator();
 				while (it.hasNext()) {
 					Entry<UUID, Integer> entry = it.next();
 					entry.setValue(entry.getValue() - 1);
@@ -167,12 +144,12 @@ public class CustomEnchantHandler implements Listener {
 							meta.getPersistentDataContainer().set(ItemsHandler.santaHatKey, PersistentDataType.INTEGER, 0);
 							item.setItemMeta(meta);
 							ElfPet[] elves = {
-									plugin.handler.addEntity(new ElfPet((Zombie) p.getWorld().spawnEntity(p.getLocation(), EntityType.ZOMBIE), plugin, rand, p.getUniqueId(), false)),
-									plugin.handler.addEntity(new ElfPet((Zombie) p.getWorld().spawnEntity(p.getLocation(), EntityType.ZOMBIE), plugin, rand, p.getUniqueId(), false)),
-									plugin.handler.addEntity(new ElfPet((Zombie) p.getWorld().spawnEntity(p.getLocation(), EntityType.ZOMBIE), plugin, rand, p.getUniqueId(), true))
+									CustomEntity.handler.addEntity(new ElfPet((Zombie) p.getWorld().spawnEntity(p.getLocation(), EntityType.ZOMBIE), plugin, rand, p.getUniqueId(), false)),
+									CustomEntity.handler.addEntity(new ElfPet((Zombie) p.getWorld().spawnEntity(p.getLocation(), EntityType.ZOMBIE), plugin, rand, p.getUniqueId(), false)),
+									CustomEntity.handler.addEntity(new ElfPet((Zombie) p.getWorld().spawnEntity(p.getLocation(), EntityType.ZOMBIE), plugin, rand, p.getUniqueId(), true))
 							};
 							for (ElfPet elf : elves)
-								plugin.handler.addEntity(elf);
+								CustomEntity.handler.addEntity(elf);
 							entry.setValue(elves);
 							continue;
 						}
@@ -189,9 +166,9 @@ public class CustomEnchantHandler implements Listener {
 								for (int i=0; i < 3; i++) {
 									if (elves[i].getEntity() == null || elves[i].getEntity().isDead()) {
 										if (i == 2)
-											elves[i] = plugin.handler.addEntity(new ElfPet((Zombie) p.getWorld().spawnEntity(p.getLocation(), EntityType.ZOMBIE), plugin, rand, p.getUniqueId(), true));
+											elves[i] = CustomEntity.handler.addEntity(new ElfPet((Zombie) p.getWorld().spawnEntity(p.getLocation(), EntityType.ZOMBIE), plugin, rand, p.getUniqueId(), true));
 										else
-											elves[i] = plugin.handler.addEntity(new ElfPet((Zombie) p.getWorld().spawnEntity(p.getLocation(), EntityType.ZOMBIE), plugin, rand, p.getUniqueId(), false));
+											elves[i] = CustomEntity.handler.addEntity(new ElfPet((Zombie) p.getWorld().spawnEntity(p.getLocation(), EntityType.ZOMBIE), plugin, rand, p.getUniqueId(), false));
 									}
 								}
 							}
@@ -200,40 +177,6 @@ public class CustomEnchantHandler implements Listener {
 							break;
 						}
 					}
-				}
-				Iterator<UUID> it = bunnyHopPlayers.iterator();
-				while (it.hasNext()) {
-					Player p = Bukkit.getPlayer(it.next());
-					if (p == null || !p.isOnline()) {
-						it.remove();
-						continue;
-					}
-					ItemStack item = p.getEquipment().getBoots();
-					if (item == null || !item.hasItemMeta() || !item.getItemMeta().getPersistentDataContainer().has(ItemsHandler.bunnyHopKey, PersistentDataType.BYTE)) {
-						if (!Utils.isPlayerImmune(p))
-							p.setAllowFlight(false);
-						it.remove();
-						continue;
-					}
-					if (!hoppingPlayers.contains(p.getUniqueId()))
-						p.setAllowFlight(true);
-				}
-			}
-		};
-		new RepeatingTask(plugin, 0, 1) {
-			@Override
-			public void run() {
-				if (!bunnyHopParticles)
-					return;
-				for (UUID uuid : bunnyHopPlayers) {
-					Player p = (Player) Bukkit.getEntity(uuid);
-					if (p != null && !p.isDead())
-						for (int i=0; i < 2; i++) {
-	            			DustTransition dust = new DustTransition(Color.fromRGB(rand.nextInt(125)+25, 255, rand.nextInt(55)+25), Color.fromRGB(25, rand.nextInt(155)+100, 255), rand.nextFloat());
-	            			if (rand.nextInt(2) == 0)
-	            				dust = new DustTransition(Color.fromRGB(rand.nextInt(105)+150, 25, 255), Color.fromRGB(25, rand.nextInt(155)+100, 255), rand.nextFloat());
-	            			p.getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, p.getLocation().add(rand.nextDouble()/1.2-.4,0.1+(rand.nextDouble()/3-.15),rand.nextDouble()/1.2-.4), 1, 0, 0, 0, 0.001, dust);
-	            		}
 				}
 			}
 		};
@@ -244,9 +187,6 @@ public class CustomEnchantHandler implements Listener {
 		ItemStack item = p.getEquipment().getHelmet();
 		if (item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(ItemsHandler.santaHatKey, PersistentDataType.INTEGER))
 			santaHatPlayers.put(p.getUniqueId(), null);
-		item = p.getEquipment().getBoots();
-		if (item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(ItemsHandler.bunnyHopKey, PersistentDataType.BYTE))
-			bunnyHopPlayers.add(p.getUniqueId());
 	}
 	@EventHandler
 	public void onPlayerLeave(PlayerQuitEvent e) {
@@ -258,24 +198,11 @@ public class CustomEnchantHandler implements Listener {
 						pet.getEntity().remove();
 			santaHatPlayers.remove(uuid);
 		}
-		bunnyHopPlayers.remove(uuid);
-		hoppingPlayers.remove(uuid);
 	}
 	@EventHandler
 	public void onArmorEquip(ArmorEquipEvent e) {
 		if (e.getSlot() == ArmorListener.ArmorSlot.HEAD && e.getItem().hasItemMeta() && e.getItem().getItemMeta().getPersistentDataContainer().has(ItemsHandler.santaHatKey, PersistentDataType.INTEGER))
 			santaHatPlayers.put(e.getPlayer().getUniqueId(), null);
-		if (e.getSlot() == ArmorListener.ArmorSlot.FEET && e.getItem().hasItemMeta() && e.getItem().getItemMeta().getPersistentDataContainer().has(ItemsHandler.bunnyHopKey, PersistentDataType.BYTE))
-			bunnyHopPlayers.add(e.getPlayer().getUniqueId());
-	}
-	@EventHandler
-	public void onArmorUnequip(ArmorUnequipEvent e) {
-		if (e.getSlot() == ArmorListener.ArmorSlot.FEET && e.getItem().hasItemMeta() && e.getItem().getItemMeta().getPersistentDataContainer().has(ItemsHandler.bunnyHopKey, PersistentDataType.BYTE)) {
-			bunnyHopPlayers.remove(e.getPlayer().getUniqueId());
-			hoppingPlayers.remove(e.getPlayer().getUniqueId());
-			if (!Utils.isPlayerImmune(e.getPlayer()))
-				e.getPlayer().setAllowFlight(false);
-		}
 	}
 	@EventHandler
 	public void onAttack(EntityDamageByEntityEvent e) {
@@ -285,7 +212,7 @@ public class CustomEnchantHandler implements Listener {
 			e.setCancelled(true);
 			return;
 		} else if (e.getDamager().hasMetadata("dd-petelfarrow")) {
-			CustomEntity ce = plugin.handler.findEntity((LivingEntity) ((Arrow) e.getDamager()).getShooter());
+			CustomEntity ce = CustomEntity.handler.findEntity((LivingEntity) ((Arrow) e.getDamager()).getShooter());
 			if (ce != null) {
 				UUID uuid = ((ElfPet) ce).owner;
 				if (uuid.equals(e.getEntity().getUniqueId()) || (santaHatPlayers.containsKey(uuid) && Stream.of(santaHatPlayers.get(uuid)).anyMatch(n -> n != null && n.getEntity().getUniqueId().equals(e.getEntity().getUniqueId())))) {
@@ -305,11 +232,13 @@ public class CustomEnchantHandler implements Listener {
 			if (santaHatPlayers.containsKey(dmr.getUniqueId()) && santaHatPlayers.get(dmr.getUniqueId()) != null && !(e.getEntity() instanceof Tameable && ((Tameable) e.getEntity()).getOwner().equals((Player) dmr))
 					&& !Stream.of(santaHatPlayers.get(dmr.getUniqueId())).anyMatch(n -> n.getEntity() != null && n.getEntity().getUniqueId().equals(e.getEntity().getUniqueId()))) {
 				for (ElfPet pet : santaHatPlayers.get(dmr.getUniqueId()))
-					pet.target = (LivingEntity) e.getEntity();
+					if (pet != null)
+						pet.target = (LivingEntity) e.getEntity();
 			} else if (santaHatPlayers.containsKey(e.getEntity().getUniqueId()) && santaHatPlayers.get(e.getEntity().getUniqueId()) != null
 					&& !Stream.of(santaHatPlayers.get(e.getEntity().getUniqueId())).anyMatch(n -> n != null && n.getEntity().equals(e.getDamager()))) {
 				for (ElfPet pet : santaHatPlayers.get(e.getEntity().getUniqueId()))
-					pet.target = (LivingEntity) dmr;
+					if (pet != null)
+						pet.target = (LivingEntity) dmr;
 			}
 		}
 		if (!(e.getEntity() instanceof LivingEntity) || !(e.getDamager() instanceof LivingEntity))
@@ -342,81 +271,7 @@ public class CustomEnchantHandler implements Listener {
 			spawnGhouls(damager, entity);
 		}
 	}
-	@EventHandler
-	public void onDamage(EntityDamageEvent e) {
-		if (e.isCancelled())
-			return;
-		if (e.getCause() == DamageCause.FALL && bunnyHopPlayers.contains(e.getEntity().getUniqueId())) {
-			if (e.getEntity().getFallDistance() < 15)
-				e.setCancelled(true);
-			else
-				e.setDamage(e.getFinalDamage()/2.5);
-			hoppingPlayers.remove(e.getEntity().getUniqueId());
-			((Player) e.getEntity()).setAllowFlight(true);
-			return;
-		}
-	}
-	@EventHandler
-	public void onInteract(PlayerInteractEvent e) {
-		if (e.getItem() == null || !e.getItem().hasItemMeta())
-			return;
-		if ((e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) && !ancientBladeCooldownMap.containsKey(e.getPlayer().getUniqueId())
-				&& e.getItem().getItemMeta().hasLore() && ((plugin.customNameSupport && e.getItem().getItemMeta().getLore().get(0).equals(ItemsHandler.ancientCurseName)) || e.getItem().getItemMeta().getPersistentDataContainer().has(ItemsHandler.ancientBladeKey, PersistentDataType.BYTE))) {
-			if (e.getPlayer() instanceof Player && !Utils.isPlayerImmune(e.getPlayer()))
-				ancientBladeCooldownMap.put(e.getPlayer().getUniqueId(), ItemsHandler.ancientBladeCooldown);
-			int[] spellLife = {20};
-			Vector motion = e.getPlayer().getEyeLocation().getDirection().clone();
-			Location spell = e.getPlayer().getEyeLocation().clone().add(motion.clone().multiply(2));
-			e.getPlayer().getWorld().playSound(spell, Sound.ITEM_FIRECHARGE_USE, SoundCategory.PLAYERS, 1f, .6f);
-			World tempW = spell.getWorld();
-			BlockData bd = Material.SAND.createBlockData();
-			new RepeatingTask(plugin, 0, 1) {
-				@Override
-				public void run() {
-					if (spellLife[0] <= 0) {
-						cancel();
-						return;
-					}
-					spellLife[0]--;
-					spell.add(motion);
-					tempW.spawnParticle(Particle.FLAME, spell, 10, 1, 1, 1, .05);
-					tempW.spawnParticle(Particle.BLOCK_DUST, spell, 10, 1, 1, 1, .1, bd);
-					for (Entity entity : spell.getWorld().getNearbyEntities(spell, 1.5, 1.5, 1.5))
-						if (entity instanceof LivingEntity && !entity.equals(e.getPlayer())) {
-							entity.setFireTicks(80);
-							entity.setVelocity(motion.clone().multiply(0.5));
-						}
-				}
-			};
-		}
-	}
-	@EventHandler
-	public void onToggleFlight(PlayerToggleFlightEvent e) {
-		if (bunnyHopPlayers.contains(e.getPlayer().getUniqueId()) && !hoppingPlayers.contains(e.getPlayer().getUniqueId()) && !Utils.isPlayerImmune(e.getPlayer())) {
-			Player p = e.getPlayer();
-			e.setCancelled(true);
-            p.setAllowFlight(false);
-            p.setFlying(false);
-            p.setVelocity(e.getPlayer().getLocation().getDirection().multiply(1.25).setY(0.8));
-            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_RABBIT_JUMP, SoundCategory.PLAYERS, 20f, 0.8f);
-            p.setFallDistance(10f);
-            hoppingPlayers.add(p.getUniqueId());
-            new RepeatingTask(plugin, 5, 1) {
-				@SuppressWarnings("deprecation")
-				@Override
-            	public void run() {
-            		if (p == null || !p.isOnline() || p.isDead() || Utils.isPlayerImmune(p) || !hoppingPlayers.contains(p.getUniqueId()) || p.isOnGround()) {
-            			cancel();
-            			hoppingPlayers.remove(p.getUniqueId());
-            			return;
-            		}
-				}
-            };
-            return;
-		}
-	}
 	public void reload() {
-		bunnyHopParticles = plugin.getConfig().getBoolean("customitems.enchants.bunny_hop.level 1.particles");
 	}
 	private void spawnSouls(Location loc, LivingEntity entity)  {
 		LivingEntity[] souls = new LivingEntity[ItemsHandler.soulRipperNumberOfSouls];
@@ -427,7 +282,7 @@ public class CustomEnchantHandler implements Listener {
 			else
 				temp = Utils.getBlockAbove(temp).getLocation().clone().add(0.5,0.5,0.5);
 			Mob vex = (Mob) loc.getWorld().spawnEntity(temp, EntityType.VEX);
-			plugin.handler.addEntity(new TamedLostSoul(vex, plugin, rand, entity));
+			CustomEntity.handler.addEntity(new TamedLostSoul(vex, plugin, rand, entity));
 			souls[i] = vex;
 			temp.getWorld().spawnParticle(Particle.SQUID_INK, temp.clone().add(0,0.75,0), 20, .4, .4, .4, 0.0001);
 			temp.getWorld().playSound(temp, Sound.ENTITY_ELDER_GUARDIAN_AMBIENT, SoundCategory.PLAYERS, 1, 0.8f);
@@ -456,7 +311,7 @@ public class CustomEnchantHandler implements Listener {
 				Zombie zombie = spawn.getWorld().spawn(spawn, Zombie.class, false, consumer -> {
 					consumer.setRotation(plugin.random.nextFloat()*360, 0);
 				});
-				Ghoul ghoul = plugin.handler.addEntity(new Ghoul(zombie, spawn.getBlock(), plugin, true));
+				Ghoul ghoul = CustomEntity.handler.addEntity(new Ghoul(zombie, spawn.getBlock(), plugin, true));
 				ghouls.add(ghoul);
 				plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
 					ghoul.setWalking(true);

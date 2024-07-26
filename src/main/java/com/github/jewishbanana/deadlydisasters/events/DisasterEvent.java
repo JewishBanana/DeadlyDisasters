@@ -8,13 +8,17 @@ import java.util.UUID;
 
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+
+import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 
 public class DisasterEvent {
 	
 	public Disaster type;
 	public int level;
 	public World world;
+	public WorldObject worldObject;
 	public FileConfiguration configFile;
 	
 	public static Queue<DisasterEvent> ongoingDisasters = new ArrayDeque<>();
@@ -24,5 +28,8 @@ public class DisasterEvent {
 		if (!countdownMap.containsKey(p.getUniqueId()))
 			countdownMap.put(p.getUniqueId(), new HashMap<>());
 		countdownMap.get(p.getUniqueId()).put(this, seconds);
+	}
+	public boolean isEntityTypeProtected(Entity entity) {
+		return worldObject.blacklistedEntities.contains(entity.getType());
 	}
 }

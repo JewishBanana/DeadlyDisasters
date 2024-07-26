@@ -35,6 +35,7 @@ import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class EndWorm extends CustomEntity {
 	
@@ -90,7 +91,7 @@ public class EndWorm extends CustomEntity {
 			for (ArmorStand e : stands)
 				if (e != null) {
 					e.teleport(e.getLocation().add(vec));
-					world.spawnParticle(Particle.BLOCK_DUST, e.getLocation().clone().add(0,1.5,0), 5, .2, .2, .2, 0.1, bd);
+					world.spawnParticle(VersionUtils.getBlockDust(), e.getLocation().clone().add(0,1.5,0), 5, .2, .2, .2, 0.1, bd);
 				}
 			if (frame % 2 == 0)
 				stands[(int) (frame / 2)] = createStand(entity.getLocation().clone().subtract((rand.nextDouble()-0.5)/4, 2, (rand.nextDouble()-0.5)/4), rand.nextInt(90));
@@ -118,7 +119,7 @@ public class EndWorm extends CustomEntity {
 			for (ArmorStand e : stands)
 				if (e != null) {
 					e.teleport(e.getLocation().add(vec));
-					world.spawnParticle(Particle.BLOCK_DUST, e.getLocation().clone().add(0,1,0), 3, .2, .2, .2, 0.1, bd);
+					world.spawnParticle(VersionUtils.getBlockDust(), e.getLocation().clone().add(0,1,0), 3, .2, .2, .2, 0.1, bd);
 				}
 			fangs.remove();
 			fangs = (EvokerFangs) world.spawnEntity(stands[0].getLocation().clone().add(0,3.5,0), EntityType.EVOKER_FANGS);
@@ -167,9 +168,9 @@ public class EndWorm extends CustomEntity {
 		}
 		if (entity.getLocation().clone().subtract(0,1,0).getBlock().getType().isBlock())
 			if (!anim)
-				world.spawnParticle(Particle.BLOCK_CRACK, entity.getLocation(), 5, .2, .2, .2, 0.1, entity.getLocation().clone().subtract(0,1,0).getBlock().getBlockData());
+				world.spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation(), 5, .2, .2, .2, 0.1, entity.getLocation().clone().subtract(0,1,0).getBlock().getBlockData());
 			else
-				world.spawnParticle(Particle.BLOCK_CRACK, entity.getLocation(), 40, .4, .3, .4, 0.1, entity.getLocation().clone().subtract(0,1,0).getBlock().getBlockData());
+				world.spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation(), 40, .4, .3, .4, 0.1, entity.getLocation().clone().subtract(0,1,0).getBlock().getBlockData());
 	}
 	@Override
 	public void function(Iterator<CustomEntity> it) {

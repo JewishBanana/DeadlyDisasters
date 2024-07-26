@@ -13,13 +13,11 @@ general:
     custom_name_support: false
     # Toggle if special limited time events should get enabled or not
     special_events: true
-blacklist:
-    # Blacklists blocks from being damaged in disasters. The format is as follows
-    blocks:
-    - bedrock
-    - end_portal_frame
-    - end_portal
-    - nether_portal
+protection_settings:
+    # Blacklisted mob types are mob types that are unaffected by all disasters (Keep in mind that disasters which displace the land can affect these entities e.g. Entity falling with Sinkhole)
+    blacklisted_mob_types:
+    - ender_dragon
+    - wither
 messages:
     # Modify messages sent by the plugin. Do not set this to be empty it will not work, if you do not want any messages then turn off event_broadcast in general
     console_error_message: '&cUnable to execute command from console!'
@@ -73,6 +71,8 @@ sinkhole:
     speed: 5
     # Size multiplier
     size: 1.0
+    # Controls if lava gets placed or not at the bottom of sinkholes (Lava is never placed in sinkholes in end type worlds)
+    place_lava: true
     # The minimum height the disaster can spawn at
     min_height: 50
     # Max level this specific disaster can reach
@@ -92,6 +92,8 @@ earthquake:
     tilt: 0.3
     # Force multiplier for how strong earthquakes can throw nearby entities
     force: 1.0
+    # Controls if lava gets placed or not at the bottom of earthquakes (Lava is never placed in earthquakes in end type worlds)
+    place_lava: true
     min_height: 50
     max_level: 6
     frequency: 1.0
@@ -170,6 +172,8 @@ supernova:
     place_fire: true
     # If set to true then explosion particles can be seen from very far away by players but this drastically affects performance
     far_particles: true
+    # Controls how fast the crystal falls from the sky
+    fall_speed_multiplier: 1.0
     min_height: 55
     max_level: 6
     frequency: 0.3
@@ -184,6 +188,7 @@ hurricane:
     lightning_frequency: 1.0
     # The minimum force of wind required to break blocks near players
     block_break_force: 0.04
+    wind_height: 60
     min_height: 60
     max_level: 6
     frequency: 1.0
@@ -379,6 +384,10 @@ extremewinds:
     interior_height_distance: 6
     # How strong winds need to be to rip blocks from buildings
     block_break_force: 0.1
+    # This controls the minimum Y level that winds can affect entities
+    wind_height: 50
+    # Controls if entities are pushed by winds or not
+    push_entities: true
     min_height: 60
     max_level: 6
     frequency: 0.6
@@ -422,6 +431,27 @@ endstorm:
     frequency: 1.0
     volume: 1.0
     name: '&5End Storm'
+solarstorm:
+    start_delay: 5
+    time:
+        level 1: 60
+        level 2: 90
+        level 3: 120
+        level 4: 150
+        level 5: 200
+    # Will change the time to sunset if set to true
+    set_sunset: true
+    # Chance of catching fire every storm tick for entities near heat sources
+    fire_catch_chance: 30.0
+    # Rate of how much fire spawns near players
+    fire_spawn_rate: 1.0
+    # Control the size of fireball explosions
+    fireball_explosion_size: 3.0
+    min_height: 60
+    max_level: 5
+    frequency: 1.0
+    volume: 1.0
+    name: '&eSolar Storm'
 custom:
     # This frequency setting is an overall chance of a custom disaster occurring, 1.0 means only custom disasters can happen
     frequency: 0.2
@@ -435,19 +465,14 @@ customitems:
     item_lore_characters_per_line: 40
     # Control which custom recipes are enabled
     recipes:
-        plague_cure: true
-        ancient_blade: true
         snow_globe: true
         easter_basket: true
-        bunny_hop: true
         pumpkin_basket: true
     items:
-        void_wrath:
-            # If set to true then unstable rifts can be created in protected regions
-            allow_in_regions: true
-            # If set to true then items that are pulled into rifts will get removed
-            remove_items: true
-    enchants:
-        bunny_hop:
-            # Toggle if particles around the players wearing this enchant
-            particles: true
+        basic_coating_book:
+            chest_spawn_rate: 1.0
+            # Chance of librarian acquiring this item as a trade
+            librarian_trade_chance: 7.0
+        plague_cure:
+            # Chance of cleric acquiring this item as a trade
+            cleric_trade_chance: 5.0

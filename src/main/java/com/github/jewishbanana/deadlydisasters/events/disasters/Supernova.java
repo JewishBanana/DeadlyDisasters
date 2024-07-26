@@ -14,12 +14,9 @@ import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.Vector;
 
@@ -30,10 +27,11 @@ import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Supernova extends DestructionDisaster {
 	
-	private double size,sizeMultiplier,particleMultiplier;
+	private double size,sizeMultiplier,particleMultiplier,fallSpeedMultiplier;
 	private int tick = 1;
 	private EnderCrystal crystal;
 	private Particle particle;
@@ -68,11 +66,12 @@ public class Supernova extends DestructionDisaster {
 		particleMultiplier = configFile.getDouble("supernova.particle_multiplier");
 		flash = configFile.getBoolean("supernova.flash");
 		this.sizeMultiplier = configFile.getDouble("supernova.size");
-		this.particle = Particle.EXPLOSION_LARGE;
+		this.particle = VersionUtils.getLargeExplosion();
 		materials = new Material[]{Material.OBSIDIAN, Material.BLACK_CONCRETE, Material.FIRE};
 		if (!configFile.getBoolean("supernova.place_fire"))
 			materials = new Material[]{Material.OBSIDIAN, Material.BLACK_CONCRETE};
 		farParticles = configFile.getBoolean("supernova.far_particles");
+		this.fallSpeedMultiplier = configFile.getDouble("supernova.fall_speed_multiplier");
 		this.type = Disaster.SUPERNOVA;
 	}
 	@Override
@@ -88,10 +87,10 @@ public class Supernova extends DestructionDisaster {
 		Location top = loc.clone();
 		top.setY(320);
 		Location crystalLoc = top.clone();
-		crystal = (EnderCrystal) world.spawnEntity(crystalLoc, EntityType.ENDER_CRYSTAL);
+		crystal = world.spawn(crystalLoc, EnderCrystal.class);
 		crystal.setShowingBottom(false);
 		crystal.setBeamTarget(top);
-		Vector vec = new Vector(0,-2,0);
+		Vector vec = new Vector(0,(-2.0 * fallSpeedMultiplier),0);
 		new RepeatingTask(plugin, 0, 1) {
 			@Override
 			public void run() {
@@ -99,13 +98,13 @@ public class Supernova extends DestructionDisaster {
 				if (vec.getY() < -0.5)
 					vec.setY(vec.getY()+0.01);
 				crystal.remove();
-				crystal = (EnderCrystal) world.spawnEntity(crystalLoc, EntityType.ENDER_CRYSTAL);
+				crystal = world.spawn(crystalLoc, EnderCrystal.class);
 				crystal.setShowingBottom(false);
 				crystal.setBeamTarget(top);
 				world.spawnParticle(Particle.CLOUD, crystalLoc, 10, .5, .5, .5, 0.01, null, true);
 				world.spawnParticle(Particle.FLAME, crystalLoc, 10, .5, .5, .5, 0.01, null, true);
 				Block b = crystalLoc.clone().subtract(0,1,0).getBlock();
-				if (b.getType() != Material.AIR && !Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
+				if (b.getType() != Material.AIR && !Utils.isBlockImmune(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
 					if (plugin.CProtect)
 						Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 					b.setType(Material.AIR);
@@ -144,10 +143,8 @@ public class Supernova extends DestructionDisaster {
 	private void explode(World world) {
 		BlockVector block = new BlockVector(loc.getX(), loc.getY(), loc.getZ());
 		final Random rand = new Random();
-		FixedMetadataValue fixdata = new FixedMetadataValue(plugin, "protected");
 		boolean CP = plugin.CProtect;
 		Supernova instance = this;
-		
 		new RepeatingTask(plugin, 0, 1) {
 			@Override
 			public void run() {
@@ -166,12 +163,13 @@ public class Supernova extends DestructionDisaster {
 							if (!(block.distance(position) >= (tick - 1) && block.distance(position) <= tick)) continue;
 							Block b = world.getBlockAt(position.toLocation(world));
 							blocks.add(b);
-							if (b.getType() == Material.AIR || Utils.isBlockBlacklisted(b.getType()) || Utils.isZoneProtected(b.getLocation()))
+							if (b.getType() == Material.AIR || Utils.isBlockImmune(b.getType()) || Utils.isZoneProtected(b.getLocation()))
 								continue;
 							if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
 							if (tick > size-2 && rand.nextInt(8) == 0) {
 								Material mat = materials[rand.nextInt(materials.length)];
-								if (CP) Utils.getCoreProtect().logPlacement("Deadly-Disasters", b.getLocation(), mat, mat.createBlockData());
+								if (CP)
+									Utils.getCoreProtect().logPlacement("Deadly-Disasters", b.getLocation(), mat, mat.createBlockData());
 								b.setType(mat);
 								blocksDestroyed++;
 								continue;
@@ -201,12 +199,9 @@ public class Supernova extends DestructionDisaster {
 				for (Entity e : world.getNearbyEntities(loc, tick+100, tick+100, tick+100))
 					if (e instanceof LivingEntity && !e.isDead()) {
 						if (loc.distance(e.getLocation()) < tick) {
-							if (Utils.isZoneProtected(e.getLocation()) || (e instanceof Player && Utils.isPlayerImmune((Player) e)))
+							if (isEntityTypeProtected(e) || Utils.isZoneProtected(e.getLocation()) || (e instanceof Player && Utils.isPlayerImmune((Player) e)))
 								continue;
-							e.setMetadata("dd-supernova", fixdata);
-							((LivingEntity) e).damage(0.01);
-							e.setLastDamageCause(new EntityDamageEvent(e, DamageCause.CUSTOM, 20));
-							((LivingEntity) e).setHealth(0);
+							Utils.pureDamageEntity((LivingEntity) e, 20.0, "dd-supernova", true, DamageCause.BLOCK_EXPLOSION);
 						} else if (e instanceof Player) {
 							Location temp = e.getLocation().clone().add(new Vector(e.getLocation().getX() - loc.getX(), e.getLocation().getY() - loc.getY(), e.getLocation().getZ() - loc.getZ()).normalize().multiply(-4));
 							float vol = (float) ((2 - (0.0005 * (loc.distance(e.getLocation())) - tick))*volume);

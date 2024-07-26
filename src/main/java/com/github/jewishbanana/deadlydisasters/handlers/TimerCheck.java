@@ -41,6 +41,7 @@ import com.github.jewishbanana.deadlydisasters.events.disasters.MeteorShower;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Purge;
 import com.github.jewishbanana.deadlydisasters.events.disasters.SandStorm;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Sinkhole;
+import com.github.jewishbanana.deadlydisasters.events.disasters.SolarStorm;
 import com.github.jewishbanana.deadlydisasters.events.disasters.SoulStorm;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Supernova;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Tornado;
@@ -322,6 +323,15 @@ public class TimerCheck {
 											level = Disaster.PURGE.getMaxLevel();
 										Purge purge = new Purge(level);
 										purge.createTimedStart((int) worldObj.settings.get("pet_warning_time"), offVec, all);
+										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
+										break breakthis;
+									case SOLARSTORM:
+										if (!worldObj.allowed.contains(Disaster.SOLARSTORM) || loc.getBlockY() < Disaster.SOLARSTORM.getMinHeight() || !Utils.isEnvironment(world, Environment.NORMAL)
+												|| DeathMessages.solarstorms.stream().anyMatch(n -> n.getWorld() == world)) continue;
+										if (level > Disaster.SOLARSTORM.getMaxLevel())
+											level = Disaster.SOLARSTORM.getMaxLevel();
+										SolarStorm solarstorm = new SolarStorm(level);
+										solarstorm.createTimedStart((int) worldObj.settings.get("pet_warning_time"), all.getWorld(), all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
 									default:

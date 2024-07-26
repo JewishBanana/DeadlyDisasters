@@ -37,6 +37,7 @@ import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.utils.AnimationHandler;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 import com.github.jewishbanana.deadlydisasters.utils.AnimationHandler.BodyPart;
 
 public class Ghoul extends AnimatedEntity {
@@ -181,14 +182,14 @@ public class Ghoul extends AnimatedEntity {
 		}
 		super.tick();
 		if (walking) {
-			entity.getWorld().spawnParticle(Particle.BLOCK_DUST, entity.getLocation().clone().add(0,1.1,0), 1, .2, .4, .2, 1, Material.PODZOL.createBlockData());
+			entity.getWorld().spawnParticle(VersionUtils.getBlockDust(), entity.getLocation().clone().add(0,1.1,0), 1, .2, .4, .2, 1, Material.PODZOL.createBlockData());
 			return;
 		}
 		entity.teleport(toGround.setDirection(entity.getEyeLocation().getDirection()));
 		stand.teleport(entity.getLocation().subtract(0,.1,0));
 		if (!riseAnimation.isFinished()) {
 			riseAnimation.tick(stand);
-			entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, ground.getLocation().add(.5, 1.1, .5), 5, .4, .1, .4, 1, ground.getBlockData());
+			entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), ground.getLocation().add(.5, 1.1, .5), 5, .4, .1, .4, 1, ground.getBlockData());
 			return;
 		}
 		if (soundTick++ == 10) {
@@ -199,7 +200,7 @@ public class Ghoul extends AnimatedEntity {
 		grabAnimation.tick(stand);
 		if (Utils.isTargetInRange(entity, 0, 4, true))
 			entity.getTarget().setVelocity(entity.getTarget().getVelocity().multiply(0.25).add(Utils.getVectorTowards(entity.getTarget().getLocation(), entity.getEyeLocation().subtract(0,.3,0)).multiply(0.05*(entity.getTarget().getLocation().distanceSquared(entity.getEyeLocation())))));
-		entity.getWorld().spawnParticle(Particle.BLOCK_CRACK, ground.getLocation().add(.5, 1.1, .5), 2, .4, .1, .4, 1, ground.getBlockData());
+		entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), ground.getLocation().add(.5, 1.1, .5), 2, .4, .1, .4, 1, ground.getBlockData());
 	}
 	@Override
 	public void function(Iterator<CustomEntity> it) {
@@ -259,7 +260,7 @@ public class Ghoul extends AnimatedEntity {
 					}
 					entity.teleport(entity.getLocation().subtract(0,0.05,0));
 					stand.setHeadPose(new EulerAngle(Math.toRadians(ticks[0]), 0, 0));
-					block[0].getWorld().spawnParticle(Particle.BLOCK_CRACK, block[0], 5, .5, .1, .5, 0.1, block[0].getBlock().getType() == Material.AIR ? Material.DIRT.createBlockData() : block[0].getBlock().getBlockData());
+					block[0].getWorld().spawnParticle(VersionUtils.getBlockCrack(), block[0], 5, .5, .1, .5, 0.1, block[0].getBlock().getType() == Material.AIR ? Material.DIRT.createBlockData() : block[0].getBlock().getBlockData());
 					return;
 				}
 				entity.setTarget(null);

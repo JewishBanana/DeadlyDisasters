@@ -33,6 +33,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.halloweenentities.Ghoul;
 import com.github.jewishbanana.deadlydisasters.entities.halloweenentities.Psyco;
@@ -69,11 +70,11 @@ public class HalloweenEventHandler extends SpecialEvent implements Listener {
 		}
 	}
 	public void openGUI(Player player) {
-		Inventory inv = Bukkit.createInventory(null, 27, Utils.chat("&9DeadlyDisasters Halloween Event"));
+		Inventory inv = Bukkit.createInventory(null, 27, Utils.convertString("&9DeadlyDisasters Halloween Event"));
 		ItemStack glass = Utils.createItem(Material.GRAY_STAINED_GLASS_PANE, 1, " ", null, false, true);
 		for (int i=0; i < 27; i++)
 			inv.setItem(i, glass);
-		inv.setItem(4, Utils.createItem(Material.NETHER_STAR, 1, Utils.chat("&6"+Languages.getString("halloween.infoItem")), Arrays.asList(Utils.chat("&a"+Languages.getString("halloween.infoItemLore"))), false, true));
+		inv.setItem(4, Utils.createItem(Material.NETHER_STAR, 1, Utils.convertString("&6"+Languages.getString("halloween.infoItem")), Arrays.asList(Utils.convertString("&a"+Languages.getString("halloween.infoItemLore"))), false, true));
 		inv.setItem(10, ItemsHandler.cursedFlesh);
 		inv.setItem(11, ItemsHandler.vampireFang);
 		inv.setItem(12, ItemsHandler.candyCorn);
@@ -89,7 +90,7 @@ public class HalloweenEventHandler extends SpecialEvent implements Listener {
 	public void onJoin(PlayerJoinEvent e) {
 		if (notify)
 			plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-				e.getPlayer().sendMessage(Languages.prefix+Utils.chat("&a"+Languages.getString("halloween.eventMessage")));
+				e.getPlayer().sendMessage(Languages.prefix+Utils.convertString("&a"+Languages.getString("halloween.eventMessage")));
 			}, 20);
 	}
 	@EventHandler
@@ -118,7 +119,7 @@ public class HalloweenEventHandler extends SpecialEvent implements Listener {
 				if (rand.nextDouble() * 100 < 2.0) {
 					Block block = loc.getBlock().getRelative(BlockFace.DOWN);
 					Mob entity = (Mob) loc.getWorld().spawnEntity(block.getRelative(BlockFace.DOWN).getLocation(), EntityType.ZOMBIE, false);
-					plugin.handler.addEntity(new Ghoul((Zombie) entity, block, plugin, true));
+					CustomEntity.handler.addEntity(new Ghoul((Zombie) entity, block, plugin, true));
 					e.setCancelled(true);
 					break;
 				}
@@ -126,7 +127,7 @@ public class HalloweenEventHandler extends SpecialEvent implements Listener {
 			case 2:
 				if (rand.nextDouble() * 100 < 2.0) {
 					Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE, false);
-					plugin.handler.addEntity(new Scarecrow((Zombie) entity, plugin, rand));
+					CustomEntity.handler.addEntity(new Scarecrow((Zombie) entity, plugin, rand));
 					e.setCancelled(true);
 					break;
 				}
@@ -134,7 +135,7 @@ public class HalloweenEventHandler extends SpecialEvent implements Listener {
 			case 3:
 				if (rand.nextDouble() * 100 < 1.5) {
 					Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.EVOKER, false);
-					plugin.handler.addEntity(new Vampire((Mob) entity, plugin));
+					CustomEntity.handler.addEntity(new Vampire((Mob) entity, plugin));
 					e.setCancelled(true);
 					break;
 				}
@@ -142,7 +143,7 @@ public class HalloweenEventHandler extends SpecialEvent implements Listener {
 			case 4:
 				if (rand.nextDouble() * 100 < 2.0) {
 					Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SKELETON, false);
-					plugin.handler.addEntity(new Psyco((Mob) entity, plugin, rand));
+					CustomEntity.handler.addEntity(new Psyco((Mob) entity, plugin, rand));
 					e.setCancelled(true);
 					break;
 				}

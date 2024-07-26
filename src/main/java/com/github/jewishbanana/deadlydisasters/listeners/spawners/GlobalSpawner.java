@@ -29,8 +29,8 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 
 import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
-import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
 import com.github.jewishbanana.deadlydisasters.entities.christmasentities.Elf;
 import com.github.jewishbanana.deadlydisasters.entities.christmasentities.Frosty;
 import com.github.jewishbanana.deadlydisasters.entities.christmasentities.Grinch;
@@ -42,15 +42,13 @@ import com.github.jewishbanana.deadlydisasters.utils.Utils;
 public class GlobalSpawner implements Listener {
 	
 	private Main plugin;
-	private EntityHandler handler;
 	private Random rand;
 	private boolean spawnChristmas;
 	
 	public static Set<World> noSpawnWorlds = new HashSet<>();
 	
-	public GlobalSpawner(Main plugin, EntityHandler handler) {
+	public GlobalSpawner(Main plugin) {
 		this.plugin = plugin;
-		this.handler = handler;
 		this.rand = new Random();
 		reload(plugin);
 		
@@ -71,11 +69,6 @@ public class GlobalSpawner implements Listener {
 			public void run() {
 				CustomEntityType[] customType = {null};
 				if (Utils.isEnvironment(loc.getWorld(), Environment.NORMAL)) {
-					if (customType[0] == null && plugin.eventHandler.isEnabled) {
-						if (e.getEntity().getType() == EntityType.GOAT && rand.nextDouble()*100 < 20.0) {
-							customType[0] = CustomEntityType.RAMPAGINGGOAT;
-						}
-					}
 					if (!(e.getEntity() instanceof Monster))
 						return;
 					if (customType[0] == null && spawnChristmas && (plugin.seasonsHandler.isActive ? SeasonsHandler.getSeasonsAPI().getSeason(loc.getWorld()) == me.casperge.realisticseasons.season.Season.WINTER : loc.getBlock().getTemperature() <= 0.15)) {
@@ -119,20 +112,20 @@ public class GlobalSpawner implements Listener {
 							case CHRISTMASELF:
 								for (int i=0; i < 3; i++) {
 									entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-									handler.addEntity(new Elf((Zombie) entity, plugin, rand));
+									CustomEntity.handler.addEntity(new Elf((Zombie) entity, plugin, rand));
 								}
 								return;
 							case FROSTY:
-								entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SNOWMAN);
-								handler.addEntity(new Frosty((Snowman) entity, plugin, rand));
+								entity = (Mob) loc.getWorld().spawn(loc, Snowman.class);
+								CustomEntity.handler.addEntity(new Frosty((Snowman) entity, plugin, rand));
 								return;
 							case GRINCH:
 								entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
-								handler.addEntity(new Grinch(entity, plugin, rand));
+								CustomEntity.handler.addEntity(new Grinch(entity, plugin, rand));
 								return;
 							case RAMPAGINGGOAT:
 								entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.GOAT);
-								handler.addEntity(new RampagingGoat((Goat) entity, plugin));
+								CustomEntity.handler.addEntity(new RampagingGoat((Goat) entity, plugin));
 								return;
 							default:
 								return;

@@ -1,8 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>net.davidclue</groupId>
-	<artifactId>deadlydisasters</artifactId>
-	<version>11.0</version>
+	<groupId>com.github.jewishbanana</groupId>
+	<artifactId>deadly-disasters</artifactId>
+	<version>12.0</version>
+	<name>DeadlyDisasters</name>
+	
+	<properties>
+		<maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.target>11</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<mainClass>com.github.jewishbanana.deadlydisasters.Main</mainClass>
+	</properties>
 
 	<build>
 		<plugins>
@@ -28,26 +36,60 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
+			<plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-jar-plugin</artifactId>
+	            <version>3.2.0</version>
+	            <configuration>
+	                <finalName>DeadlyDisasters-V${project.version}</finalName>
+	                <outputDirectory>${custom.output.directory}</outputDirectory>
+	            </configuration>
+	        </plugin>
 		</plugins>
+		<resources>
+	        <resource>
+	            <directory>src/main/resources</directory>
+	            <filtering>true</filtering>
+	        </resource>
+	    </resources>
 	</build>
 
 	<repositories>
+		<repository>
+        	<id>jitpack.io</id>
+        	<url>https://jitpack.io</url>
+    	</repository>
 		<repository>
 			<id>spigot-repo</id>
 			<url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
 		</repository>
 		<repository>
-        	<id>jitpack.io</id>
-        	<url>https://jitpack.io</url>
-    	</repository>
+			<id>minecraft-libraries</id>
+			<name>Minecraft Libraries</name>
+			<url>https://libraries.minecraft.net</url>
+		</repository>
+		<repository>
+			<id>enginehub-maven</id>
+			<url>https://maven.enginehub.org/repo/</url>
+		</repository>
+		<repository>
+		    <id>playpro-repo</id>
+		    <url>https://maven.playpro.com</url>
+		</repository>
 	</repositories>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>
-			<version>1.20.2-R0.1-SNAPSHOT</version>
+			<version>1.21-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+		    <groupId>com.mojang</groupId>
+		    <artifactId>datafixerupper</artifactId>
+		    <version>1.0.20</version>
+		    <scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -55,11 +97,65 @@
 			<version>2.11.0</version>
 			<scope>compile</scope>
 		</dependency>
+	    <dependency>
+	    	<groupId>com.github.jewishbanana</groupId>
+	    	<artifactId>UIFramework</artifactId>
+	    	<version>2.2.3</version>
+	    	<scope>provided</scope>
+		</dependency>
+		<dependency>
+		    <groupId>com.github.jewishbanana</groupId>
+		    <artifactId>ultimate-content</artifactId>
+		    <version>1.0.1</version>
+		    <scope>provided</scope>
+		</dependency>
 		<dependency>
 			<groupId>com.github.koca2000</groupId>
 			<artifactId>NoteBlockAPI</artifactId>
 			<version>1.6.2</version>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+	        <groupId>com.github.angeschossen</groupId>
+	        <artifactId>LandsAPI</artifactId>
+	        <version>7.6.1</version>
+	        <scope>provided</scope>
+	    </dependency>
+	    <dependency>
+	    	<groupId>com.github.GriefPrevention</groupId>
+		    <artifactId>GriefPrevention</artifactId>
+		    <version>16.18.2</version>
+            <scope>provided</scope>
+		</dependency>
+		<dependency>
+		    <groupId>com.github.cryptomorin</groupId>
+		    <artifactId>kingdoms</artifactId>
+		    <version>1.16.8.1.1</version>
+		    <scope>provided</scope>
+		</dependency>
+		<dependency>
+		    <groupId>com.github.TownyAdvanced.Towny</groupId>
+		    <artifactId>towny</artifactId>
+		    <version>0.100.3.10</version>
+		    <scope>provided</scope>
+		</dependency>
+		<dependency>
+		    <groupId>com.sk89q.worldedit</groupId>
+		    <artifactId>worldedit-bukkit</artifactId>
+		    <version>7.2.9</version>
+		    <scope>provided</scope>
+		</dependency>
+		<dependency>
+	        <groupId>com.sk89q.worldguard</groupId>
+	        <artifactId>worldguard-bukkit</artifactId>
+	        <version>7.0.9</version>
+	        <scope>provided</scope>
+	    </dependency>
+	    <dependency>
+		    <groupId>net.coreprotect</groupId>
+		    <artifactId>coreprotect</artifactId>
+		    <version>22.4</version>
+		    <scope>provided</scope>
 		</dependency>
 	</dependencies>
 </project>

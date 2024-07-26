@@ -1,18 +1,26 @@
 package com.github.jewishbanana.deadlydisasters.events.disasters;
 
 import java.util.ArrayDeque;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryHolder;
@@ -32,10 +40,13 @@ public class Sinkhole extends DestructionDisaster {
 	private Queue<Places> placements = new ArrayDeque<>();
 	
 	private Location memory;
-	private int tick=0,speed;
+	private int speed;
 	public int maxD,blocksDestroyed;
 	private double radius = 0, size;
 	public Random rand;
+	public boolean placeLava;
+	
+	public Map<Block,Integer> liquidBlocks = new HashMap<>();
 	
 	public static Set<Material> treeBlocks = new HashSet<>();
 	
@@ -46,6 +57,7 @@ public class Sinkhole extends DestructionDisaster {
 		this.speed = configFile.getInt("sinkhole.speed");
 		this.size = configFile.getDouble("sinkhole.size");
 		this.volume = configFile.getDouble("sinkhole.volume");
+		this.placeLava = configFile.getBoolean("sinkhole.place_lava");
 		switch (level) {
 		default:
 		case 1:
@@ -73,58 +85,67 @@ public class Sinkhole extends DestructionDisaster {
 		DestructionDisasterEvent event = new DestructionDisasterEvent(this, loc, level, p);
 		Bukkit.getPluginManager().callEvent(event);
 		if (event.isCancelled()) return;
+		ongoingDisasters.add(this);
 		this.loc = loc;
 		radius *= size;
 		final World world = loc.getWorld();
 		memory = loc.clone();
 		DeathMessages.sinkholes.add(this);
 		Sinkhole me = this;
+		
+		Queue<Block> spots = new ArrayDeque<>();
+		BlockVector block = new BlockVector(loc.getX(), loc.getY(), loc.getZ());
+		for (int x = (int) -radius; x < radius; x++)
+			for (int z = (int) -radius; z < radius; z++) {
+				Vector position = block.clone().add(new Vector(x, 0, z));
+				if (block.distance(position) <= radius)
+					spots.add(world.getBlockAt(position.toLocation(world)));
+			}
+		final int current = Math.min(spots.size()/10, 150);
 		new RepeatingTask(plugin, 0, 1) {
 			@Override
 			public void run() {
-				BlockVector block = new BlockVector(loc.getX(), loc.getY(), loc.getZ());
-				for (int x = -tick; x < tick; x++)
-					for (int z = -tick; z < tick; z++) {
-						Vector position = block.clone().add(new Vector(x, 0, z));
-						if (!(block.distance(position) >= (tick - 1) && block.distance(position) <= tick)) continue;
-						Block bl = world.getBlockAt(position.toLocation(world));
-						Location place = bl.getLocation();
-						int offset = 0;
-						if (bl.getType().isSolid() || bl.isLiquid()) {
-							for (int c=place.getBlockY(); c < 255; c++) {
-								place.setY(c);
-								bl = place.getBlock();
-								if (!(bl.getType().isSolid()) && !(bl.isLiquid())) {
-									place.setY(c-1);
-									break;
-								}
-								if (treeBlocks.contains(bl.getType()))
-									offset++;
+				Iterator<Block> it = spots.iterator();
+				for (int i=0; i < current; i++) {
+					if (!it.hasNext())
+						break;
+					Block bl = it.next();
+					int offset = 0;
+					if (!bl.isPassable()) {
+						for (int c=0; c < rand.nextInt(15)+5; c++) {
+							bl = bl.getRelative(BlockFace.UP);
+							if (bl.isPassable()) {
+								bl = bl.getRelative(BlockFace.DOWN);
+								break;
 							}
-						} else {
-							for (int c=place.getBlockY(); c > maxD; c--) {
-								place.setY(c);
-								bl = place.getBlock();
-								if (bl.getType().isSolid() || bl.isLiquid())
-									break;
-							}
+							if (treeBlocks.contains(bl.getType()))
+								offset++;
 						}
-						int depth = 0;
-						if (tick >= radius/4*3) depth = (int) (radius-tick+offset);
-						else depth = (int) ((rand.nextInt((int) (radius))+radius-tick)*level);
-						if (depth <= 0) {
-							tick = (int) radius + 1;
-							break;
-						}
-						placements.add(new Places(place, depth, true, me));
-						if (treeBlocks.contains(place.getBlock().getType())) {
-							for (int x2=place.getBlockX()-3; x2 < place.getBlockX()+3; x2++)
-								for (int z2=place.getBlockZ()-3; z2 < place.getBlockZ()+3; z2++)
-									if (!(x2 == place.getBlockX() && z2 == place.getBlockZ()) && treeBlocks.contains(place.getWorld().getHighestBlockAt(x2, z2).getType()))
-										placements.add(new Places(new Location(place.getWorld(), x2, place.getWorld().getHighestBlockYAt(x2, z2), z2), depth, false, me));
+					} else {
+						for (int c=bl.getLocation().getBlockY(); c > maxD; c--) {
+							bl = bl.getRelative(BlockFace.DOWN);
+							if (!bl.isPassable())
+								break;
 						}
 					}
-				if (tick >= radius) {
+					Location place = bl.getLocation();
+					int depth = 0;
+					double dist = place.add(.5,.5,.5).distance(loc);
+					if (dist >= radius/4*3)
+						depth = (int) (radius-dist+offset);
+					else
+						depth = (int) ((rand.nextInt((int) (radius))+radius-dist)*level);
+					placements.add(new Places(bl, depth, me));
+					if (treeBlocks.contains(bl.getType())) {
+						for (int x2=place.getBlockX()-3; x2 < place.getBlockX()+3; x2++)
+							for (int z2=place.getBlockZ()-3; z2 < place.getBlockZ()+3; z2++)
+								if (!(x2 == place.getBlockX() && z2 == place.getBlockZ()) && treeBlocks.contains(place.getWorld().getHighestBlockAt(x2, z2).getType()))
+									placements.add(new Places(new Location(place.getWorld(), x2, place.getWorld().getHighestBlockYAt(x2, z2), z2).getBlock(), depth, me));
+					}
+					it.remove();
+				}
+				if (!it.hasNext()) {
+					placements = new ArrayDeque<>(placements.stream().sorted(Comparator.comparingDouble(e -> e.getBlock().getLocation().distanceSquared(loc))).collect(Collectors.toList()));
 					for (Entity all : memory.getWorld().getNearbyEntities(memory, radius+20, 128, radius+20)) {
 						if (all instanceof Player && all.getLocation().getBlockY() <= memory.getBlockY()+40) {
 							((Player) all).playSound(all.getLocation(), Sound.ITEM_TOTEM_USE, (float) ((0.33*level)*volume), (float) 0.5);
@@ -136,6 +157,15 @@ public class Sinkhole extends DestructionDisaster {
 							Iterator<Places> iterator = placements.iterator();
 							while (iterator.hasNext())
 								iterator.next().dig(iterator);
+							Iterator<Entry<Block, Integer>> it = liquidBlocks.entrySet().iterator();
+							while (it.hasNext()) {
+								Entry<Block, Integer> entry = it.next();
+								if (entry.getKey().isLiquid())
+									entry.getKey().setType(Material.AIR);
+								entry.setValue(entry.getValue()-1);
+								if (entry.getValue() <= 0)
+									it.remove();
+							}
 							if (placements.isEmpty()) {
 								plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
 									@Override
@@ -144,6 +174,7 @@ public class Sinkhole extends DestructionDisaster {
 									}
 								}, 200L);
 								cancel();
+								ongoingDisasters.remove(me);
 								Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
 							}
 						}
@@ -151,7 +182,6 @@ public class Sinkhole extends DestructionDisaster {
 					cancel();
 					return;
 				}
-				tick++;
 			}
 		};
 	}
@@ -192,65 +222,62 @@ public class Sinkhole extends DestructionDisaster {
 
 class Places {
 	private int depth;
-	private Location loc;
-	private boolean force,CP;
+	private Block b, memory;
+	private boolean CP;
 	private Sinkhole classInstance;
 	private Random rand;
-	Places(Location loc, int depth, boolean force, Sinkhole classInstance) {
-		this.loc = loc;
+	Places(Block b, int depth, Sinkhole classInstance) {
+		this.b = b;
 		this.depth = depth;
-		this.force = force;
 		this.classInstance = classInstance;
 		this.rand = classInstance.rand;
 		this.CP = classInstance.plugin.CProtect;
+		this.memory = b;
 	}
-	void dig(Iterator<Places> it) {
-		Block b = loc.getBlock();
-		int r = rand.nextInt(3)+1;
-		if (r > depth) r = depth;
-		for (int i=r; i > 0; i--) {
-			loc.setY(loc.getY()-1);
-			b = loc.getBlock();
-			if (!force && loc.getBlock().getType() == Material.AIR) {
-				b = loc.clone().add(0,1,0).getBlock();
-				if (!Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
-					if (CP) Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
+	public void dig(Iterator<Places> it) {
+		for (int i=rand.nextInt(3)+1; i > 0; i--) {
+			if (!Utils.passStrengthTest(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
+				Block b2 = b.getRelative(BlockFace.DOWN);
+				if (!Utils.passStrengthTest(b2.getType()) && !Utils.isZoneProtected(b2.getLocation())) {
+					if (CP) {
+						Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
+						Utils.getCoreProtect().logRemoval("Deadly-Disasters", b2.getLocation(), b2.getType(), b2.getBlockData());
+					}
+					BlockState state = b.getState();
+					b2.setBlockData(b.getBlockData());
+					if (state instanceof InventoryHolder)
+						((InventoryHolder) b2.getState()).getInventory().setContents(((InventoryHolder) state).getInventory().getContents());
+					if (CP)
+						Utils.getCoreProtect().logPlacement("Deadly-Disasters", b2.getLocation(), b2.getType(), b2.getBlockData());
+					if (b.isLiquid())
+						classInstance.liquidBlocks.put(b, 5);
 					b.setType(Material.AIR);
 					classInstance.blocksDestroyed++;
+				} else {
+					it.remove();
+					return;
 				}
+			} else {
+				if (!b.equals(memory))
 				it.remove();
 				return;
 			}
-			if (!Utils.isBlockBlacklisted(b.getType()) && !Utils.isZoneProtected(b.getLocation())) {
-				if (CP) {
-					Utils.getCoreProtect().logRemoval("Deadly-Disasters", b.getLocation(), b.getType(), b.getBlockData());
-					Utils.getCoreProtect().logPlacement("Deadly-Disasters", b.getLocation(), new Location(b.getWorld(), b.getX(), b.getY()+1, b.getZ()).getBlock().getType(), new Location(b.getWorld(), b.getX(), b.getY()+1, b.getZ()).getBlock().getBlockData());
-					Utils.getCoreProtect().logRemoval("Deadly-Disasters", new Location(b.getWorld(), b.getX(), b.getY()+1, b.getZ()), new Location(b.getWorld(), b.getX(), b.getY()+1, b.getZ()).getBlock().getType(), new Location(b.getWorld(), b.getX(), b.getY()+1, b.getZ()).getBlock().getBlockData());
-				}
-				Block b2 = loc.clone().add(0, 1, 0).getBlock();
-				if (!Utils.isBlockBlacklisted(b2.getType()) && !Utils.isZoneProtected(b2.getLocation())) {
-					b.setType(b2.getType());
-					if (b2.getState() instanceof InventoryHolder)
-						((InventoryHolder) b.getState()).getInventory().setContents(((InventoryHolder) b2.getState()).getInventory().getContents());
-					b2.setType(Material.AIR);
+			depth--;
+			b = b.getRelative(BlockFace.DOWN);
+			if (depth <= 0) {
+				if (classInstance.placeLava && b.getWorld().getEnvironment() != Environment.THE_END && b.getLocation().getBlockY() < (classInstance.maxD + 15)) {
+					b.setType(Material.LAVA);
 					classInstance.blocksDestroyed++;
 				}
-				//new Location(b.getWorld(), b.getX(), b.getY()+2, b.getZ()).getBlock().setType(Material.AIR);
-			} else {
 				it.remove();
 				return;
 			}
-		}
-		depth-=r;
-		if (depth <= 0) {
-			if (loc.getBlockY() < (classInstance.maxD + 15)) {
-				b.setType(Material.LAVA);
-				classInstance.blocksDestroyed++;
-			}
-			it.remove();
 		}
 	}
 	public Location getLocation() {
-		return loc;
+		return b.getLocation();
+	}
+	public Block getBlock() {
+		return b;
 	}
 }

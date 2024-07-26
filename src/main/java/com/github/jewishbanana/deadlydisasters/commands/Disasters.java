@@ -70,6 +70,7 @@ import com.github.jewishbanana.deadlydisasters.entities.purgeentities.TunnellerZ
 import com.github.jewishbanana.deadlydisasters.entities.purgeentities.ZombieKnight;
 import com.github.jewishbanana.deadlydisasters.entities.sandstormentities.AncientMummy;
 import com.github.jewishbanana.deadlydisasters.entities.sandstormentities.AncientSkeleton;
+import com.github.jewishbanana.deadlydisasters.entities.solarstormentities.FirePhantom;
 import com.github.jewishbanana.deadlydisasters.entities.soulstormentities.LostSoul;
 import com.github.jewishbanana.deadlydisasters.entities.soulstormentities.SoulReaper;
 import com.github.jewishbanana.deadlydisasters.events.Disaster;
@@ -88,6 +89,7 @@ import com.github.jewishbanana.deadlydisasters.events.disasters.MeteorShower;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Purge;
 import com.github.jewishbanana.deadlydisasters.events.disasters.SandStorm;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Sinkhole;
+import com.github.jewishbanana.deadlydisasters.events.disasters.SolarStorm;
 import com.github.jewishbanana.deadlydisasters.events.disasters.SoulStorm;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Supernova;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Tornado;
@@ -112,7 +114,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 	
 	public static List<String> disasterNames = new ArrayList<>();
 	
-	private String globalUsage = Utils.chat("&cUsage: /disasters <enable|disable|start|mintimer|reload|help|summon|give|difficulty|language|catalog|whitelist|listplayer|config|favor|dislike|event>...");
+	private String globalUsage = Utils.convertString("&cUsage: /disasters <enable|disable|start|mintimer|reload|help|summon|give|difficulty|language|catalog|whitelist|listplayer|config|favor|dislike|event>...");
 
 	public Disasters(Main plugin, TimerCheck tc, EntityHandler handler, Random rand, Catalog catalog) {
 		this.plugin = plugin;
@@ -140,12 +142,12 @@ public class Disasters implements CommandExecutor,TabCompleter {
 		}
 		if (!(sender instanceof Player)) {
 			if (args[0].equalsIgnoreCase("start") && args.length != 4) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters start <disaster> <level> <player>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters start <disaster> <level> <player>"));
 				return true;
 			}
 			if (((args[0].equalsIgnoreCase("mintimer") || args[0].equalsIgnoreCase("difficulty")) && args[1].equalsIgnoreCase("this_world"))
 					|| ((args[0].equalsIgnoreCase("enable") || args[0].equalsIgnoreCase("disable")) && args[2].equalsIgnoreCase("this_world")) || args[0].equalsIgnoreCase("catalog")) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.console_error_message")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.console_error_message")));
 				return true;
 			}
 		}
@@ -155,11 +157,11 @@ public class Disasters implements CommandExecutor,TabCompleter {
 		}
 		if (args[0].equalsIgnoreCase("enable")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length != 3) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters enable <disaster|randomdisasters|maxlevels|eventmsg> <world>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters enable <disaster|randomdisasters|maxlevels|eventmsg> <world>"));
 				return true;
 			}
 			WorldObject worldObj = null;
@@ -167,12 +169,12 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				if (sender instanceof Player)
 					worldObj = WorldObject.findWorldObject(((Player) sender).getWorld());
 				else {
-					sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.console_error_message")));
+					sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.console_error_message")));
 					return true;
 				}
 			else if (!args[2].equalsIgnoreCase("all_worlds")) {
 				if (Bukkit.getWorld(args[2]) == null) {
-					sender.sendMessage(Utils.chat("&cCould not find world '"+args[2]+"'"));
+					sender.sendMessage(Utils.convertString("&cCould not find world '"+args[2]+"'"));
 					return true;
 				}
 				worldObj = WorldObject.findWorldObject(Bukkit.getWorld(args[2]));
@@ -183,7 +185,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					WorldObject.changeAllField("natural_disasters", true, plugin);
 					for (Player p : Bukkit.getOnlinePlayers())
 						if (p.hasPermission("deadlydisasters.difficultyNotify"))
-							p.sendMessage(Utils.chat("&3Random occurring disasters are now &a&lENABLED &3on &dALL_WORLDS"));
+							p.sendMessage(Utils.convertString("&3Random occurring disasters are now &a&lENABLED &3on &dALL_WORLDS"));
 					return true;
 				}
 				worldObj.settings.replace("natural_disasters", true);
@@ -192,53 +194,53 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				WorldObject.saveYamlFile(plugin);
 				for (Player p : worldObj.getWorld().getPlayers())
 					if (p.hasPermission("deadlydisasters.difficultyNotify"))
-						p.sendMessage(Utils.chat("&3Random occurring disasters are now &a&lENABLED &3on &d'"+worldObj.getWorld().getName()+"'"));
+						p.sendMessage(Utils.convertString("&3Random occurring disasters are now &a&lENABLED &3on &d'"+worldObj.getWorld().getName()+"'"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("maxlevels")) {
 				if (args[2].equalsIgnoreCase("all_worlds")) {
 					WorldObject.changeAllField("level_six", true, plugin);
-					sender.sendMessage(Utils.chat("&aLevel 6 disasters are now &benabled &aon &dALL_WORLDS"));
+					sender.sendMessage(Utils.convertString("&aLevel 6 disasters are now &benabled &aon &dALL_WORLDS"));
 					return true;
 				}
 				worldObj.settings.replace("level_six", true);
 				WorldObject.yamlFile.set(worldObj.getWorld().getName()+".general.level_six", true);
 				WorldObject.saveYamlFile(plugin);
-				sender.sendMessage(Utils.chat("&aLevel 6 disasters are now &benabled &aon &d'"+worldObj.getWorld().getName()+"'"));
+				sender.sendMessage(Utils.convertString("&aLevel 6 disasters are now &benabled &aon &d'"+worldObj.getWorld().getName()+"'"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("eventmsg")) {
 				if (args[2].equalsIgnoreCase("all_worlds")) {
 					WorldObject.changeAllField("event_broadcast", true, plugin);
-					sender.sendMessage(Utils.chat("&aEvent broadcasts are now &benabled &aon &dALL_WORLDS"));
+					sender.sendMessage(Utils.convertString("&aEvent broadcasts are now &benabled &aon &dALL_WORLDS"));
 					return true;
 				}
 				worldObj.settings.replace("event_broadcast", true);
 				WorldObject.yamlFile.set(worldObj.getWorld().getName()+".general.event_broadcast", true);
 				WorldObject.saveYamlFile(plugin);
-				sender.sendMessage(Utils.chat("&aEvent broadcasts are now &benabled &aon &d'"+worldObj.getWorld().getName()+"'"));
+				sender.sendMessage(Utils.convertString("&aEvent broadcasts are now &benabled &aon &d'"+worldObj.getWorld().getName()+"'"));
 				return true;
 			} else if (Disaster.forName(upper) != null) {
 				Disaster disaster = Disaster.valueOf(upper);
 				if (args[2].equalsIgnoreCase("all_worlds")) {
 					WorldObject.updateGlobalDisaster(disaster, true, plugin);
-					sender.sendMessage(Utils.chat(disaster.getLabel()+" &aare now &benabled &aon &dALL_WORLDS"));
+					sender.sendMessage(Utils.convertString(disaster.getLabel()+" &aare now &benabled &aon &dALL_WORLDS"));
 					return true;
 				}
 				if (!worldObj.allowed.contains(disaster)) worldObj.allowed.add(disaster);
 				WorldObject.yamlFile.set(worldObj.getWorld().getName()+".disasters."+upper, true);
 				WorldObject.saveYamlFile(plugin);
-				sender.sendMessage(Utils.chat(disaster.getLabel()+" &aare now &benabled &aon &d'"+worldObj.getWorld().getName()+"'"));
+				sender.sendMessage(Utils.convertString(disaster.getLabel()+" &aare now &benabled &aon &d'"+worldObj.getWorld().getName()+"'"));
 				return true;
 			} else {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters enable <disaster|randomdisasters|maxlevels|eventmsg> <world>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters enable <disaster|randomdisasters|maxlevels|eventmsg> <world>"));
 				return true;
 			}
 		} else if (args[0].equalsIgnoreCase("disable")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length != 3) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters disable <disaster|randomdisasters|maxlevels|eventmsg> <world>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters disable <disaster|randomdisasters|maxlevels|eventmsg> <world>"));
 				return true;
 			}
 			WorldObject worldObj = null;
@@ -246,12 +248,12 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				if (sender instanceof Player)
 					worldObj = WorldObject.findWorldObject(((Player) sender).getWorld());
 				else {
-					sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.console_error_message")));
+					sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.console_error_message")));
 					return true;
 				}
 			else if (!args[2].equalsIgnoreCase("all_worlds")) {
 				if (Bukkit.getWorld(args[2]) == null) {
-					sender.sendMessage(Utils.chat("&cCould not find world '"+args[2]+"'"));
+					sender.sendMessage(Utils.convertString("&cCould not find world '"+args[2]+"'"));
 					return true;
 				}
 				worldObj = WorldObject.findWorldObject(Bukkit.getWorld(args[2]));
@@ -262,7 +264,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					WorldObject.changeAllField("natural_disasters", false, plugin);
 					for (Player p : Bukkit.getOnlinePlayers())
 						if (p.hasPermission("deadlydisasters.difficultyNotify"))
-							p.sendMessage(Utils.chat("&3Random occurring disasters are now &c&lDISABLED &3on &dALL_WORLDS"));
+							p.sendMessage(Utils.convertString("&3Random occurring disasters are now &c&lDISABLED &3on &dALL_WORLDS"));
 					return true;
 				}
 				worldObj.settings.replace("natural_disasters", false);
@@ -271,49 +273,49 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				WorldObject.saveYamlFile(plugin);
 				for (Player p : worldObj.getWorld().getPlayers())
 					if (p.hasPermission("deadlydisasters.difficultyNotify"))
-						p.sendMessage(Utils.chat("&3Random occurring disasters are now &c&lDISABLED &3on &d'"+worldObj.getWorld().getName()+"'"));
+						p.sendMessage(Utils.convertString("&3Random occurring disasters are now &c&lDISABLED &3on &d'"+worldObj.getWorld().getName()+"'"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("maxlevels")) {
 				if (args[2].equalsIgnoreCase("all_worlds")) {
 					WorldObject.changeAllField("level_six", false, plugin);
-					sender.sendMessage(Utils.chat("&aLevel 6 disasters are now &cdisabled &aon &dALL_WORLDS"));
+					sender.sendMessage(Utils.convertString("&aLevel 6 disasters are now &cdisabled &aon &dALL_WORLDS"));
 					return true;
 				}
 				worldObj.settings.replace("level_six", false);
 				WorldObject.yamlFile.set(worldObj.getWorld().getName()+".general.level_six", false);
 				WorldObject.saveYamlFile(plugin);
-				sender.sendMessage(Utils.chat("&aLevel 6 disasters are now &cdisabled &aon &d'"+worldObj.getWorld().getName()+"'"));
+				sender.sendMessage(Utils.convertString("&aLevel 6 disasters are now &cdisabled &aon &d'"+worldObj.getWorld().getName()+"'"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("eventmsg")) {
 				if (args[2].equalsIgnoreCase("all_worlds")) {
 					WorldObject.changeAllField("event_broadcast", false, plugin);
-					sender.sendMessage(Utils.chat("&aEvent broadcasts are now &cdisabled &aon &dALL_WORLDS"));
+					sender.sendMessage(Utils.convertString("&aEvent broadcasts are now &cdisabled &aon &dALL_WORLDS"));
 					return true;
 				}
 				worldObj.settings.replace("event_broadcast", false);
 				WorldObject.yamlFile.set(worldObj.getWorld().getName()+".general.event_broadcast", false);
 				WorldObject.saveYamlFile(plugin);
-				sender.sendMessage(Utils.chat("&aEvent broadcasts are now &cdisabled &aon &d'"+worldObj.getWorld().getName()+"'"));
+				sender.sendMessage(Utils.convertString("&aEvent broadcasts are now &cdisabled &aon &d'"+worldObj.getWorld().getName()+"'"));
 				return true;
 			} else if (Disaster.forName(upper) != null) {
 				Disaster disaster = Disaster.valueOf(upper);
 				if (args[2].equalsIgnoreCase("all_worlds")) {
 					WorldObject.updateGlobalDisaster(disaster, false, plugin);
-					sender.sendMessage(Utils.chat(disaster.getLabel()+" &aare now &cdisabled &aon &dALL_WORLDS"));
+					sender.sendMessage(Utils.convertString(disaster.getLabel()+" &aare now &cdisabled &aon &dALL_WORLDS"));
 					return true;
 				}
 				if (worldObj.allowed.contains(disaster)) worldObj.allowed.remove(disaster);
 				WorldObject.yamlFile.set(worldObj.getWorld().getName()+".disasters."+upper, false);
 				WorldObject.saveYamlFile(plugin);
-				sender.sendMessage(Utils.chat(disaster.getLabel()+" &aare now &cdisabled &aon &d'"+worldObj.getWorld().getName()+"'"));
+				sender.sendMessage(Utils.convertString(disaster.getLabel()+" &aare now &cdisabled &aon &d'"+worldObj.getWorld().getName()+"'"));
 				return true;
 			} else {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters disable <disaster|randomdisasters|maxlevels|eventmsg> <world>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters disable <disaster|randomdisasters|maxlevels|eventmsg> <world>"));
 				return true;
 			}
 		} else if (args[0].equalsIgnoreCase("start")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.start"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			int level = 1;
@@ -323,11 +325,11 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				try {
 					level = Integer.parseInt(args[2]);
 					if (level <= 0 || level > 6) {
-						sender.sendMessage(Utils.chat("&cError level must be #1-6"));
+						sender.sendMessage(Utils.convertString("&cError level must be #1-6"));
 						return true;
 					}
 				} catch (NumberFormatException e) {
-					sender.sendMessage(Utils.chat("&cError level must be a valid integer #1-6"));
+					sender.sendMessage(Utils.convertString("&cError level must be a valid integer #1-6"));
 					return true;
 				}
 				if (args.length >= 4) {
@@ -335,7 +337,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						if (target.getName().equalsIgnoreCase(args[3]))
 							p = target;
 					if (p == null) {
-						sender.sendMessage(Utils.chat("&c"+args[3]+" is not online!"));
+						sender.sendMessage(Utils.convertString("&c"+args[3]+" is not online!"));
 						return true;
 					}
 				} else p = (Player) sender;
@@ -343,7 +345,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					if (args[4].equalsIgnoreCase("false"))
 						broadcast = false;
 					else if (!args[4].equalsIgnoreCase("true")) {
-						sender.sendMessage(Utils.chat("&cError broadcast can only be a true/false value!"));
+						sender.sendMessage(Utils.convertString("&cError broadcast can only be a true/false value!"));
 						return true;
 					}
 				}
@@ -351,18 +353,18 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				level = rand.nextInt(6)+1;
 				p = (Player) sender;
 			} else {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters start <disaster> [level] [player] [broadcast]"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters start <disaster> [level] [player] [broadcast]"));
 				return true;
 			}
 			WorldObject temp = WorldObject.findWorldObject(p.getWorld());
 			
 			if (!(boolean)temp.settings.get("admin_override") && !temp.allowed.contains(Disaster.valueOf(args[1].toUpperCase()))) {
-				sender.sendMessage(Utils.chat("&cThis disaster is not allowed in the targets world!"));
+				sender.sendMessage(Utils.convertString("&cThis disaster is not allowed in the targets world!"));
 				return true;
 			}
 			if (args[1].equalsIgnoreCase("acidstorm")) {
 				if (!Utils.isEnvironment(p.getWorld(), Environment.NORMAL)) {
-					sender.sendMessage(Utils.chat("&cMust be in an overworld environment to start an acidstorm"));
+					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start an acidstorm"));
 					return true;
 				}
 				AcidStorm storm = new AcidStorm(level);
@@ -371,7 +373,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				return true;
 			} else if (args[1].equalsIgnoreCase("blizzard")) {
 				if (!Utils.isEnvironment(p.getWorld(), Environment.NORMAL)) {
-					sender.sendMessage(Utils.chat("&cMust be in an overworld environment to start a blizzard"));
+					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start a blizzard"));
 					return true;
 				}
 				Blizzard blizz = new Blizzard(level);
@@ -391,7 +393,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					}
 					b = b.getRelative(BlockFace.UP);
 				}
-				sender.sendMessage(Utils.chat("&cMust have a roof over target player to start a cave-in!"));
+				sender.sendMessage(Utils.convertString("&cMust have a roof over target player to start a cave-in!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("earthquake")) {
 				Location loc = p.getLocation();
@@ -406,7 +408,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						return true;
 					}
 				}
-				sender.sendMessage(Utils.chat("&cMust be ground below target player to start an earthquake!"));
+				sender.sendMessage(Utils.convertString("&cMust be ground below target player to start an earthquake!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("extremewinds")) {
 				ExtremeWinds winds = new ExtremeWinds(level);
@@ -415,7 +417,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				return true;
 			} else if (args[1].equalsIgnoreCase("geyser")) {
 				if (p.getWorld().getEnvironment() == Environment.THE_END) {
-					sender.sendMessage(Utils.chat("&cMust be in an overworld or nether environment to start a geyser"));
+					sender.sendMessage(Utils.convertString("&cMust be in an overworld or nether environment to start a geyser"));
 					return true;
 				}
 				Geyser geyser = new Geyser(level);
@@ -437,11 +439,11 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						return true;
 					}
 				}
-				sender.sendMessage(Utils.chat("&cMust be ground below target player to start a sinkhole!"));
+				sender.sendMessage(Utils.convertString("&cMust be ground below target player to start a sinkhole!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("soulstorm")) {
 				if (!Utils.isEnvironment(p.getWorld(), Environment.NETHER)) {
-					sender.sendMessage(Utils.chat("&cMust be in a nether environment to start a soulstorm"));
+					sender.sendMessage(Utils.convertString("&cMust be in a nether environment to start a soulstorm"));
 					return true;
 				}
 				SoulStorm storm = new SoulStorm(level);
@@ -461,11 +463,11 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						return true;
 					}
 				}
-				sender.sendMessage(Utils.chat("&cMust be ground below target player to start a tornado!"));
+				sender.sendMessage(Utils.convertString("&cMust be ground below target player to start a tornado!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("sandstorm")) {
 				if (!Utils.isEnvironment(p.getWorld(), Environment.NORMAL)) {
-					sender.sendMessage(Utils.chat("&cMust be in an overworld environment to start a sandstorm"));
+					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start a sandstorm"));
 					return true;
 				}
 				SandStorm storm = new SandStorm(level);
@@ -479,7 +481,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.PLAGUE.getMetricsLabel());
 					return true;
 				}
-				sender.sendMessage(Utils.chat("&cCould not find available mob nearby!"));
+				sender.sendMessage(Utils.convertString("&cCould not find available mob nearby!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("tsunami")) {
 				Tsunami tsu = new Tsunami(level);
@@ -491,11 +493,11 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.TSUNAMI.getMetricsLabel());
 					return true;
 				}
-				sender.sendMessage(Utils.chat("&cCould not find pool nearby!"));
+				sender.sendMessage(Utils.convertString("&cCould not find pool nearby!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("meteorshowers")) {
 				if (!Utils.isEnvironment(p.getWorld(), Environment.NORMAL)) {
-					sender.sendMessage(Utils.chat("&cMust be in an overworld environment to start a meteor shower"));
+					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start a meteor shower"));
 					return true;
 				}
 				MeteorShower shower = new MeteorShower(level);
@@ -504,11 +506,11 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				return true;
 			} else if (args[1].equalsIgnoreCase("endstorm")) {
 				if (plugin.mcVersion < 1.16) {
-					sender.sendMessage(Utils.chat("&cThis disaster is only available on version 1.16 or higher!"));
+					sender.sendMessage(Utils.convertString("&cThis disaster is only available on version 1.16 or higher!"));
 					return true;
 				}
 				if (!Utils.isEnvironment(p.getWorld(), Environment.THE_END)) {
-					sender.sendMessage(Utils.chat("&cMust be in an end environment to start an endstorm"));
+					sender.sendMessage(Utils.convertString("&cMust be in an end environment to start an endstorm"));
 					return true;
 				}
 				EndStorm storm = new EndStorm(level);
@@ -531,7 +533,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				return true;
 			} else if (args[1].equalsIgnoreCase("purge")) {
 				if (Purge.targetedPlayers.contains(p.getUniqueId())) {
-					sender.sendMessage(Utils.chat("&cCannot start a purge because player is already being targeted"));
+					sender.sendMessage(Utils.convertString("&cCannot start a purge because player is already being targeted"));
 					return true;
 				}
 				Purge purge = new Purge(level);
@@ -540,18 +542,27 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				purge.start(p.getLocation(), p);
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.PURGE.getMetricsLabel());
 				return true;
+			} else if (args[1].equalsIgnoreCase("solarstorm")) {
+				if (!Utils.isEnvironment(p.getWorld(), Environment.NORMAL)) {
+					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start a solar storm"));
+					return true;
+				}
+				SolarStorm storm = new SolarStorm(level);
+				storm.start(p.getWorld(), p, broadcast);
+				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.SOLARSTORM.getMetricsLabel());
+				return true;
 			} else if (disasterNames.contains(args[1])) {
 				YamlConfiguration yaml = CustomDisaster.disasterFiles.get(args[1]);
 				if (!yaml.getStringList("settings.environments").contains(p.getWorld().getEnvironment().toString().toLowerCase())) {
-					sender.sendMessage(Utils.chat("&c"+args[1]+" cannot be started in this environment!"));
+					sender.sendMessage(Utils.convertString("&c"+args[1]+" cannot be started in this environment!"));
 					return true;
 				}
 				if (yaml.getInt("settings.min_height") > p.getLocation().getBlockY()) {
-					sender.sendMessage(Utils.chat("&c"+args[1]+" can only be started above y="+yaml.getInt("settings.min_height")));
+					sender.sendMessage(Utils.convertString("&c"+args[1]+" can only be started above y="+yaml.getInt("settings.min_height")));
 					return true;
 				}
 				if (!yaml.contains("core.level "+level)) {
-					sender.sendMessage(Utils.chat("&c"+args[1]+" does not have a level "+level));
+					sender.sendMessage(Utils.convertString("&c"+args[1]+" does not have a level "+level));
 					return true;
 				}
 				CustomDisaster custom = new CustomDisaster(level, plugin, yaml);
@@ -561,15 +572,15 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.CUSTOM.getMetricsLabel());
 				return true;
 			}
-			sender.sendMessage(Utils.chat("&cNo disaster '"+args[1]+"' exists!"));
+			sender.sendMessage(Utils.convertString("&cNo disaster '"+args[1]+"' exists!"));
 			return true;
 		} else if (args[0].equalsIgnoreCase("mintimer")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length != 3) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters mintimer <world> <seconds>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters mintimer <world> <seconds>"));
 				return true;
 			}
 			WorldObject worldObj = null;
@@ -577,12 +588,12 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				if (sender instanceof Player)
 					worldObj = WorldObject.findWorldObject(((Player) sender).getWorld());
 				else {
-					sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.console_error_message")));
+					sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.console_error_message")));
 					return true;
 				}
 			else if (!args[1].equalsIgnoreCase("all_worlds")) {
 				if (Bukkit.getWorld(args[1]) == null) {
-					sender.sendMessage(Utils.chat("&cCould not find world '"+args[1]+"'"));
+					sender.sendMessage(Utils.convertString("&cCould not find world '"+args[1]+"'"));
 					return true;
 				}
 				worldObj = WorldObject.findWorldObject(Bukkit.getWorld(args[1]));
@@ -591,7 +602,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			try {
 				time = Integer.parseInt(args[2]);
 			} catch (NumberFormatException e) {
-				sender.sendMessage(Utils.chat("&cValue must be a valid integer!"));
+				sender.sendMessage(Utils.convertString("&cValue must be a valid integer!"));
 				return true;
 			}
 			if (args[1].equalsIgnoreCase("all_worlds")) {
@@ -604,44 +615,44 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					}
 				}
 				WorldObject.saveYamlFile(plugin);
-				sender.sendMessage(Utils.chat("&aChanged the minimum time to &b"+time+" &aon &dALL_WORLDS"
+				sender.sendMessage(Utils.convertString("&aChanged the minimum time to &b"+time+" &aon &dALL_WORLDS"
 						+ "\n&3&oKeep in mind that a worlds disaster difficulty level must be set to &f&lCUSTOM &3&ofor these changes to take effect."));
 				return true;
 			}
-			sender.sendMessage(Utils.chat("&aChanged the minimum time to &b"+time+" &aon &d'"+worldObj.getWorld().getName()+"'"));
+			sender.sendMessage(Utils.convertString("&aChanged the minimum time to &b"+time+" &aon &d'"+worldObj.getWorld().getName()+"'"));
 			worldObj.settings.replace("min_timer", time);
 			if (worldObj.difficulty == DifficultyLevel.CUSTOM) {
 				worldObj.timer = time;
 				tc.updateTimerList(worldObj.getWorld());
 			} else
-				sender.sendMessage(Utils.chat("&3&oThe worlds disaster difficulty level is set to "+worldObj.difficulty.getLabel()+" &3&oyou must change the worlds difficulty to &f&lCUSTOM &3&ofor these changes to take effect."));
+				sender.sendMessage(Utils.convertString("&3&oThe worlds disaster difficulty level is set to "+worldObj.difficulty.getLabel()+" &3&oyou must change the worlds difficulty to &f&lCUSTOM &3&ofor these changes to take effect."));
 			WorldObject.yamlFile.set(worldObj.getWorld().getName()+".general.min_timer", time);
 			WorldObject.saveYamlFile(plugin);
 			return true;
 		} else if (args[0].equalsIgnoreCase("reload")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length != 1) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters reload"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters reload"));
 				return true;
 			}
 			plugin.reloadConfig();
 			Utils.reloadPlugin(plugin);
-			sender.sendMessage(Utils.chat(Languages.prefix+"&aSuccessfully reloaded the config!\n&7&oAll disasters currently ongoing will not have their settings reloaded!"));
+			sender.sendMessage(Utils.convertString(Languages.prefix+"&aSuccessfully reloaded the config!\n&7&oAll disasters currently ongoing will not have their settings reloaded!"));
 			return true;
 		} else if (args[0].equalsIgnoreCase("help")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.help"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length > 2) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters help [disaster]"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters help [disaster]"));
 				return true;
 			}
 			if (args.length == 1) {
-				sender.sendMessage(Utils.chat("&3&l====================================\n&6&n&l"+Languages.langFile.getString("misc.prefix")+" Commands:"
+				sender.sendMessage(Utils.convertString("&3&l====================================\n&6&n&l"+Languages.langFile.getString("misc.prefix")+" Commands:"
 						+ "\n&6/disasters start <disaster> [level] [player] &3- "+Languages.langFile.getString("helpCommand.start")
 						+ "\n&6/disasters enable <disaster | randomdisasters | maxlevels | eventmsg> <world> &3- "+Languages.langFile.getString("helpCommand.enable")
 						+ "\n&6/disasters disable <disaster | randomdisasters | maxlevels | eventmsg> <world> &3- "+Languages.langFile.getString("helpCommand.disable")
@@ -660,45 +671,47 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				return true;
 			}
 			if (args[1].equalsIgnoreCase("sinkhole"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.SINKHOLE.getLabel()+" &bcreate massive holes in the ground pulling all mobs down with them, pools of lava form near the bottom.\n&7Damage: &4SEVERE\n&7Performance: &cLOW"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.SINKHOLE.getLabel()+" &bcreate massive holes in the ground pulling all mobs down with them, pools of lava form near the bottom.\n&7Damage: &4SEVERE\n&7Performance: &cLOW"));
 			else if (args[1].equalsIgnoreCase("earthquake"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.EARTHQUAKE.getLabel()+" &bcreate massive cracks in the world launching all nearby mobs around and forming pools of lava at the bottom. High levels create tremors.\n&7Damage: &4SEVERE\n&7Performance: &cLOW"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.EARTHQUAKE.getLabel()+" &bcreate massive cracks in the world launching all nearby mobs around and forming pools of lava at the bottom. High levels create tremors.\n&7Damage: &4SEVERE\n&7Performance: &cLOW"));
 			else if (args[1].equalsIgnoreCase("tornado"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.TORNADO.getLabel()+" &bform strong currents of wind that throw mobs and blocks all around as they are blown higher and higher. Tornados do not move very far.\n&7Damage: &cLARGE\n&7Performance: &cLOW"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.TORNADO.getLabel()+" &bform strong currents of wind that throw mobs and blocks all around as they are blown higher and higher. Tornados do not move very far.\n&7Damage: &cLARGE\n&7Performance: &cLOW"));
 			else if (args[1].equalsIgnoreCase("geyser"))
-				sender.sendMessage(Languages.prefix+Utils.chat("&9Water Geysers &bform on the overworld environment. Boiling hot water spurts that burn to the touch, fire resistance will protect you. &cLava Geysers &bform in nether environments. Spurts of blazing hot lava from the deepest pits of the nether.\n&7Damage: &eMINIMAL\n&7Performance: &eMEDIUM"));
+				sender.sendMessage(Languages.prefix+Utils.convertString("&9Water Geysers &bform on the overworld environment. Boiling hot water spurts that burn to the touch, fire resistance will protect you. &cLava Geysers &bform in nether environments. Spurts of blazing hot lava from the deepest pits of the nether.\n&7Damage: &eMINIMAL\n&7Performance: &eMEDIUM"));
 			else if (args[1].equalsIgnoreCase("cavein"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.CAVEIN.getLabel()+" &bunstable cave roofs collapse on players burying them alive. Form below surface in caves only and do massive damage.\n&7Damage: &eMINIMAL\n&7Performance: &eMEDIUM"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.CAVEIN.getLabel()+" &bunstable cave roofs collapse on players burying them alive. Form below surface in caves only and do massive damage.\n&7Damage: &eMINIMAL\n&7Performance: &eMEDIUM"));
 			else if (args[1].equalsIgnoreCase("tsunami"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.TSUNAMI.getLabel()+" &bmassive currents from the ocean sending waves of water to topple buildings and drown mobs.\n&7Damage: &eMINIMAL\n&7Performance: &cLOW"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.TSUNAMI.getLabel()+" &bmassive currents from the ocean sending waves of water to topple buildings and drown mobs.\n&7Damage: &eMINIMAL\n&7Performance: &cLOW"));
 			else if (args[1].equalsIgnoreCase("acidstorm"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.ACIDSTORM.getLabel()+" &bacidic rain pours from skies melting all metal equipment and tools, rain does not melt blocks.\n&7Damage: &eMINIMAL\n&7Performance: &aHIGH"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.ACIDSTORM.getLabel()+" &bacidic rain pours from skies melting all metal equipment and tools, rain does not melt blocks.\n&7Damage: &eMINIMAL\n&7Performance: &aHIGH"));
 			else if (args[1].equalsIgnoreCase("plague"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.PLAGUE.getLabel()+" &brandom mobs contract the black plague and will suffer severe symptoms leading to death, there is no cure and mobs can pass the plague to any others they come into contact with.\n&7Damage: &aMILD\n&7Performance: &aHIGH"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.PLAGUE.getLabel()+" &brandom mobs contract the black plague and will suffer severe symptoms leading to death, there is no cure and mobs can pass the plague to any others they come into contact with.\n&7Damage: &aMILD\n&7Performance: &aHIGH"));
 			else if (args[1].equalsIgnoreCase("blizzard"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.BLIZZARD.getLabel()+" &bonly occur in arctic environments and will freeze mobs solid, mobs can be thawed out of ice after weather clears up, full leather armor can protect you from the cold and strong fires can too.\n&7Damage: &aMILD\n&7Performance: &aHIGH"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.BLIZZARD.getLabel()+" &bonly occur in arctic environments and will freeze mobs solid, mobs can be thawed out of ice after weather clears up, full leather armor can protect you from the cold and strong fires can too.\n&7Damage: &aMILD\n&7Performance: &aHIGH"));
 			else if (args[1].equalsIgnoreCase("extremewinds"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.EXTREMEWINDS.getLabel()+" &bwildy strong winds that carry mobs and objects through the air, each levels force can be modified in the config.\n&7Damage: &aMILD\n&7Performance: &eMEDIUM"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.EXTREMEWINDS.getLabel()+" &bwildy strong winds that carry mobs and objects through the air, each levels force can be modified in the config.\n&7Damage: &aMILD\n&7Performance: &eMEDIUM"));
 			else if (args[1].equalsIgnoreCase("meteorshowers"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.METEORSHOWERS.getLabel()+" &bthe sky turns dark and massive meteors from space come collapsing down on players, there are 3 types of meteors and some can have valuable ores in them.\n&7Damage: &cLARGE\n&7Performance: &eMEDIUM"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.METEORSHOWERS.getLabel()+" &bthe sky turns dark and massive meteors from space come collapsing down on players, there are 3 types of meteors and some can have valuable ores in them.\n&7Damage: &cLARGE\n&7Performance: &eMEDIUM"));
 			else if (args[1].equalsIgnoreCase("sandstorm"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.SANDSTORM.getLabel()+" &bonly occur in desert environments, mobs are buffeted by sand blinding and withering them, dangerous mobs also appear in this violent weather and skulls can be found on the ground after these storms.\n&7Damage: &aMILD\n&7Performance: &aHIGH"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.SANDSTORM.getLabel()+" &bonly occur in desert environments, mobs are buffeted by sand blinding and withering them, dangerous mobs also appear in this violent weather and skulls can be found on the ground after these storms.\n&7Damage: &aMILD\n&7Performance: &aHIGH"));
 			else if (args[1].equalsIgnoreCase("soulstorm"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.SOULSTORM.getLabel()+" &bonly occur in nether environments, storms made of lost souls of the dead crying for help, vex's can spawn and attack violently.\n&7Damage: &aMILD\n&7Performance: &aHIGH"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.SOULSTORM.getLabel()+" &bonly occur in nether environments, storms made of lost souls of the dead crying for help, vex's can spawn and attack violently.\n&7Damage: &aMILD\n&7Performance: &aHIGH"));
 			else if (args[1].equalsIgnoreCase("endstorm"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.ENDSTORM.getLabel()+" &bonly occur in end environments, unstable rifts release dangerous creatures from the deepest depths of the void.\n&7Damage: &aMILD\n&7Performance: &aHIGH"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.ENDSTORM.getLabel()+" &bonly occur in end environments, unstable rifts release dangerous creatures from the deepest depths of the void.\n&7Damage: &aMILD\n&7Performance: &aHIGH"));
 			else if (args[1].equalsIgnoreCase("supernova"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.SUPERNOVA.getLabel()+" &bis an exploding star that causes colossal damage to the environment obliterating everything to dust.\n&7Damage: &4SEVERE\n&7Performance: &cLOW"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.SUPERNOVA.getLabel()+" &bis an exploding star that causes colossal damage to the environment obliterating everything to dust.\n&7Damage: &4SEVERE\n&7Performance: &cLOW"));
 			else if (args[1].equalsIgnoreCase("hurricane"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.HURRICANE.getLabel()+" &bis a violent wind storm that travels throughout the world wiping out all that go near them.\n&7Damage: &aMILD\n&7Performance: &eMEDIUM"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.HURRICANE.getLabel()+" &bis a violent wind storm that travels throughout the world wiping out all that go near them.\n&7Damage: &aMILD\n&7Performance: &eMEDIUM"));
 			else if (args[1].equalsIgnoreCase("purge"))
-				sender.sendMessage(Languages.prefix+Utils.chat(Disaster.PURGE.getLabel()+" &bmeans that a player is being targeted by a horde of mobs and must die or kill a certain amount for the horde to dissipate.\n&7Damage: &aLOW\n&7Performance: &aHIGH"));
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.PURGE.getLabel()+" &bmeans that a player is being targeted by a horde of mobs and must die or kill a certain amount for the horde to dissipate.\n&7Damage: &aLOW\n&7Performance: &aHIGH"));
+			else if (args[1].equalsIgnoreCase("solarstorm"))
+				sender.sendMessage(Languages.prefix+Utils.convertString(Disaster.SOLARSTORM.getLabel()+" &bis a very dangerous storm that rains fire and fire phantoms, all burning entities will be on fire for twice as long during solarstorms.\n&7Damage: &eMINIMAL\n&7Performance: &aHIGH"));
 			else
-				sender.sendMessage(Utils.chat("&cUsage: /disasters help [disaster]"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters help [disaster]"));
 			return true;
 		} else if (args[0].equalsIgnoreCase("summon")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.summon"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			Location loc = null;
@@ -707,31 +720,31 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			if (sender instanceof Player) {
 				if (otherTypes.contains(args[1])) {
 					if (args.length != 2 && args.length != 3) {
-						sender.sendMessage(Utils.chat("&cUsage: /disasters summon "+args[1]+" [size]"));
+						sender.sendMessage(Utils.convertString("&cUsage: /disasters summon "+args[1]+" [size]"));
 						return true;
 					}
 					if (args.length == 3)
 						try {
 							optionalData = Integer.parseInt(args[2]);
 						} catch (NumberFormatException e) {
-							sender.sendMessage(Utils.chat("&cSize must be a valid integer!"));
+							sender.sendMessage(Utils.convertString("&cSize must be a valid integer!"));
 							return true;
 						}
 					else
 						optionalData = 5;
 				} else if (args.length != 2 && args.length != 5) {
-					sender.sendMessage(Utils.chat("&cUsage: /disasters summon <entity> [x y z]"));
+					sender.sendMessage(Utils.convertString("&cUsage: /disasters summon <entity> [x y z]"));
 					return true;
 				}
 				loc = ((Player) sender).getLocation();
 			} else {
 				if (args.length < 6 || args.length > 7) {
-					sender.sendMessage(Utils.chat("&cUsage: /disasters summon <entity> <x y z> <world> [data]"));
+					sender.sendMessage(Utils.convertString("&cUsage: /disasters summon <entity> <x y z> <world> [data]"));
 					return true;
 				}
 				World world = Bukkit.getWorld(args[5]);
 				if (world == null) {
-					sender.sendMessage(Utils.chat("&cUsage: /disasters summon <entity> <x y z> <world> [data]"));
+					sender.sendMessage(Utils.convertString("&cUsage: /disasters summon <entity> <x y z> <world> [data]"));
 					return true;
 				}
 				loc = new Location(world, 0, 0, 0);
@@ -740,7 +753,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						try {
 							optionalData = Integer.parseInt(args[6]);
 						} catch (NumberFormatException e) {
-							sender.sendMessage(Utils.chat("&cSize must be a valid integer!"));
+							sender.sendMessage(Utils.convertString("&cSize must be a valid integer!"));
 							return true;
 						}
 					else
@@ -754,158 +767,163 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					loc.setZ(Double.valueOf(args[4])+0.5);
 				} catch (NumberFormatException e) {
 					if (sender instanceof Player)
-						sender.sendMessage(Utils.chat("&cUsage: /disasters summon <entity> [x y z]"));
+						sender.sendMessage(Utils.convertString("&cUsage: /disasters summon <entity> [x y z]"));
 					else
-						sender.sendMessage(Utils.chat("&cUsage: /disasters summon <entity> <x y z> <world>"));
+						sender.sendMessage(Utils.convertString("&cUsage: /disasters summon <entity> <x y z> <world>"));
 					return true;
 				}
 			if (args[1].equalsIgnoreCase("babyendtotem")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.WOLF);
-				handler.addEntity(new BabyEndTotem(entity, plugin.dataFile, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &5End Totem"));
+				handler.addEntity(new BabyEndTotem(entity, plugin, rand));
+				sender.sendMessage(Utils.convertString("&fSummoned &5End Totem"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("endtotem")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.WITHER_SKELETON);
 				entity.getEquipment().setItemInMainHand(new ItemStack(Material.AIR));
 				handler.addEntity(new EndTotem(entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &5End Totem"));
+				sender.sendMessage(Utils.convertString("&fSummoned &5End Totem"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("endworm")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				handler.addEntity(new EndWorm(entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &5End Worm"));
+				sender.sendMessage(Utils.convertString("&fSummoned &5End Worm"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("voidguardian")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				handler.addEntity(new VoidGuardian(entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &5Void Guardian"));
+				sender.sendMessage(Utils.convertString("&fSummoned &5Void Guardian"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("voidarcher")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SKELETON);
 				handler.addEntity(new VoidArcher(entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &5Void Archer"));
+				sender.sendMessage(Utils.convertString("&fSummoned &5Void Archer"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("voidstalker")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.PHANTOM);
 				handler.addEntity(new VoidStalker(entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &5Void Stalker"));
+				sender.sendMessage(Utils.convertString("&fSummoned &5Void Stalker"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("lostsoul")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.VEX);
 				handler.addEntity(new LostSoul(entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &3Lost Soul"));
+				sender.sendMessage(Utils.convertString("&fSummoned &3Lost Soul"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("ancientskeleton")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SKELETON);
 				handler.addEntity(new AncientSkeleton(entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &6Ancient Skeleton"));
+				sender.sendMessage(Utils.convertString("&fSummoned &6Ancient Skeleton"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("ancientmummy")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.HUSK);
 				handler.addEntity(new AncientMummy(entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &6Ancient Mummy"));
+				sender.sendMessage(Utils.convertString("&fSummoned &6Ancient Mummy"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("tunneller")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				handler.addEntity(new TunnellerZombie((Zombie) entity, null, plugin));
-				sender.sendMessage(Utils.chat("&fSummoned &7Tunneller"));
+				sender.sendMessage(Utils.convertString("&fSummoned &7Tunneller"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("primedcreeper")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.CREEPER);
 				handler.addEntity(new PrimedCreeper(entity, plugin));
-				sender.sendMessage(Utils.chat("&fSummoned &7PrimedCreeper"));
+				sender.sendMessage(Utils.convertString("&fSummoned &7PrimedCreeper"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("skeletonknight")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SKELETON);
 				handler.addEntity(new SkeletonKnight((Skeleton) entity, plugin));
-				sender.sendMessage(Utils.chat("&fSummoned &7SkeletonKnight"));
+				sender.sendMessage(Utils.convertString("&fSummoned &7SkeletonKnight"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("darkmage")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				entity.getEquipment().setHelmet(new ItemStack(Material.DIAMOND_HELMET));
 				handler.addEntity(new DarkMage(entity, plugin));
-				sender.sendMessage(Utils.chat("&fSummoned &7Dark Mage"));
+				sender.sendMessage(Utils.convertString("&fSummoned &7Dark Mage"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("soulreaper")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SKELETON);
 				handler.addEntity(new SoulReaper(entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &3Soul Reaper"));
+				sender.sendMessage(Utils.convertString("&fSummoned &3Soul Reaper"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("normalMeteor")) {
 				Location spawn = new Location(loc.getWorld(), loc.getBlockX()+(rand.nextInt(100)-50), Math.min(loc.getBlockY()+70, 320), loc.getBlockZ()+(rand.nextInt(100)-50));
 				if (optionalData == null)
 					optionalData = 5;
 				MeteorShower.spawnMeteor(1, spawn, loc, plugin, (int) optionalData);
-				sender.sendMessage(Utils.chat("&fSummoned &7Normal Meteor"));
+				sender.sendMessage(Utils.convertString("&fSummoned &7Normal Meteor"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("explodingMeteor")) {
 				Location spawn = new Location(loc.getWorld(), loc.getBlockX()+(rand.nextInt(100)-50), Math.min(loc.getBlockY()+70, 320), loc.getBlockZ()+(rand.nextInt(100)-50));
 				if (optionalData == null)
 					optionalData = 5;
 				MeteorShower.spawnMeteor(2, spawn, loc, plugin, (int) optionalData);
-				sender.sendMessage(Utils.chat("&fSummoned &cExploding Meteor"));
+				sender.sendMessage(Utils.convertString("&fSummoned &cExploding Meteor"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("splittingMeteor")) {
 				Location spawn = new Location(loc.getWorld(), loc.getBlockX()+(rand.nextInt(100)-50), Math.min(loc.getBlockY()+70, 320), loc.getBlockZ()+(rand.nextInt(100)-50));
 				if (optionalData == null)
 					optionalData = 5;
 				MeteorShower.spawnMeteor(3, spawn, loc, plugin, (int) optionalData);
-				sender.sendMessage(Utils.chat("&fSummoned Splitting Meteor"));
+				sender.sendMessage(Utils.convertString("&fSummoned Splitting Meteor"));
+				return true;
+			} else if (args[1].equalsIgnoreCase("firephantom")) {
+				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.PHANTOM);
+				handler.addEntity(new FirePhantom(entity, plugin, rand));
+				sender.sendMessage(Utils.convertString("&fSummoned &cFire Phantom"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("swampbeast")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				handler.addEntity(new SwampBeast(entity, plugin));
-				sender.sendMessage(Utils.chat("&fSummoned &7Swamp Beast"));
+				sender.sendMessage(Utils.convertString("&fSummoned &7Swamp Beast"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("zombieknight")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				handler.addEntity(new ZombieKnight(entity, plugin));
-				sender.sendMessage(Utils.chat("&fSummoned &7Zombie Knight"));
+				sender.sendMessage(Utils.convertString("&fSummoned &7Zombie Knight"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("shadowleech")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				handler.addEntity(new ShadowLeech((Zombie) entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &7Shadow Leech"));
+				sender.sendMessage(Utils.convertString("&fSummoned &7Shadow Leech"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("elf")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				handler.addEntity(new Elf((Zombie) entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &cElf"));
+				sender.sendMessage(Utils.convertString("&fSummoned &cElf"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("frosty")) {
-				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SNOWMAN);
+				Mob entity = (Mob) loc.getWorld().spawn(loc, Snowman.class);
 				handler.addEntity(new Frosty((Snowman) entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &cFrosty"));
+				sender.sendMessage(Utils.convertString("&fSummoned &cFrosty"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("grinch")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				handler.addEntity(new Grinch(entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &cGrinch"));
+				sender.sendMessage(Utils.convertString("&fSummoned &cGrinch"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("santa")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				handler.addEntity(new Santa((Zombie) entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &cSanta"));
+				sender.sendMessage(Utils.convertString("&fSummoned &cSanta"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("rampaginggoat")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.GOAT);
 				handler.addEntity(new RampagingGoat((Goat) entity, plugin));
-				sender.sendMessage(Utils.chat("&fSummoned &aRampaging Goat"));
+				sender.sendMessage(Utils.convertString("&fSummoned &aRampaging Goat"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("easterbunny")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.RABBIT);
 				handler.addEntity(new EasterBunny((Rabbit) entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &aEaster Bunny"));
+				sender.sendMessage(Utils.convertString("&fSummoned &aEaster Bunny"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("killerchicken")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				handler.addEntity(new KillerChicken((Zombie) entity, plugin));
-				sender.sendMessage(Utils.chat("&fSummoned &aKiller Chicken"));
+				sender.sendMessage(Utils.convertString("&fSummoned &aKiller Chicken"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("scarecrow")) {
 				Zombie entity = (Zombie) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE, false);
 				handler.addEntity(new Scarecrow((Zombie) entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &6Scarecrow"));
+				sender.sendMessage(Utils.convertString("&fSummoned &6Scarecrow"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("ghoul")) {
 				if (!(sender instanceof Player)) {
@@ -914,38 +932,38 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				}
 				Block block = ((Player) sender).getTargetBlockExact(5, FluidCollisionMode.NEVER);
 				if (block == null || !block.getType().isSolid()) {
-					sender.sendMessage(Utils.chat("&cCan only summon on solid block! Please look at a solid block when running this command!"));
+					sender.sendMessage(Utils.convertString("&cCan only summon on solid block! Please look at a solid block when running this command!"));
 					return true;
 				}
 				Mob entity = (Mob) loc.getWorld().spawnEntity(block.getRelative(BlockFace.DOWN).getLocation(), EntityType.ZOMBIE, false);
 				handler.addEntity(new Ghoul((Zombie) entity, block, plugin, true));
-				sender.sendMessage(Utils.chat("&fSummoned &6Ghoul"));
+				sender.sendMessage(Utils.convertString("&fSummoned &6Ghoul"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("vampire")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.EVOKER, false);
 				handler.addEntity(new Vampire((Mob) entity, plugin));
-				sender.sendMessage(Utils.chat("&fSummoned &6Vampire"));
+				sender.sendMessage(Utils.convertString("&fSummoned &6Vampire"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("psyco")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.SKELETON, false);
 				handler.addEntity(new Psyco((Mob) entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &6Psyco Killer"));
+				sender.sendMessage(Utils.convertString("&fSummoned &6Psyco Killer"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("pumpkinking")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.WITHER_SKELETON, false);
 				handler.addEntity(new PumpkinKing((Mob) entity, plugin, rand));
-				sender.sendMessage(Utils.chat("&fSummoned &6Pumpkin King"));
+				sender.sendMessage(Utils.convertString("&fSummoned &6Pumpkin King"));
 				return true;
 			} else
-				sender.sendMessage(Utils.chat("&c'"+args[1]+"' is not a valid mob!"));
+				sender.sendMessage(Utils.convertString("&c'"+args[1]+"' is not a valid mob!"));
 			return true;
 		} else if (args[0].equalsIgnoreCase("give")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.give"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length < 2 || args.length > 3) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters give <item> [player]"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters give <item> [player]"));
 				return true;
 			}
 			Player p = null;
@@ -954,33 +972,33 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			else if (args.length == 3) {
 				p = Bukkit.getPlayer(args[2]);
 				if (p == null) {
-					sender.sendMessage(Utils.chat("&cCould not find player '"+args[2]+"'"));
+					sender.sendMessage(Utils.convertString("&cCould not find player '"+args[2]+"'"));
 					return true;
 				}
 			} else {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters give <item> <player>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters give <item> <player>"));
 				return true;
 			}
 			if (p.getInventory().firstEmpty() == -1) {
-				sender.sendMessage(Utils.chat("&cTargets inventory is full!"));
+				sender.sendMessage(Utils.convertString("&cTargets inventory is full!"));
 				return true;
 			}
 			if (!ItemsHandler.allItems.keySet().contains(args[1].toLowerCase())) {
-				sender.sendMessage(Utils.chat("&c'"+args[1]+"' is not a valid item!"));
+				sender.sendMessage(Utils.convertString("&c'"+args[1]+"' is not a valid item!"));
 				return true;
 			}
 			ItemStack item = ItemsHandler.allItems.get(args[1].toLowerCase());
 			p.getInventory().addItem(item);
-			sender.sendMessage(Utils.chat("&aGave 1 ["+item.getItemMeta().getDisplayName()+"&a] to "+p.getName()));
+			sender.sendMessage(Utils.convertString("&aGave 1 ["+item.getItemMeta().getDisplayName()+"&a] to "+p.getName()));
 			p.playSound(p.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1, 1);
 			return true;
 		} else if (args[0].equalsIgnoreCase("difficulty")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length != 3) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters difficulty <world> <difficulty>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters difficulty <world> <difficulty>"));
 				return true;
 			}
 			WorldObject worldObj = null;
@@ -988,19 +1006,19 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				if (sender instanceof Player)
 					worldObj = WorldObject.findWorldObject(((Player) sender).getWorld());
 				else {
-					sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.console_error_message")));
+					sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.console_error_message")));
 					return true;
 				}
 			else if (!args[1].equalsIgnoreCase("all_worlds")) {
 				if (Bukkit.getWorld(args[1]) == null) {
-					sender.sendMessage(Utils.chat("&cCould not find world '"+args[1]+"'"));
+					sender.sendMessage(Utils.convertString("&cCould not find world '"+args[1]+"'"));
 					return true;
 				}
 				worldObj = WorldObject.findWorldObject(Bukkit.getWorld(args[1]));
 			}
 			DifficultyLevel diff = DifficultyLevel.forName(args[2].toUpperCase());
 			if (diff == null) {
-				sender.sendMessage(Utils.chat("&cThe difficulty "+args[2]+" does not exist!"));
+				sender.sendMessage(Utils.convertString("&cThe difficulty "+args[2]+" does not exist!"));
 				return true;
 			}
 			String message = "";
@@ -1011,21 +1029,21 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				}
 				WorldObject.saveYamlFile(plugin);
 				if (diff != DifficultyLevel.CUSTOM) {
-					message = Utils.chat(CoreListener.worldMessage.replace("%difficulty%", diff.getLabel()).replace("%world%", "ALL_WORLDS")
+					message = Utils.convertString(CoreListener.worldMessage.replace("%difficulty%", diff.getLabel()).replace("%world%", "ALL_WORLDS")
 							+ "\n&3- "+Languages.langFile.getString("internal.min_timer")+": &6"+(diff.getTimer())+" &7/ &3"+Languages.langFile.getString("internal.offset")+": &6"+(diff.getOffset())
 							+ "\n&3- "+Languages.langFile.getString("internal.levelWord")+": &a"+(diff.getTable()[0])+"% &2"+(diff.getTable()[1])+"% &b"+(diff.getTable()[2])+"% &e"+(diff.getTable()[3])+"% &c"+(diff.getTable()[4])+"% &4"+(diff.getTable()[5])+"%");
 					for (Player p : Bukkit.getOnlinePlayers())
 						if (p.hasPermission("deadlydisasters.difficultyNotify"))
 							p.sendMessage(message);
 				} else {
-					message = Utils.chat(CoreListener.worldMessage.replace("%difficulty%", diff.getLabel()).replace("%world%", "ALL_WORLDS"));
+					message = Utils.convertString(CoreListener.worldMessage.replace("%difficulty%", diff.getLabel()).replace("%world%", "ALL_WORLDS"));
 					for (Player p : Bukkit.getOnlinePlayers())
 						if (p.hasPermission("deadlydisasters.difficultyNotify")) {
 							WorldObject obj = WorldObject.findWorldObject(p.getWorld());
-							String tf = Utils.chat("&c&l"+Languages.langFile.getString("internal.offWord"));
+							String tf = Utils.convertString("&c&l"+Languages.langFile.getString("internal.offWord"));
 							if (obj.naturalAllowed)
-								tf = Utils.chat("&a&l"+Languages.langFile.getString("internal.onWord"));
-							p.sendMessage(message+Utils.chat("\n&3- "+Languages.langFile.getString("internal.random_disasters")+": "+tf
+								tf = Utils.convertString("&a&l"+Languages.langFile.getString("internal.onWord"));
+							p.sendMessage(message+Utils.convertString("\n&3- "+Languages.langFile.getString("internal.random_disasters")+": "+tf
 									+ "\n&3- "+Languages.langFile.getString("internal.min_timer")+": &6"+(obj.timer)+" &7 &3"+Languages.langFile.getString("internal.offset")+": &6"+(obj.offset)
 									+ "\n&3- "+Languages.langFile.getString("internal.levelWord")+": &a"+(obj.table[0])+"% &2"+(obj.table[1])+"% &b"+(obj.table[2])+"% &e"+(obj.table[3])+"% &c"+(obj.table[4])+"% &4"+(obj.table[5])+"%"));
 							p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3F, 1);
@@ -1036,10 +1054,10 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			WorldObject.changeDifficulty(worldObj, diff);
 			WorldObject.saveYamlFile(plugin);
 			tc.updateTimerList(worldObj.getWorld());
-			String tf = Utils.chat("&c&l"+Languages.langFile.getString("internal.offWord"));
+			String tf = Utils.convertString("&c&l"+Languages.langFile.getString("internal.offWord"));
 			if (worldObj.naturalAllowed)
-				tf = Utils.chat("&a&l"+Languages.langFile.getString("internal.onWord"));
-			message = Utils.chat(CoreListener.worldMessage.replace("%difficulty%", diff.getLabel()).replace("%world%", worldObj.getWorld().getName())
+				tf = Utils.convertString("&a&l"+Languages.langFile.getString("internal.onWord"));
+			message = Utils.convertString(CoreListener.worldMessage.replace("%difficulty%", diff.getLabel()).replace("%world%", worldObj.getWorld().getName())
 					+ "\n&3- "+Languages.langFile.getString("internal.random_disasters")+": "+tf
 					+ "\n&3- "+Languages.langFile.getString("internal.min_timer")+": &6"+(worldObj.timer)+" &7/ &3"+Languages.langFile.getString("internal.offset")+": &6"+(worldObj.offset)
 					+ "\n&3- "+Languages.langFile.getString("internal.levelWord")+": &a"+(worldObj.table[0])+"% &2"+(worldObj.table[1])+"% &b"+(worldObj.table[2])+"% &e"+(worldObj.table[3])+"% &c"+(worldObj.table[4])+"% &4"+(worldObj.table[5])+"%");
@@ -1051,11 +1069,11 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			return true;
 		} else if (args[0].equalsIgnoreCase("language")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length != 2) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters language <language>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters language <language>"));
 				return true;
 			}
 			Player[] p = new Player[1];
@@ -1068,8 +1086,8 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						Languages.changeConfigLang(plugin);
 						plugin.dataFile.set("data.lang", 0);
 						plugin.saveDataFile();
-						sender.sendMessage(Languages.prefix+Utils.chat("&bLanguage translations have been set to &eEnglish"));
-						Main.consoleSender.sendMessage(Utils.chat(Languages.prefix+"&bLanguage translations have been set to &eEnglish"));
+						sender.sendMessage(Languages.prefix+Utils.convertString("&bLanguage translations have been set to &eEnglish"));
+						Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&bLanguage translations have been set to &eEnglish"));
 					}
 				});
 			} else if (args[1].equalsIgnoreCase("中文")) {
@@ -1079,10 +1097,10 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						Languages.changeConfigLang(plugin);
 						plugin.dataFile.set("data.lang", 1);
 						plugin.saveDataFile();
-						sender.sendMessage(Languages.prefix+Utils.chat("&b插件语言已设置为&e中文。 请记住，并非所有内容都会被翻译!"
+						sender.sendMessage(Languages.prefix+Utils.convertString("&b插件语言已设置为&e中文。 请记住，并非所有内容都会被翻译!"
 								+ "\n&3- 翻译者 &dKPC123"
 								+ "\n&3- https://www.mcbbs.net/thread-1288279-1-1.html"));
-						Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&b插件语言已设置为&e中文。 请记住，并非所有内容都会被翻译!&r"
+						Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&b插件语言已设置为&e中文。 请记住，并非所有内容都会被翻译!&r"
 								+ "\n&3- 翻译者 &dKPC123&r"
 								+ "\n&3- https://www.mcbbs.net/thread-1288279-1-1.html"));
 					}
@@ -1094,9 +1112,9 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						Languages.changeConfigLang(plugin);
 						plugin.dataFile.set("data.lang", 2);
 						plugin.saveDataFile();
-						sender.sendMessage(Languages.prefix+Utils.chat("&bЯзык был изменен на русский. Обратите внимание на то, что не всё будет переведено!"
+						sender.sendMessage(Languages.prefix+Utils.convertString("&bЯзык был изменен на русский. Обратите внимание на то, что не всё будет переведено!"
 								+ "\n&3- Перевод от: ZBLL/Roughly_"));
-						Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&bЯзык был изменен на русский. Обратите внимание на то, что не всё будет переведено!"
+						Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&bЯзык был изменен на русский. Обратите внимание на то, что не всё будет переведено!"
 								+ "\n&3- Перевод от: ZBLL/Roughly_"));
 					}
 				});
@@ -1107,9 +1125,9 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						Languages.changeConfigLang(plugin);
 						plugin.dataFile.set("data.lang", 3);
 						plugin.saveDataFile();
-						sender.sendMessage(Languages.prefix+Utils.chat("&bJazyk překladu byl nastaven do češtiny. Mějte na paměti, že ne všechno bude přeloženo!"
+						sender.sendMessage(Languages.prefix+Utils.convertString("&bJazyk překladu byl nastaven do češtiny. Mějte na paměti, že ne všechno bude přeloženo!"
 								+ "\n&3- Přeložil: &dFreddy1CZ1"));
-						Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&bJazyk překladu byl nastaven do češtiny. Mějte na paměti, že ne všechno bude přeloženo!"
+						Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&bJazyk překladu byl nastaven do češtiny. Mějte na paměti, že ne všechno bude přeloženo!"
 								+ "\n&3- Přeložil: &dFreddy1CZ1"));
 					}
 				});
@@ -1120,39 +1138,39 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						Languages.changeConfigLang(plugin);
 						plugin.dataFile.set("data.lang", 4);
 						plugin.saveDataFile();
-						sender.sendMessage(Languages.prefix+Utils.chat("&bTranslations have been set to French. Keep in mind that not everything will be translated!"
+						sender.sendMessage(Languages.prefix+Utils.convertString("&bTranslations have been set to French. Keep in mind that not everything will be translated!"
 								+ "\n&3- Translations by: &dArryl"));
-						Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&bTranslations have been set to French. Keep in mind that not everything will be translated!"
+						Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&bTranslations have been set to French. Keep in mind that not everything will be translated!"
 								+ "\n&3- Translations by: &dArryl"));
 					}
 				});
 			} else {
-				sender.sendMessage(Utils.chat("&c'"+args[1]+"' is not an applicable language!"));
+				sender.sendMessage(Utils.convertString("&c'"+args[1]+"' is not an applicable language!"));
 				return true;
 			}
 			if (plugin.dataFile.getBoolean("data.firstStart")) {
 				sender.sendMessage(Languages.prefix+Languages.firstStart
-						+ "\n"+Utils.chat("&c"+Languages.langFile.getString("internal.allowFlight")));
+						+ "\n"+Utils.convertString("&c"+Languages.langFile.getString("internal.allowFlight")));
 			}
 			return true;
 		} else if (args[0].equalsIgnoreCase("catalog")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			((Player) sender).openInventory(catalog.featuredPage);
 			return true;
 		} else if (args[0].equalsIgnoreCase("whitelist")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.whitelist"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length != 4) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters whitelist <add|remove> <player> <world>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters whitelist <add|remove> <player> <world>"));
 				return true;
 			}
 			if (Bukkit.getPlayer(args[2]) == null) {
-				sender.sendMessage(Utils.chat("&cCould not find player '"+args[2]+"'"));
+				sender.sendMessage(Utils.convertString("&cCould not find player '"+args[2]+"'"));
 				return true;
 			}
 			WorldObject worldObj = null;
@@ -1160,12 +1178,12 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				if (sender instanceof Player)
 					worldObj = WorldObject.findWorldObject(((Player) sender).getWorld());
 				else {
-					sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.console_error_message")));
+					sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.console_error_message")));
 					return true;
 				}
 			else if (!args[3].equalsIgnoreCase("all_worlds")) {
 				if (Bukkit.getWorld(args[3]) == null) {
-					sender.sendMessage(Utils.chat("&cCould not find world '"+args[3]+"'"));
+					sender.sendMessage(Utils.convertString("&cCould not find world '"+args[3]+"'"));
 					return true;
 				}
 				worldObj = WorldObject.findWorldObject(Bukkit.getWorld(args[3]));
@@ -1180,7 +1198,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						WorldObject.yamlFile.set(wo.getWorld().getName()+".whitelist", players);
 					}
 					WorldObject.saveYamlFile(plugin);
-					sender.sendMessage(Utils.chat("&aAdded &6'"+args[2]+"' &bto the whitelist for &dALL_WORLDS"));
+					sender.sendMessage(Utils.convertString("&aAdded &6'"+args[2]+"' &bto the whitelist for &dALL_WORLDS"));
 					return true;
 				}
 				worldObj.whitelist.add(uuid);
@@ -1188,7 +1206,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				players.add(uuid.toString());
 				WorldObject.yamlFile.set(worldObj.getWorld().getName()+".whitelist", players);
 				WorldObject.saveYamlFile(plugin);
-				sender.sendMessage(Utils.chat("&aAdded &6'"+args[2]+"' &bto the whitelist for &d"+worldObj.getWorld().getName()));
+				sender.sendMessage(Utils.convertString("&aAdded &6'"+args[2]+"' &bto the whitelist for &d"+worldObj.getWorld().getName()));
 				return true;
 			} else if (args[1].equalsIgnoreCase("remove")) {
 				if (args[3].equalsIgnoreCase("all_worlds")) {
@@ -1199,7 +1217,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						WorldObject.yamlFile.set(wo.getWorld().getName()+".whitelist", players);
 					}
 					WorldObject.saveYamlFile(plugin);
-					sender.sendMessage(Utils.chat("&cRemoved &6'"+args[2]+"' &bto the whitelist for &dALL_WORLDS"));
+					sender.sendMessage(Utils.convertString("&cRemoved &6'"+args[2]+"' &bto the whitelist for &dALL_WORLDS"));
 					return true;
 				}
 				worldObj.whitelist.remove(uuid);
@@ -1207,19 +1225,19 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				players.remove(uuid.toString());
 				WorldObject.yamlFile.set(worldObj.getWorld().getName()+".whitelist", players);
 				WorldObject.saveYamlFile(plugin);
-				sender.sendMessage(Utils.chat("&cRemoved &6'"+args[2]+"' &bto the whitelist for &d"+worldObj.getWorld().getName()));
+				sender.sendMessage(Utils.convertString("&cRemoved &6'"+args[2]+"' &bto the whitelist for &d"+worldObj.getWorld().getName()));
 				return true;
 			} else {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters whitelist <add|remove> <player> <world>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters whitelist <add|remove> <player> <world>"));
 				return true;
 			}
 		} else if (args[0].equalsIgnoreCase("listplayer")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.listplayer"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length != 2) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters listplayer <player>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters listplayer <player>"));
 				return true;
 			}
 			plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
@@ -1232,7 +1250,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					if (player == null) {
 						OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(args[1]);
 						if (offlinePlayer == null) {
-							sender.sendMessage(Utils.chat("&cPlayer '"+args[1]+"' does not exist!"));
+							sender.sendMessage(Utils.convertString("&cPlayer '"+args[1]+"' does not exist!"));
 							return;
 						}
 						uuid = offlinePlayer.getUniqueId();
@@ -1241,87 +1259,87 @@ public class Disasters implements CommandExecutor,TabCompleter {
 						uuid = player.getUniqueId();
 						name = player.getName();
 					}
-					StringBuilder string = new StringBuilder(Languages.prefix+Utils.chat("&bCurrent timer values for &e"+name));
+					StringBuilder string = new StringBuilder(Languages.prefix+Utils.convertString("&bCurrent timer values for &e"+name));
 					if (Bukkit.getPlayer(uuid) != null)
 						for (UUID worldUUID : tc.timer.keySet())
 							if (Bukkit.getWorld(worldUUID).equals(Bukkit.getPlayer(uuid).getWorld())) {
-								string.append(Utils.chat("\n&d"+Bukkit.getWorld(worldUUID).getName()+" &7: &c"+tc.timer.get(worldUUID).get(uuid)));
+								string.append(Utils.convertString("\n&d"+Bukkit.getWorld(worldUUID).getName()+" &7: &c"+tc.timer.get(worldUUID).get(uuid)));
 								if (DisasterEvent.countdownMap.containsKey(uuid))
 									for (Entry<DisasterEvent, Integer> entry : DisasterEvent.countdownMap.get(uuid).entrySet())
-										string.append(Utils.chat("\n  &7- "+entry.getKey().type.getLabel()+" &7(&"+Utils.getLevelChar(entry.getKey().level)+entry.getKey().level+"&7) : &e"+entry.getValue()+"&9s"));
+										string.append(Utils.convertString("\n  &7- "+entry.getKey().type.getLabel()+" &7(&"+Utils.getLevelChar(entry.getKey().level)+entry.getKey().level+"&7) : &e"+entry.getValue()+"&9s"));
 							} else
-								string.append(Utils.chat("\n&d"+Bukkit.getWorld(worldUUID).getName()+" &7: &a"+tc.timer.get(worldUUID).get(uuid)));
+								string.append(Utils.convertString("\n&d"+Bukkit.getWorld(worldUUID).getName()+" &7: &a"+tc.timer.get(worldUUID).get(uuid)));
 					else
 						for (UUID worldUUID : tc.timer.keySet())
 							if (plugin.dataFile.contains("timers."+worldUUID+"."+uuid))
-								string.append(Utils.chat("\n&d"+Bukkit.getWorld(worldUUID).getName()+" &7: &a"+plugin.dataFile.getInt("timers."+worldUUID+"."+uuid)));
+								string.append(Utils.convertString("\n&d"+Bukkit.getWorld(worldUUID).getName()+" &7: &a"+plugin.dataFile.getInt("timers."+worldUUID+"."+uuid)));
 							else
-								string.append(Utils.chat("\n&d"+Bukkit.getWorld(worldUUID).getName()+" &7: &a-"));
+								string.append(Utils.convertString("\n&d"+Bukkit.getWorld(worldUUID).getName()+" &7: &a-"));
 					sender.sendMessage(string.toString());
 				}
 			});
 			return true;
 		} else if (args[0].equalsIgnoreCase("config")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length != 3 && !args[1].equalsIgnoreCase("view")) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters config <save|swap|delete|view> <template>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters config <save|swap|delete|view> <template>"));
 				return true;
 			}
 			if (args[1].equalsIgnoreCase("save")) {
 				if (plugin.cfgSwapper.configTemplates.contains(args[2])) {
-					sender.sendMessage(Utils.chat("&cA config template with the name '"+args[2]+"' already exists!"));
+					sender.sendMessage(Utils.convertString("&cA config template with the name '"+args[2]+"' already exists!"));
 					return true;
 				}
 				plugin.cfgSwapper.saveConfig(args[2]);
-				sender.sendMessage(Utils.chat("&aSaved new config template &b'"+args[2]+"' &asuccessfully!"));
+				sender.sendMessage(Utils.convertString("&aSaved new config template &b'"+args[2]+"' &asuccessfully!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("swap")) {
 				if (!plugin.cfgSwapper.configTemplates.contains(args[2])) {
-					sender.sendMessage(Utils.chat("&cThere is no config template with the name '"+args[2]+"'!"));
+					sender.sendMessage(Utils.convertString("&cThere is no config template with the name '"+args[2]+"'!"));
 					return true;
 				}
 				if (plugin.cfgSwapper.currentConfig.equals(args[2])) {
-					sender.sendMessage(Utils.chat("&cTemplate '"+args[2]+"' is already selected!"));
+					sender.sendMessage(Utils.convertString("&cTemplate '"+args[2]+"' is already selected!"));
 					return true;
 				}
 				if (plugin.cfgSwapper.swapConfigs(args[2]))
-					sender.sendMessage(Utils.chat("&aSwapped config to template &b'"+args[2]+"' &asuccessfully!"));
+					sender.sendMessage(Utils.convertString("&aSwapped config to template &b'"+args[2]+"' &asuccessfully!"));
 				else
-					sender.sendMessage(Utils.chat("&cCould not swap to template '"+args[2]+"'!"));
+					sender.sendMessage(Utils.convertString("&cCould not swap to template '"+args[2]+"'!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("delete")) {
 				if (!plugin.cfgSwapper.configTemplates.contains(args[2])) {
-					sender.sendMessage(Utils.chat("&cThere is no config template with the name '"+args[2]+"'!"));
+					sender.sendMessage(Utils.convertString("&cThere is no config template with the name '"+args[2]+"'!"));
 					return true;
 				}
 				if (plugin.cfgSwapper.deleteConfig(args[2]))
-					sender.sendMessage(Utils.chat("&aRemoved config template &b'"+args[2]+"' &asuccessfully!"));
+					sender.sendMessage(Utils.convertString("&aRemoved config template &b'"+args[2]+"' &asuccessfully!"));
 				else
-					sender.sendMessage(Utils.chat("&cCould not delete template '"+args[2]+"'!"));
+					sender.sendMessage(Utils.convertString("&cCould not delete template '"+args[2]+"'!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("view")) {
-				StringBuilder builder = new StringBuilder(Languages.prefix+Utils.chat("&bList of config templates:"));
+				StringBuilder builder = new StringBuilder(Languages.prefix+Utils.convertString("&bList of config templates:"));
 				for (String s : plugin.cfgSwapper.configTemplates)
 					if (s.equals(plugin.cfgSwapper.currentConfig))
-						builder.append(Utils.chat("\n&3- &a"+s+" &7&o(Current)"));
+						builder.append(Utils.convertString("\n&3- &a"+s+" &7&o(Current)"));
 					else
-						builder.append(Utils.chat("\n&3- &e"+s));
+						builder.append(Utils.convertString("\n&3- &e"+s));
 				sender.sendMessage(builder.toString());
 				return true;
 			} else {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters config <save|swap|delete> <template>"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters config <save|swap|delete> <template>"));
 				return true;
 			}
 		} else if (args[0].equalsIgnoreCase("favor")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length != 2 || Disaster.forName(args[1].toUpperCase()) == null) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters favor <disaster>\nVote also cannot be a custom disaster!"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters favor <disaster>\nVote also cannot be a custom disaster!"));
 				return true;
 			}
 			Disaster disaster = Disaster.valueOf(args[1].toUpperCase());
@@ -1331,11 +1349,11 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			return true;
 		} else if (args[0].equalsIgnoreCase("dislike")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.modify"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length != 2 || Disaster.forName(args[1].toUpperCase()) == null) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters dislike <disaster>\nVote also cannot be a custom disaster!"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters dislike <disaster>\nVote also cannot be a custom disaster!"));
 				return true;
 			}
 			Disaster disaster = Disaster.valueOf(args[1].toUpperCase());
@@ -1345,38 +1363,38 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			return true;
 		} else if (args[0].equalsIgnoreCase("event")) {
 			if (!(sender instanceof Player)) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.console_error_message")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.console_error_message")));
 				return true;
 			}
 			if (!(((Player) sender).hasPermission("deadlydisasters.event"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (!plugin.eventHandler.isEnabled) {
-				sender.sendMessage(Utils.chat("&cThere is no ongoing event at this time!"));
+				sender.sendMessage(Utils.convertString("&cThere is no ongoing event at this time!"));
 				return true;
 			}
 			plugin.eventHandler.openGUI((Player) sender);
 			return true;
 		} else if (args[0].equalsIgnoreCase("entities")) {
 			if (sender instanceof Player && !(((Player) sender).hasPermission("deadlydisasters.entities"))) {
-				sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+				sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 				return true;
 			}
 			if (args.length < 2) {
-				sender.sendMessage(Utils.chat("&cUsage: /disasters entities <list|kill> [type]"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters entities <list|kill> [type]"));
 				return true;
 			}
 			if (args[1].equalsIgnoreCase("list")) {
 				if (args.length >= 3) {
 					CustomEntityType type = CustomEntityType.getCustomEntityType(args[2].toLowerCase());
 					if (type == null) {
-						sender.sendMessage(Utils.chat("&cNo such species type '"+args[2]+"'"));
+						sender.sendMessage(Utils.convertString("&cNo such species type '"+args[2]+"'"));
 						return true;
 					}
-					sender.sendMessage(Languages.prefix+Utils.chat("&aCurrently spawned &"+type.getColChar()+type.species));
+					sender.sendMessage(Languages.prefix+Utils.convertString("&aCurrently spawned &"+type.getColChar()+type.species));
 					String species = type.species;
-					for (CustomEntity e : plugin.handler.getList()) {
+					for (CustomEntity e : CustomEntity.handler.getList()) {
 						if (e.getEntity() == null)
 							continue;
 						if (e.getSpecies().equals(species)) {
@@ -1391,45 +1409,45 @@ public class Disasters implements CommandExecutor,TabCompleter {
 							if (e.getEntity().getCustomName() != null)
 								name = type.getColChar()+e.getEntity().getCustomName();
 							Location loc = e.getEntity().getLocation();
-							if (Main.isSpigot() && sender instanceof Player) {
-								net.md_5.bungee.api.chat.TextComponent message = new net.md_5.bungee.api.chat.TextComponent(Utils.chat("&3- &"+name+" &"+healthString+" &7- &6("+loc.getWorld().getName()+") &f"+loc.getBlockX()+' '+loc.getBlockY()+' '+loc.getBlockZ()));
+							if (Utils.isSpigot() && sender instanceof Player) {
+								net.md_5.bungee.api.chat.TextComponent message = new net.md_5.bungee.api.chat.TextComponent(Utils.convertString("&3- &"+name+" &"+healthString+" &7- &6("+loc.getWorld().getName()+") &f"+loc.getBlockX()+' '+loc.getBlockY()+' '+loc.getBlockZ()));
 								message.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.SUGGEST_COMMAND, "/tp @s "+loc.getBlockX()+' '+loc.getBlockY()+' '+loc.getBlockZ()));
 								((Player) sender).spigot().sendMessage(message);
 							} else
-								sender.sendMessage(Utils.chat("&3- &"+name+" &"+healthString+" &7- &6("+loc.getWorld().getName()+") &f"+loc.getBlockX()+' '+loc.getBlockY()+' '+loc.getBlockZ()));
+								sender.sendMessage(Utils.convertString("&3- &"+name+" &"+healthString+" &7- &6("+loc.getWorld().getName()+") &f"+loc.getBlockX()+' '+loc.getBlockY()+' '+loc.getBlockZ()));
 						}
 					}
 					return true;
 				}
-				sender.sendMessage(Languages.prefix+Utils.chat("&aCurrently spawned entities"));
+				sender.sendMessage(Languages.prefix+Utils.convertString("&aCurrently spawned entities"));
 				Map<CustomEntityType, Integer> tempMap = new HashMap<>();
-				for (CustomEntity e : plugin.handler.getList()) {
+				for (CustomEntity e : CustomEntity.handler.getList()) {
 					if (tempMap.containsKey(e.getType()))
 						tempMap.replace(e.getType(), tempMap.get(e.getType()) + 1);
 					else
 						tempMap.put(e.getType(), 1);
 				}
 				for (Map.Entry<CustomEntityType, Integer> entry : tempMap.entrySet())
-					sender.sendMessage(Utils.chat("&3- &"+entry.getKey().getColChar()+entry.getKey().species+" &7- &f"+entry.getValue()));
+					sender.sendMessage(Utils.convertString("&3- &"+entry.getKey().getColChar()+entry.getKey().species+" &7- &f"+entry.getValue()));
 				return true;
 			} else if (args[1].equalsIgnoreCase("kill")) {
 				if (args.length >= 3) {
 					CustomEntityType type = CustomEntityType.getCustomEntityType(args[2].toLowerCase());
 					if (type == null) {
-						sender.sendMessage(Utils.chat("&cNo such species type '"+args[2]+"'"));
+						sender.sendMessage(Utils.convertString("&cNo such species type '"+args[2]+"'"));
 						return true;
 					}
 					String species = type.species;
-					for (CustomEntity e : plugin.handler.getList())
+					for (CustomEntity e : CustomEntity.handler.getList())
 						if (e.getEntity() != null && e.getSpecies().equals(species))
 							e.getEntity().remove();
-					sender.sendMessage(Languages.prefix+Utils.chat("&eKilled all &"+type.getColChar()+type.species)+"&e!");
+					sender.sendMessage(Languages.prefix+Utils.convertString("&eKilled all &"+type.getColChar()+type.species)+"&e!");
 					return true;
 				}
-				for (CustomEntity e : plugin.handler.getList())
+				for (CustomEntity e : CustomEntity.handler.getList())
 					if (e.getEntity() != null)
 						e.getEntity().remove();
-				sender.sendMessage(Languages.prefix+Utils.chat("&eKilled all custom entities!"));
+				sender.sendMessage(Languages.prefix+Utils.convertString("&eKilled all custom entities!"));
 				return true;
 			}
 		} else

@@ -6,74 +6,27 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.attribute.AttributeModifier.Operation;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.potion.PotionData;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.potion.PotionType;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 @SuppressWarnings("deprecation")
 public class ItemsHandler {
 	
 	public static Map<String, ItemStack> allItems = new HashMap<>();
-	
-	public static ItemStack voidshard = new ItemStack(Material.GHAST_TEAR);
-	public static String voidShardName;
-	public static NamespacedKey voidShardKey;
-	
-	public static ItemStack voidsedge = new ItemStack(Material.IRON_SWORD);
-	public static double voidsedgeDroprate;
-	public static NamespacedKey voidsEdgeKey;
-	
-	public static ItemStack voidshield = new ItemStack(Material.SHIELD);
-	public static NamespacedKey voidShieldKey;
-	
-	public static ItemStack voidswrath = new ItemStack(Material.BOW);
-	public static String voidBowName;
-	public static int voidBowCooldown = 10;
-	public static int voidBowPortalTicks = 80;
-	public static NamespacedKey voidBowKey;
-	
-	public static ItemStack ancientblade;
-	public static String ancientBladeName;
-	public static String ancientCurseName;
-	private static NamespacedKey ancientBladeRecipe;
-	public static int ancientBladeCooldown = 8;
-	public static NamespacedKey ancientBladeKey;
-	
-	public static ItemStack plagueCure = new ItemStack(Material.POTION);
-	public static ItemStack plagueCureSplash = new ItemStack(Material.SPLASH_POTION);
-	public static String plagueCureName;
-	public static String plagueCureLore;
-	private static NamespacedKey plagueCureRecipe;
-	private static NamespacedKey plagueCureRecipe2;
-	public static NamespacedKey plagueCureKey;
-	
-	public static ItemStack ancientbone = new ItemStack(Material.BONE);
-	public static String ancientBoneLore;
-	public static NamespacedKey ancientBoneKey;
-	
-	public static ItemStack ancientcloth = new ItemStack(Material.PAPER);
-	public static String ancientClothLore;
-	public static NamespacedKey ancientClothKey;
 	
 	public static ItemStack mageWand = new ItemStack(Material.BLAZE_ROD);
 	public static String mageWandLore;
@@ -124,14 +77,9 @@ public class ItemsHandler {
 	public static ItemStack purpleEasterEgg;
 	public static NamespacedKey purpleEasterEggKey;
 	
-	public static ItemStack goldenEasterEgg;
-	public static NamespacedKey goldenEasterEggKey;
-	
 	public static ItemStack easterBasket;
 	private static NamespacedKey easterBasketRecipe;
 	public static NamespacedKey easterBasketKey;
-	
-	public static NamespacedKey bunnyHopKey;
 	
 	public static ItemStack cursedFlesh;
 	public static NamespacedKey cursedFleshKey;
@@ -160,122 +108,30 @@ public class ItemsHandler {
 	public static ItemStack etherealLanternBoss2;
 	public static NamespacedKey etherealLanternBoss2Key;
 	
+	public static Map<NamespacedKey, String> compatibilityMap;
+	static {
+		Main plugin = Main.getInstance();
+		compatibilityMap = new HashMap<>();
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-voidShardKey"), "dd:void_tear");
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-voidsEdgeKey"), "ui:voids_edge");
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-voidShieldKey"), "ui:abyssal_shield");
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-voidBowKey"), "ui:call_of_the_void");
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-ancientBladeKey"), "ui:ancient_blade");
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-plagueCureKey"), "dd:plague_cure");
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-ancientBoneKey"), "ui:ancient_bone");
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-ancientClothKey"), "ui:ancient_cloth");
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-yetiFurKey"), "ui:yeti_fur");
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-basicEnch"), "dd:basic_coating_book");
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-pTrident"), "ui:tritons_fang");
+		compatibilityMap.put(new NamespacedKey(plugin, "dd-goldenegg"), "ui:golden_egg");
+	}
+	
 	public static void refreshMetas(Main plugin) {
 		allItems.clear();
-		String craftables = Utils.chat("&7&o"+Languages.langFile.getString("misc.craftable"));
-		
-		//voidshard
-		ItemMeta meta = voidshard.getItemMeta();
-		meta.addEnchant(Enchantment.DURABILITY, 1, true);
-		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-		meta.setDisplayName(ChatColor.LIGHT_PURPLE+Languages.langFile.getString("items.voidShard"));
-		meta.setLore(Arrays.asList(Languages.langFile.getString("items.voidShardLore.line 1"), Utils.chat("&b"+Languages.langFile.getString("items.voidShardLore.line 2"))));
-		meta.setCustomModelData(100001);
-		voidShardKey = new NamespacedKey(plugin, "dd-voidShardKey");
-		meta.getPersistentDataContainer().set(voidShardKey, PersistentDataType.BYTE, (byte) 1);
-		voidshard.setItemMeta(meta);
-		voidShardName = ChatColor.LIGHT_PURPLE+Languages.langFile.getString("items.voidShard");
-		allItems.put("voidshard", voidshard);
-		
-		//voidguards
-		meta = voidsedge.getItemMeta();
-		meta.addEnchant(Enchantment.DAMAGE_ALL, 2, false);
-		meta.setDisplayName(ChatColor.LIGHT_PURPLE+Languages.langFile.getString("items.voidEdge"));
-		meta.setLore(Arrays.asList(Languages.langFile.getString("items.voidEdgeLore")));
-		meta.setCustomModelData(100002);
-		voidsEdgeKey = new NamespacedKey(plugin, "dd-voidsEdgeKey");
-		meta.getPersistentDataContainer().set(voidsEdgeKey, PersistentDataType.BYTE, (byte) 1);
-		voidsedge.setItemMeta(meta);
-		allItems.put("voidsedge", voidsedge);
-		
-		meta = voidshield.getItemMeta();
-		meta.addEnchant(Enchantment.DURABILITY, 2, false);
-		meta.setDisplayName(ChatColor.LIGHT_PURPLE+Languages.langFile.getString("items.voidShield"));
-		meta.setLore(Arrays.asList(Languages.langFile.getString("items.voidShieldLore")));
-		meta.setCustomModelData(100003);
-		voidShieldKey = new NamespacedKey(plugin, "dd-voidShieldKey");
-		meta.getPersistentDataContainer().set(voidShieldKey, PersistentDataType.BYTE, (byte) 1);
-		voidshield.setItemMeta(meta);
-		allItems.put("voidshield", voidshield);
-		
-		//void wrath
-		meta = voidswrath.getItemMeta();
-		meta.addEnchant(Enchantment.ARROW_DAMAGE, 2, false);
-		meta.setDisplayName(ChatColor.LIGHT_PURPLE+Languages.langFile.getString("items.voidWrath"));
-		meta.setLore(Arrays.asList(Languages.langFile.getString("items.voidWrathLore")));
-		meta.setCustomModelData(100004);
-		voidBowKey = new NamespacedKey(plugin, "dd-voidBowKey");
-		meta.getPersistentDataContainer().set(voidBowKey, PersistentDataType.BYTE, (byte) 1);
-		voidswrath.setItemMeta(meta);
-		voidBowName = ChatColor.LIGHT_PURPLE+Languages.langFile.getString("items.voidWrath");
-		allItems.put("voidswrath", voidswrath);
-		
-		//ancient blade
-		if (plugin.mcVersion >= 1.16)
-			ancientblade = new ItemStack(Material.NETHERITE_SWORD);
-		else
-			ancientblade = new ItemStack(Material.DIAMOND_SWORD);
-		meta = ancientblade.getItemMeta();
-		meta.setDisplayName(ChatColor.GOLD+Languages.langFile.getString("items.ancientBlade"));
-		meta.setLore(Arrays.asList(ChatColor.GRAY+Languages.langFile.getString("misc.ancientCurse"), " ", ChatColor.YELLOW+Languages.langFile.getString("items.ancientBladeLore")));
-		meta.addEnchant(Enchantment.DAMAGE_ALL, 2, false);
-		meta.setCustomModelData(100005);
-		ancientBladeKey = new NamespacedKey(plugin, "dd-ancientBladeKey");
-		meta.getPersistentDataContainer().set(ancientBladeKey, PersistentDataType.BYTE, (byte) 1);
-		ancientblade.setItemMeta(meta);
-		ancientBladeName = ChatColor.LIGHT_PURPLE+Languages.langFile.getString("items.ancientBlade");
-		ancientCurseName = ChatColor.GRAY+Languages.langFile.getString("misc.ancientCurse");
-		allItems.put("ancientblade", ancientblade);
-		
-		//plague cure
-		PotionMeta potionMeta = (PotionMeta) plagueCure.getItemMeta();
-		potionMeta.setDisplayName(Languages.langFile.getString("items.plagueCure"));
-		potionMeta.setLore(Arrays.asList(Languages.langFile.getString("items.plagueCureLore")));
-		potionMeta.setColor(Color.BLACK);
-		potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.HEAL, 1, 1, true, false, false), false);
-		potionMeta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
-		potionMeta.setBasePotionData(new PotionData(PotionType.AWKWARD));
-		plagueCureKey = new NamespacedKey(plugin, "dd-plagueCureKey");
-		potionMeta.getPersistentDataContainer().set(plagueCureKey, PersistentDataType.BYTE, (byte) 1);
-		meta.setCustomModelData(100006);
-		plagueCure.setItemMeta(potionMeta);
-		PotionMeta splashMeta = potionMeta.clone();
-		splashMeta.setCustomModelData(100013);
-		plagueCureSplash.setItemMeta(potionMeta);
-		plagueCureName = Languages.langFile.getString("items.plagueCure");
-		plagueCureLore = Languages.langFile.getString("items.plagueCureLore");
-		allItems.put("plaguecure", plagueCure);
-		allItems.put("splashplaguecure", plagueCureSplash);
-		
-		//ancient bone
-		meta = ancientbone.getItemMeta();
-		meta.addEnchant(Enchantment.DURABILITY, 1, false);
-		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-		meta.setDisplayName(ChatColor.GOLD+Languages.langFile.getString("items.ancientBone"));
-		meta.setLore(Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("items.ancientBoneLore"), craftables));
-		meta.setCustomModelData(100007);
-		ancientBoneKey = new NamespacedKey(plugin, "dd-ancientBoneKey");
-		meta.getPersistentDataContainer().set(ancientBoneKey, PersistentDataType.BYTE, (byte) 1);
-		ancientbone.setItemMeta(meta);
-		ancientBoneLore = ChatColor.YELLOW+Languages.langFile.getString("items.ancientBoneLore");
-		allItems.put("ancientbone", ancientbone);
-		
-		//ancient cloth
-		meta = ancientcloth.getItemMeta();
-		meta.addEnchant(Enchantment.DURABILITY, 1, false);
-		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-		meta.setDisplayName(ChatColor.GOLD+Languages.langFile.getString("items.ancientCloth"));
-		meta.setLore(Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("items.ancientClothLore"), craftables));
-		meta.setCustomModelData(100008);
-		ancientClothKey = new NamespacedKey(plugin, "dd-ancientClothKey");
-		meta.getPersistentDataContainer().set(ancientClothKey, PersistentDataType.BYTE, (byte) 1);
-		ancientcloth.setItemMeta(meta);
-		ancientClothLore = ChatColor.YELLOW+Languages.langFile.getString("items.ancientClothLore");
-		allItems.put("ancientcloth", ancientcloth);
 		
 		//mage wand
-		meta = mageWand.getItemMeta();
-		meta.addEnchant(Enchantment.DURABILITY, 1, false);
+		ItemMeta meta = mageWand.getItemMeta();
+		meta.addEnchant(VersionUtils.getUnbreaking(), 1, false);
 		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		meta.setDisplayName(ChatColor.GRAY+Languages.langFile.getString("items.mageWand"));
 		meta.setLore(Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("items.mageWandLore")));
@@ -288,7 +144,7 @@ public class ItemsHandler {
 		
 		//soul ripper
 		meta = soulRipper.getItemMeta();
-		meta.addEnchant(Enchantment.DURABILITY, 1, false);
+		meta.addEnchant(VersionUtils.getUnbreaking(), 1, false);
 		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		meta.setDisplayName(ChatColor.GRAY+Languages.langFile.getString("items.soulRipper"));
 		meta.setLore(Arrays.asList(Languages.langFile.getString("items.soulRipperLore")));
@@ -300,7 +156,7 @@ public class ItemsHandler {
 		allItems.put("soulripper", soulRipper);
 		
 		//candy cane
-		candyCane = Utils.createItem(Material.DIAMOND_SWORD, 1, ChatColor.RED+Languages.langFile.getString("items.candyCane"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("items.candyCaneLore")), false, false);
+		candyCane = Utils.createItem(Material.DIAMOND_SWORD, 1, ChatColor.RED+Languages.langFile.getString("christmas.candyCane"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("christmas.candyCaneLore")), false, false);
 		meta = candyCane.getItemMeta();
 		candyCaneKey = new NamespacedKey(plugin, "dd-candyCane");
 		meta.getPersistentDataContainer().set(candyCaneKey, PersistentDataType.BYTE, (byte) 1);
@@ -312,7 +168,7 @@ public class ItemsHandler {
 		allItems.put("candycane", candyCane);
 		
 		//cursed candy cane
-		cursedCandyCane = Utils.createItem(Material.DIAMOND_SWORD, 1, ChatColor.RED+Languages.langFile.getString("items.cursedCandyCane"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("items.cursedCandyCaneLore")), true, false);
+		cursedCandyCane = Utils.createItem(Material.DIAMOND_SWORD, 1, ChatColor.RED+Languages.langFile.getString("christmas.cursedCandyCane"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("christmas.cursedCandyCaneLore")), true, false);
 		meta = cursedCandyCane.getItemMeta();
 		cursedCandyCaneKey = new NamespacedKey(plugin, "dd-cursedCandyCane");
 		meta.getPersistentDataContainer().set(cursedCandyCaneKey, PersistentDataType.BYTE, (byte) 1);
@@ -324,7 +180,7 @@ public class ItemsHandler {
 		allItems.put("cursedcandycane", cursedCandyCane);
 		
 		//ornament
-		ornament = Utils.createItem(Material.GHAST_TEAR, 1, ChatColor.RED+Languages.langFile.getString("items.ornament"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("items.ornamentLore")), false, false);
+		ornament = Utils.createItem(Material.GHAST_TEAR, 1, ChatColor.RED+Languages.langFile.getString("christmas.ornament"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("christmas.ornamentLore")), false, false);
 		meta = ornament.getItemMeta();
 		ornamentKey = new NamespacedKey(plugin, "dd-ornament");
 		meta.getPersistentDataContainer().set(ornamentKey, PersistentDataType.BYTE, (byte) 1);
@@ -333,7 +189,7 @@ public class ItemsHandler {
 		allItems.put("ornament", ornament);
 		
 		//broken snow globe
-		brokenSnowGlobe = Utils.createItem(CustomHead.BROKENSNOWGLOBE.getHead().clone(), 1, ChatColor.RED+Languages.langFile.getString("items.brokenSnowGlobe"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("items.brokenSnowGlobeLore")), false, false);
+		brokenSnowGlobe = Utils.createItem(CustomHead.BROKENSNOWGLOBE.getHead().clone(), 1, ChatColor.RED+Languages.langFile.getString("christmas.brokenSnowGlobe"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("christmas.brokenSnowGlobeLore")), false, false);
 		meta = brokenSnowGlobe.getItemMeta();
 		brokenSnowGlobeKey = new NamespacedKey(plugin, "dd-brokenSnowGlobe");
 		meta.getPersistentDataContainer().set(brokenSnowGlobeKey, PersistentDataType.BYTE, (byte) 1);
@@ -341,7 +197,7 @@ public class ItemsHandler {
 		allItems.put("brokensnowglobe", brokenSnowGlobe);
 		
 		//snow globe
-		snowGlobe = Utils.createItem(CustomHead.SNOWGLOBE.getHead().clone(), 1, ChatColor.RED+Languages.langFile.getString("items.snowGlobe"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("items.snowGlobeLore"), ChatColor.GRAY+"-"+Languages.langFile.getString("items.snowGlobeAbility")), false, false);
+		snowGlobe = Utils.createItem(CustomHead.SNOWGLOBE.getHead().clone(), 1, ChatColor.RED+Languages.langFile.getString("christmas.snowGlobe"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("christmas.snowGlobeLore"), ChatColor.GRAY+"-"+Languages.langFile.getString("christmas.snowGlobeAbility")), false, false);
 		meta = snowGlobe.getItemMeta();
 		snowGlobeKey = new NamespacedKey(plugin, "dd-snowGlobe");
 		meta.getPersistentDataContainer().set(snowGlobeKey, PersistentDataType.BYTE, (byte) 1);
@@ -349,7 +205,7 @@ public class ItemsHandler {
 		allItems.put("snowglobe", snowGlobe);
 		
 		//santa hat
-		santaHat = Utils.createItem(Material.DIAMOND_HELMET, 1, ChatColor.RED+Languages.langFile.getString("items.santaHat"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("items.santaHatLore"), ChatColor.GRAY+"-"+Languages.langFile.getString("items.santaHatAbility")), false, false);
+		santaHat = Utils.createItem(Material.DIAMOND_HELMET, 1, ChatColor.RED+Languages.langFile.getString("christmas.santaHat"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("christmas.santaHatLore"), ChatColor.GRAY+"-"+Languages.langFile.getString("christmas.santaHatAbility")), false, false);
 		meta = santaHat.getItemMeta();
 		santaHatKey = new NamespacedKey(plugin, "dd-santaHat");
 		meta.getPersistentDataContainer().set(santaHatKey, PersistentDataType.INTEGER, 1);
@@ -404,14 +260,6 @@ public class ItemsHandler {
 		purpleEasterEgg.setItemMeta(meta);
 		allItems.put("purpleegg", purpleEasterEgg);
 		
-		//golden egg
-		goldenEasterEgg = Utils.createItem(Material.TURTLE_EGG, 1, Utils.chat("&e&l")+Languages.langFile.getString("easter.goldenEgg"), Arrays.asList(ChatColor.GREEN+Languages.langFile.getString("easter.goldenEggLore")), false, false);
-		meta = goldenEasterEgg.getItemMeta();
-		goldenEasterEggKey = new NamespacedKey(plugin, "dd-goldenegg");
-		meta.getPersistentDataContainer().set(goldenEasterEggKey, PersistentDataType.BYTE, (byte) 1);
-		meta.setCustomModelData(100028);
-		goldenEasterEgg.setItemMeta(meta);
-		allItems.put("goldenegg", goldenEasterEgg);
 		
 		//easter basket
 		easterBasket = Utils.createItem(CustomHead.EASTERBASKET.getHead().clone(), 1, ChatColor.AQUA+Languages.langFile.getString("easter.basket"), Arrays.asList(ChatColor.YELLOW+Languages.langFile.getString("easter.basketLore"), ChatColor.GRAY+"-"+Languages.langFile.getString("easter.basketAbility")), false, false);
@@ -421,12 +269,9 @@ public class ItemsHandler {
 		easterBasket.setItemMeta(meta);
 		allItems.put("easterbasket", easterBasket);
 		
-		//bunny hop
-		bunnyHopKey = new NamespacedKey(plugin, "dd-bunnyHopEnchant");
-		
 		//cursed flesh
 		try {
-			cursedFlesh = Utils.createItem(Material.ROTTEN_FLESH, 1, Utils.chat("&6&l")+Languages.getString("halloween.cursedFlesh"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.cursedFleshLore")), true, false);
+			cursedFlesh = Utils.createItem(Material.ROTTEN_FLESH, 1, Utils.convertString("&6&l")+Languages.getString("halloween.cursedFlesh"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.cursedFleshLore")), true, false);
 			meta = cursedFlesh.getItemMeta();
 			cursedFleshKey = new NamespacedKey(plugin, "dd-cursedflesh");
 			meta.getPersistentDataContainer().set(cursedFleshKey, PersistentDataType.BYTE, (byte) 1);
@@ -440,7 +285,7 @@ public class ItemsHandler {
 		
 		//vampire fang
 		try {
-			vampireFang = Utils.createItem(Material.GHAST_TEAR, 1, Utils.chat("&6&l")+Languages.getString("halloween.vampireFang"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.vampireFangLore")), false, false);
+			vampireFang = Utils.createItem(Material.GHAST_TEAR, 1, Utils.convertString("&6&l")+Languages.getString("halloween.vampireFang"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.vampireFangLore")), false, false);
 			meta = vampireFang.getItemMeta();
 			vampireFangKey = new NamespacedKey(plugin, "dd-vampirefang");
 			meta.getPersistentDataContainer().set(vampireFangKey, PersistentDataType.BYTE, (byte) 1);
@@ -454,7 +299,7 @@ public class ItemsHandler {
 		
 		//candy corn
 		try {
-			candyCorn = Utils.createItem(Material.SUGAR, 1, Utils.chat("&6&l")+Languages.getString("halloween.candyCorn"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.candyCornLore")), false, false);
+			candyCorn = Utils.createItem(Material.SUGAR, 1, Utils.convertString("&6&l")+Languages.getString("halloween.candyCorn"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.candyCornLore")), false, false);
 			meta = candyCorn.getItemMeta();
 			candyCornKey = new NamespacedKey(plugin, "dd-candycorn");
 			meta.getPersistentDataContainer().set(candyCornKey, PersistentDataType.BYTE, (byte) 1);
@@ -468,7 +313,7 @@ public class ItemsHandler {
 		
 		//spooky pumpkin
 		try {
-			spookyPumpkin = Utils.createItem(Material.JACK_O_LANTERN, 1, Utils.chat("&6&l")+Languages.getString("halloween.spookyPumpkin"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.spookyPumpkinLore")), false, false);
+			spookyPumpkin = Utils.createItem(Material.JACK_O_LANTERN, 1, Utils.convertString("&6&l")+Languages.getString("halloween.spookyPumpkin"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.spookyPumpkinLore")), false, false);
 			meta = spookyPumpkin.getItemMeta();
 			spookyPumpkinKey = new NamespacedKey(plugin, "dd-spookypumpkin");
 			meta.getPersistentDataContainer().set(spookyPumpkinKey, PersistentDataType.BYTE, (byte) 1);
@@ -495,7 +340,7 @@ public class ItemsHandler {
 		
 		//ethereal lantern
 		try {
-			etherealLantern = Utils.createItem(Material.SOUL_LANTERN, 1, Utils.chat("&6&l")+Languages.getString("halloween.etherealLantern"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.etherealLanternLore")), true, false);
+			etherealLantern = Utils.createItem(Material.SOUL_LANTERN, 1, Utils.convertString("&6&l")+Languages.getString("halloween.etherealLantern"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.etherealLanternLore")), true, false);
 			meta = etherealLantern.getItemMeta();
 			etherealLanternKey = new NamespacedKey(plugin, "dd-ethereallantern");
 			meta.getPersistentDataContainer().set(etherealLanternKey, PersistentDataType.BYTE, (byte) 1);
@@ -511,7 +356,7 @@ public class ItemsHandler {
 		
 		//ethereal lantern boss
 		try {
-			etherealLanternBoss = Utils.createItem(Material.SOUL_LANTERN, 1, Utils.chat("&6&l")+Languages.getString("halloween.etherealLantern"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.etherealLanternLore")), false, false);
+			etherealLanternBoss = Utils.createItem(Material.SOUL_LANTERN, 1, Utils.convertString("&6&l")+Languages.getString("halloween.etherealLantern"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.etherealLanternLore")), false, false);
 			meta = etherealLanternBoss.getItemMeta();
 			etherealLanternBossKey = new NamespacedKey(plugin, "dd-ethereallanternboss");
 			meta.getPersistentDataContainer().set(etherealLanternBossKey, PersistentDataType.BYTE, (byte) 1);
@@ -525,7 +370,7 @@ public class ItemsHandler {
 		
 		//ethereal lantern boss2
 		try {
-			etherealLanternBoss2 = Utils.createItem(Material.SOUL_LANTERN, 1, Utils.chat("&6&l")+Languages.getString("halloween.etherealLantern"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.etherealLanternLore")), false, false);
+			etherealLanternBoss2 = Utils.createItem(Material.SOUL_LANTERN, 1, Utils.convertString("&6&l")+Languages.getString("halloween.etherealLantern"), Arrays.asList(ChatColor.YELLOW+Languages.getString("halloween.etherealLanternLore")), false, false);
 			meta = etherealLanternBoss2.getItemMeta();
 			etherealLanternBoss2Key = new NamespacedKey(plugin, "dd-ethereallanternboss2");
 			meta.getPersistentDataContainer().set(etherealLanternBoss2Key, PersistentDataType.BYTE, (byte) 1);
@@ -539,57 +384,9 @@ public class ItemsHandler {
 	}
 	public static void createRecipes(Main plugin) {
 		if (plugin.mcVersion < 1.16) {
-			Main.consoleSender.sendMessage(Languages.prefix+Utils.chat("&eWARNING old version detected ( < 1.16) All custom crafting recipes are disabled, custom crafting recipe support is only for 1.16+"));
+			Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&eWARNING old version detected ( < 1.16) All custom crafting recipes are disabled, custom crafting recipe support is only for 1.16+"));
 			return;
 		}
-		// plague cure
-		if (plugin.getConfig().getBoolean("customitems.recipes.plague_cure")) {
-			if (plagueCureRecipe == null || plugin.getServer().getRecipe(plagueCureRecipe) == null) {
-				plagueCureRecipe = new NamespacedKey(plugin, "plague_cure");
-				ShapedRecipe sr = new ShapedRecipe(plagueCureRecipe, plagueCure);
-				sr.shape(" A ", "ABA", " A ");
-				sr.setIngredient('A', Material.INK_SAC);
-				sr.setIngredient('B', Material.POTION);
-
-				plugin.getServer().addRecipe(sr);
-			}
-			if (plugin.mcVersion >= 1.17 && (plagueCureRecipe2 == null || plugin.getServer().getRecipe(plagueCureRecipe2) == null)) {
-				plagueCureRecipe2 = new NamespacedKey(plugin, "plague_cure2");
-				ShapedRecipe sr2 = new ShapedRecipe(plagueCureRecipe2, plagueCure);
-				sr2.shape(" A ","ABA"," A ");
-				sr2.setIngredient('A', Material.GLOW_INK_SAC);
-				sr2.setIngredient('B', Material.POTION);
-				
-				plugin.getServer().addRecipe(sr2);
-			}
-		} else {
-			if (plagueCureRecipe != null && plugin.getServer().getRecipe(plagueCureRecipe) != null)
-				plugin.getServer().removeRecipe(plagueCureRecipe);
-			plagueCureRecipe = null;
-			if (plagueCureRecipe2 != null && plugin.getServer().getRecipe(plagueCureRecipe2) != null)
-				plugin.getServer().removeRecipe(plagueCureRecipe2);
-			plagueCureRecipe2 = null;
-		}
-		
-		//ancient blade
-		if (plugin.getConfig().getBoolean("customitems.recipes.ancient_blade")) {
-			if (ancientBladeRecipe == null || plugin.getServer().getRecipe(ancientBladeRecipe) == null) {
-				ancientBladeRecipe = new NamespacedKey(plugin, "ancient_blade");
-				ShapedRecipe sr = new ShapedRecipe(ancientBladeRecipe, ancientblade);
-				sr.shape(" A ", "ABA", "CDC");
-				sr.setIngredient('A', Material.BONE);
-				sr.setIngredient('B', Material.NETHER_STAR);
-				sr.setIngredient('C', Material.PAPER);
-				sr.setIngredient('D', Material.NETHERITE_SWORD);
-
-				plugin.getServer().addRecipe(sr);
-			}
-		} else {
-			if (ancientBladeRecipe != null && plugin.getServer().getRecipe(ancientBladeRecipe) != null)
-				plugin.getServer().removeRecipe(ancientBladeRecipe);
-			ancientBladeRecipe = null;
-		}
-		
 		//snow globe
 		if (plugin.getConfig().getBoolean("customitems.recipes.snow_globe")) {
 			if (snowGlobeRecipe == null || plugin.getServer().getRecipe(snowGlobeRecipe) == null) {

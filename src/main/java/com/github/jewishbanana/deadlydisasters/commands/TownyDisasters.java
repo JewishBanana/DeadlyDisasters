@@ -32,31 +32,31 @@ public class TownyDisasters implements CommandExecutor,TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
     	if (!Utils.TownyB) {
-    		sender.sendMessage(Utils.chat("&cTowny has not been detected on the server!"));
+    		sender.sendMessage(Utils.convertString("&cTowny has not been detected on the server!"));
     		return true;
     	}
     	if (args.length < 1 || args.length > 2) {
-    		sender.sendMessage(Utils.chat("&c/towndisasters <on|off> [player]"));
+    		sender.sendMessage(Utils.convertString("&c/towndisasters <on|off> [player]"));
     		return true;
     	}
     	if (!(sender instanceof Player) && args.length != 2) {
-    		sender.sendMessage(Utils.chat("&c/towndisasters <on|off> <player>"));
+    		sender.sendMessage(Utils.convertString("&c/towndisasters <on|off> <player>"));
     		return true;
     	} else if (!((Player) sender).hasPermission("deadlydisasters.towny")) {
-    		sender.sendMessage(Utils.chat(plugin.getConfig().getString("messages.permission_error")));
+    		sender.sendMessage(Utils.convertString(plugin.getConfig().getString("messages.permission_error")));
 			return true;
     	}
     	Resident resident = null;
     	if (args.length == 2) {
     		resident = Utils.getTownyAPI().getResident(args[1]);
     		if (resident == null) {
-    			sender.sendMessage(Utils.chat("&cCould not find player '"+args[1]+"'"));
+    			sender.sendMessage(Utils.convertString("&cCould not find player '"+args[1]+"'"));
         		return true;
     		}
     	} else
     		resident = Utils.getTownyAPI().getResident((Player) sender);
     	if (resident.getTownOrNull() == null) {
-    		sender.sendMessage(Utils.chat("&cPlayer '"+resident.getName()+"' does not have a town!"));
+    		sender.sendMessage(Utils.convertString("&cPlayer '"+resident.getName()+"' does not have a town!"));
     		return true;
     	}
     	if (args[0].equalsIgnoreCase("on")) {
@@ -68,7 +68,7 @@ public class TownyDisasters implements CommandExecutor,TabCompleter {
             TownyMessaging.sendPrefixedTownMessage(resident.getTownOrNull(), "Disaster Protection has been Disabled.");
             return true;
     	} else {
-    		sender.sendMessage(Utils.chat("&c/towndisasters <on|off> [player]"));
+    		sender.sendMessage(Utils.convertString("&c/towndisasters <on|off> [player]"));
 			return true;
     	}
     }

@@ -1,12 +1,15 @@
 package com.github.jewishbanana.deadlydisasters.utils;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,12 +19,16 @@ import java.util.Random;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.DyeColor;
+import org.bukkit.EntityEffect;
 import org.bukkit.GameMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
@@ -35,14 +42,14 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.enchantments.Enchantment;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.minecart.CommandMinecart;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.EquipmentSlot;
@@ -71,8 +78,8 @@ import com.github.jewishbanana.deadlydisasters.listeners.spawners.GlobalSpawner;
 
 public class Utils {
 	
-	private static Set<String> blacklisted;
-	private static Set<Material> mats = new HashSet<>();
+	private static Map<Material, Double> matStrength = new HashMap<>();
+	
 	private static Main plugin;
 	private static Random rand;
 	
@@ -85,7 +92,7 @@ public class Utils {
 	private static net.coreprotect.CoreProtectAPI coreProtect;
 	private static com.palmergames.bukkit.towny.TownyAPI townyapi;
 	private static me.ryanhamshire.GriefPrevention.DataStore grief;
-	private static me.angeschossen.lands.api.integration.LandsIntegration landsclaims;
+	private static me.angeschossen.lands.api.LandsIntegration landsclaims;
 	
 	private static Sound startSound;
 	private static float[] startSoundModifiers;
@@ -93,8 +100,37 @@ public class Utils {
 	private static int descriptionLine = 35;
 	
 	private static DecimalFormat decimalFormat;
+	private static boolean usingSpigot;
+	private static Pattern hexPattern;
+	private static Map<DyeColor, ChatColor> dyeChatMap;
 	static {
+		hexPattern = Pattern.compile("\\(hex:#[a-fA-F0-9]{6}\\)");
 		decimalFormat = new DecimalFormat("0.0");
+		
+		dyeChatMap = new HashMap<>();
+		dyeChatMap.put(DyeColor.BLACK, ChatColor.BLACK);
+		dyeChatMap.put(DyeColor.BLUE, ChatColor.DARK_BLUE);
+		dyeChatMap.put(DyeColor.BROWN, ChatColor.GOLD);
+		dyeChatMap.put(DyeColor.CYAN, ChatColor.AQUA);
+		dyeChatMap.put(DyeColor.GRAY, ChatColor.DARK_GRAY);
+		dyeChatMap.put(DyeColor.GREEN, ChatColor.DARK_GREEN);
+		dyeChatMap.put(DyeColor.LIGHT_BLUE, ChatColor.BLUE);
+		dyeChatMap.put(DyeColor.LIGHT_GRAY, ChatColor.GRAY);
+		dyeChatMap.put(DyeColor.LIME, ChatColor.GREEN);
+		dyeChatMap.put(DyeColor.MAGENTA, ChatColor.LIGHT_PURPLE);
+		dyeChatMap.put(DyeColor.ORANGE, ChatColor.GOLD);
+		dyeChatMap.put(DyeColor.PINK, ChatColor.LIGHT_PURPLE);
+		dyeChatMap.put(DyeColor.PURPLE, ChatColor.DARK_PURPLE);
+		dyeChatMap.put(DyeColor.RED, ChatColor.DARK_RED);
+		dyeChatMap.put(DyeColor.WHITE, ChatColor.WHITE);
+		dyeChatMap.put(DyeColor.YELLOW, ChatColor.YELLOW);
+		
+		try {
+	        Class.forName("org.bukkit.entity.Player$Spigot");
+	        usingSpigot = true;
+	    } catch (Throwable tr) {
+	    	usingSpigot = false;
+	    }
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -115,7 +151,7 @@ public class Utils {
 				if (GriefB)
 					grief = me.ryanhamshire.GriefPrevention.GriefPrevention.instance.dataStore;
 				if (LandsB)
-					landsclaims = new me.angeschossen.lands.api.integration.LandsIntegration(plugin);
+					landsclaims = me.angeschossen.lands.api.LandsIntegration.of(plugin);
 			}
 		}, 1);
 		
@@ -134,8 +170,26 @@ public class Utils {
 		ExtremeWinds.bannedBlocks.addAll(Tag.LEAVES.getValues());
 		Hurricane.oceans.addAll(Arrays.asList(Biome.OCEAN, Biome.COLD_OCEAN, Biome.DEEP_COLD_OCEAN, Biome.DEEP_FROZEN_OCEAN, Biome.DEEP_LUKEWARM_OCEAN, Biome.DEEP_OCEAN, Biome.FROZEN_OCEAN, Biome.LUKEWARM_OCEAN, Biome.WARM_OCEAN));
 	}
-	public static String chat(String s) {
-		return ChatColor.translateAlternateColorCodes('&', s);
+	public static String convertString(String text) {
+		if (text == null)
+			return null;
+		String s = text;
+		Matcher match = hexPattern.matcher(s);
+		if (usingSpigot) {
+		    while (match.find()) {
+		        String color = s.substring(match.start(), match.end());
+		        s = s.replace(color, net.md_5.bungee.api.ChatColor.of(color.substring(5, color.length()-1))+"");
+		        match = hexPattern.matcher(s);
+		    }
+		    return net.md_5.bungee.api.ChatColor.translateAlternateColorCodes('&', s);
+		}
+	    while (match.find()) {
+	        String color = s.substring(match.start(), match.end());
+	        Color col = Color.decode(color);
+	        s = s.replace(color, dyeChatMap.getOrDefault(DyeColor.getByColor(org.bukkit.Color.fromRGB(col.getRed(), col.getGreen(), col.getBlue())), ChatColor.WHITE)+"");
+	        match = hexPattern.matcher(s);
+	    }
+	    return ChatColor.translateAlternateColorCodes('&', s);
 	}
 	public static void broadcastEvent(int level, String category, Disaster type, World world) {
 		if (level > 5) level = 5;
@@ -175,14 +229,11 @@ public class Utils {
 		com.sk89q.worldguard.protection.ApplicableRegionSet set = query.getApplicableRegions(loc);
 		return set.size() != 0;
 	}
-	public static boolean isWorldBlackListed(World w) {
-		return blacklisted.contains(w.getName());
+	public static boolean passStrengthTest(Material material) {
+		return (matStrength.containsKey(material) && rand.nextDouble()+0.0001 < matStrength.get(material));
 	}
-	public static boolean isBlockBlacklisted(Material material) {
-		return mats.contains(material);
-	}
-	public static Set<Material> getBlacklistedBlocks() {
-		return mats;
+	public static boolean isBlockImmune(Material material) {
+		return (matStrength.containsKey(material) && matStrength.get(material) >= 1);
 	}
 	public static net.coreprotect.CoreProtectAPI getCoreProtect() {
 		return coreProtect;
@@ -193,26 +244,17 @@ public class Utils {
 	public static me.ryanhamshire.GriefPrevention.DataStore getGriefPrevention() {
 		return grief;
 	}
-	public static me.angeschossen.lands.api.integration.LandsIntegration getLandsClaims() {
+	public static me.angeschossen.lands.api.LandsIntegration getLandsClaims() {
 		return landsclaims;
 	}
 	public static void reloadVariables() {
-		FileConfiguration config = plugin.getConfig();
-		blacklisted = new HashSet<String>(config.getStringList("blacklist.worlds"));
-		if (blacklisted.contains("exampleWorld"))
-			blacklisted.remove("exampleWorld");
-		mats.clear();
-		for (String str : config.getStringList("blacklist.blocks")) {
-			if (Material.getMaterial(str.toUpperCase()) == null) {
-				plugin.getLogger().info("[DeadlyDisasters]: There is no such block type '"+str+"' skipping this entry!");
-			} else mats.add(Material.getMaterial(str.toUpperCase()));
-		}
+		refreshBlockStrengths();
 		
 		if (!plugin.getConfig().getString("messages.start_sound.sound").equalsIgnoreCase("none")) {
 			try {
 				startSound = Sound.valueOf(plugin.getConfig().getString("messages.start_sound.sound").toUpperCase());
 			} catch (Exception e) {
-				Main.consoleSender.sendMessage(Utils.chat("&e[DeadlyDisasters]: There is no sound with the name &d'"+plugin.getConfig().getString("messages.start_sound.sound")+"' &ein the config at:\nmessages:\n    start_sound:\n        sound: "+plugin.getConfig().getString("messages.start_sound.sound")));
+				Main.consoleSender.sendMessage(Utils.convertString("&e[DeadlyDisasters]: There is no sound with the name &d'"+plugin.getConfig().getString("messages.start_sound.sound")+"' &ein the config at:\nmessages:\n    start_sound:\n        sound: "+plugin.getConfig().getString("messages.start_sound.sound")));
 			}
 			try {
 				startSoundModifiers = new float[] {(float) plugin.getConfig().getDouble("messages.start_sound.volume"), (float) plugin.getConfig().getDouble("messages.start_sound.pitch")};
@@ -221,6 +263,177 @@ public class Utils {
 			}
 		}
 		descriptionLine = plugin.getConfig().getInt("customitems.item_lore_characters_per_line");
+	}
+	public static void refreshBlockStrengths() {
+		File blockCfg = new File(plugin.getDataFolder().getAbsolutePath(), "blocks.yml");
+		if (!blockCfg.exists())
+			try {
+				blockCfg.createNewFile();
+				FileUtils.copyInputStreamToFile(plugin.getResource("files/blocks.yml"), blockCfg);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		YamlConfiguration yml = YamlConfiguration.loadConfiguration(blockCfg);
+		Set<String> tempMats = new HashSet<>();
+		for (Material mat : Material.values())
+			tempMats.add(mat.name());
+		matStrength.clear();
+		for (String s : yml.getKeys(false))
+			if (tempMats.contains(s.toUpperCase()))
+				matStrength.put(Material.valueOf(s.toUpperCase()), yml.getDouble(s));
+			else if (s.equals("wools"))
+				for (Material wool : Tag.WOOL.getValues())
+					matStrength.put(wool, yml.getDouble(s));
+			else if (s.equals("terracottas") && plugin.mcVersion >= 1.18)
+				for (Material wool : Tag.TERRACOTTA.getValues())
+					matStrength.put(wool, yml.getDouble(s));
+		if (matStrength.containsKey(Material.OAK_PLANKS)) {
+			if (!matStrength.containsKey(Material.OAK_STAIRS)) matStrength.put(Material.OAK_STAIRS, matStrength.get(Material.OAK_PLANKS));
+			if (!matStrength.containsKey(Material.OAK_SLAB)) matStrength.put(Material.OAK_SLAB, matStrength.get(Material.OAK_PLANKS));
+			if (!matStrength.containsKey(Material.OAK_FENCE)) matStrength.put(Material.OAK_FENCE, matStrength.get(Material.OAK_PLANKS));
+		}
+		if (matStrength.containsKey(Material.BIRCH_PLANKS)) {
+			if (!matStrength.containsKey(Material.BIRCH_STAIRS)) matStrength.put(Material.BIRCH_STAIRS, matStrength.get(Material.BIRCH_PLANKS));
+			if (!matStrength.containsKey(Material.BIRCH_SLAB)) matStrength.put(Material.BIRCH_SLAB, matStrength.get(Material.BIRCH_PLANKS));
+			if (!matStrength.containsKey(Material.BIRCH_FENCE)) matStrength.put(Material.BIRCH_FENCE, matStrength.get(Material.BIRCH_PLANKS));
+		}
+		if (matStrength.containsKey(Material.SPRUCE_PLANKS)) {
+			if (!matStrength.containsKey(Material.SPRUCE_STAIRS)) matStrength.put(Material.SPRUCE_STAIRS, matStrength.get(Material.SPRUCE_PLANKS));
+			if (!matStrength.containsKey(Material.SPRUCE_SLAB)) matStrength.put(Material.SPRUCE_SLAB, matStrength.get(Material.SPRUCE_PLANKS));
+			if (!matStrength.containsKey(Material.SPRUCE_FENCE)) matStrength.put(Material.SPRUCE_FENCE, matStrength.get(Material.SPRUCE_PLANKS));
+		}
+		if (matStrength.containsKey(Material.JUNGLE_PLANKS)) {
+			if (!matStrength.containsKey(Material.JUNGLE_STAIRS)) matStrength.put(Material.JUNGLE_STAIRS, matStrength.get(Material.JUNGLE_PLANKS));
+			if (!matStrength.containsKey(Material.JUNGLE_SLAB)) matStrength.put(Material.JUNGLE_SLAB, matStrength.get(Material.JUNGLE_PLANKS));
+			if (!matStrength.containsKey(Material.JUNGLE_FENCE)) matStrength.put(Material.JUNGLE_FENCE, matStrength.get(Material.JUNGLE_PLANKS));
+		}
+		if (matStrength.containsKey(Material.ACACIA_PLANKS)) {
+			if (!matStrength.containsKey(Material.ACACIA_STAIRS)) matStrength.put(Material.ACACIA_STAIRS, matStrength.get(Material.ACACIA_PLANKS));
+			if (!matStrength.containsKey(Material.ACACIA_SLAB)) matStrength.put(Material.ACACIA_SLAB, matStrength.get(Material.ACACIA_PLANKS));
+			if (!matStrength.containsKey(Material.ACACIA_FENCE)) matStrength.put(Material.ACACIA_FENCE, matStrength.get(Material.ACACIA_PLANKS));
+		}
+		if (matStrength.containsKey(Material.DARK_OAK_PLANKS)) {
+			if (!matStrength.containsKey(Material.DARK_OAK_STAIRS)) matStrength.put(Material.DARK_OAK_STAIRS, matStrength.get(Material.DARK_OAK_PLANKS));
+			if (!matStrength.containsKey(Material.DARK_OAK_SLAB)) matStrength.put(Material.DARK_OAK_SLAB, matStrength.get(Material.DARK_OAK_PLANKS));
+			if (!matStrength.containsKey(Material.DARK_OAK_FENCE)) matStrength.put(Material.DARK_OAK_FENCE, matStrength.get(Material.DARK_OAK_PLANKS));
+		}
+		if (matStrength.containsKey(Material.COBBLESTONE)) {
+			if (!matStrength.containsKey(Material.COBBLESTONE_STAIRS)) matStrength.put(Material.COBBLESTONE_STAIRS, matStrength.get(Material.COBBLESTONE));
+			if (!matStrength.containsKey(Material.COBBLESTONE_SLAB)) matStrength.put(Material.COBBLESTONE_SLAB, matStrength.get(Material.COBBLESTONE));
+			if (!matStrength.containsKey(Material.COBBLESTONE_WALL)) matStrength.put(Material.COBBLESTONE_WALL, matStrength.get(Material.COBBLESTONE));
+		}
+		if (matStrength.containsKey(Material.STONE_BRICKS)) {
+			if (!matStrength.containsKey(Material.STONE_BRICK_STAIRS)) matStrength.put(Material.STONE_BRICK_STAIRS, matStrength.get(Material.STONE_BRICKS));
+			if (!matStrength.containsKey(Material.STONE_BRICK_SLAB)) matStrength.put(Material.STONE_BRICK_SLAB, matStrength.get(Material.STONE_BRICKS));
+			if (!matStrength.containsKey(Material.STONE_BRICK_WALL)) matStrength.put(Material.STONE_BRICK_WALL, matStrength.get(Material.STONE_BRICKS));
+		}
+		if (matStrength.containsKey(Material.STONE)) {
+			if (!matStrength.containsKey(Material.STONE_STAIRS)) matStrength.put(Material.STONE_STAIRS, matStrength.get(Material.STONE));
+			if (!matStrength.containsKey(Material.STONE_SLAB)) matStrength.put(Material.STONE_SLAB, matStrength.get(Material.STONE));
+		}
+		if (matStrength.containsKey(Material.BRICK)) {
+			if (!matStrength.containsKey(Material.BRICK_STAIRS)) matStrength.put(Material.BRICK_STAIRS, matStrength.get(Material.BRICK));
+			if (!matStrength.containsKey(Material.BRICK_SLAB)) matStrength.put(Material.BRICK_SLAB, matStrength.get(Material.BRICK));
+			if (!matStrength.containsKey(Material.BRICK_WALL)) matStrength.put(Material.BRICK_WALL, matStrength.get(Material.BRICK));
+		}
+		if (matStrength.containsKey(Material.SMOOTH_STONE))
+			if (!matStrength.containsKey(Material.SMOOTH_STONE_SLAB)) matStrength.put(Material.SMOOTH_STONE_SLAB, matStrength.get(Material.SMOOTH_STONE));
+		if (matStrength.containsKey(Material.SANDSTONE)) {
+			if (!matStrength.containsKey(Material.SANDSTONE_STAIRS)) matStrength.put(Material.SANDSTONE_STAIRS, matStrength.get(Material.SANDSTONE));
+			if (!matStrength.containsKey(Material.SANDSTONE_SLAB)) matStrength.put(Material.SANDSTONE_SLAB, matStrength.get(Material.SANDSTONE));
+			if (!matStrength.containsKey(Material.SANDSTONE_WALL)) matStrength.put(Material.SANDSTONE_WALL, matStrength.get(Material.SANDSTONE));
+		}
+		if (matStrength.containsKey(Material.CUT_SANDSTONE))
+			if (!matStrength.containsKey(Material.CUT_SANDSTONE_SLAB)) matStrength.put(Material.CUT_SANDSTONE_SLAB, matStrength.get(Material.CUT_SANDSTONE));
+		if (matStrength.containsKey(Material.SMOOTH_SANDSTONE)) {
+			if (!matStrength.containsKey(Material.SMOOTH_SANDSTONE_STAIRS)) matStrength.put(Material.SMOOTH_SANDSTONE_STAIRS, matStrength.get(Material.SMOOTH_SANDSTONE));
+			if (!matStrength.containsKey(Material.SMOOTH_SANDSTONE_SLAB)) matStrength.put(Material.SMOOTH_SANDSTONE_SLAB, matStrength.get(Material.SMOOTH_SANDSTONE));
+		}
+		if (matStrength.containsKey(Material.RED_SANDSTONE)) {
+			if (!matStrength.containsKey(Material.RED_SANDSTONE_STAIRS)) matStrength.put(Material.RED_SANDSTONE_STAIRS, matStrength.get(Material.RED_SANDSTONE));
+			if (!matStrength.containsKey(Material.RED_SANDSTONE_SLAB)) matStrength.put(Material.RED_SANDSTONE_SLAB, matStrength.get(Material.RED_SANDSTONE));
+			if (!matStrength.containsKey(Material.RED_SANDSTONE_WALL)) matStrength.put(Material.RED_SANDSTONE_WALL, matStrength.get(Material.RED_SANDSTONE));
+		}
+		if (matStrength.containsKey(Material.CUT_RED_SANDSTONE))
+			if (!matStrength.containsKey(Material.CUT_RED_SANDSTONE_SLAB)) matStrength.put(Material.CUT_RED_SANDSTONE_SLAB, matStrength.get(Material.CUT_RED_SANDSTONE));
+		if (matStrength.containsKey(Material.SMOOTH_RED_SANDSTONE)) {
+			if (!matStrength.containsKey(Material.SMOOTH_RED_SANDSTONE_STAIRS)) matStrength.put(Material.SMOOTH_RED_SANDSTONE_STAIRS, matStrength.get(Material.SMOOTH_RED_SANDSTONE));
+			if (!matStrength.containsKey(Material.SMOOTH_RED_SANDSTONE_SLAB)) matStrength.put(Material.SMOOTH_RED_SANDSTONE_SLAB, matStrength.get(Material.SMOOTH_RED_SANDSTONE));
+		}
+		if (matStrength.containsKey(Material.NETHER_BRICK)) {
+			if (!matStrength.containsKey(Material.NETHER_BRICK_STAIRS)) matStrength.put(Material.NETHER_BRICK_STAIRS, matStrength.get(Material.NETHER_BRICK));
+			if (!matStrength.containsKey(Material.NETHER_BRICK_SLAB)) matStrength.put(Material.NETHER_BRICK_SLAB, matStrength.get(Material.NETHER_BRICK));
+			if (!matStrength.containsKey(Material.NETHER_BRICK_FENCE)) matStrength.put(Material.NETHER_BRICK_FENCE, matStrength.get(Material.NETHER_BRICK));
+			if (!matStrength.containsKey(Material.NETHER_BRICK_WALL)) matStrength.put(Material.NETHER_BRICK_WALL, matStrength.get(Material.NETHER_BRICK));
+		}
+		if (matStrength.containsKey(Material.RED_NETHER_BRICKS)) {
+			if (!matStrength.containsKey(Material.RED_NETHER_BRICK_STAIRS)) matStrength.put(Material.RED_NETHER_BRICK_STAIRS, matStrength.get(Material.RED_NETHER_BRICKS));
+			if (!matStrength.containsKey(Material.RED_NETHER_BRICK_SLAB)) matStrength.put(Material.RED_NETHER_BRICK_SLAB, matStrength.get(Material.RED_NETHER_BRICKS));
+			if (!matStrength.containsKey(Material.RED_NETHER_BRICK_WALL)) matStrength.put(Material.RED_NETHER_BRICK_WALL, matStrength.get(Material.RED_NETHER_BRICKS));
+		}
+		if (matStrength.containsKey(Material.QUARTZ_BLOCK)) {
+			if (!matStrength.containsKey(Material.QUARTZ_STAIRS)) matStrength.put(Material.QUARTZ_STAIRS, matStrength.get(Material.QUARTZ_BLOCK));
+			if (!matStrength.containsKey(Material.QUARTZ_SLAB)) matStrength.put(Material.QUARTZ_SLAB, matStrength.get(Material.QUARTZ_BLOCK));
+		}
+		if (matStrength.containsKey(Material.PURPUR_BLOCK)) {
+			if (!matStrength.containsKey(Material.PURPUR_STAIRS)) matStrength.put(Material.PURPUR_STAIRS, matStrength.get(Material.PURPUR_BLOCK));
+			if (!matStrength.containsKey(Material.PURPUR_SLAB)) matStrength.put(Material.PURPUR_SLAB, matStrength.get(Material.PURPUR_BLOCK));
+		}
+		if (matStrength.containsKey(Material.PRISMARINE)) {
+			if (!matStrength.containsKey(Material.PRISMARINE_STAIRS)) matStrength.put(Material.PRISMARINE_STAIRS, matStrength.get(Material.PRISMARINE));
+			if (!matStrength.containsKey(Material.PRISMARINE_SLAB)) matStrength.put(Material.PRISMARINE_SLAB, matStrength.get(Material.PRISMARINE));
+			if (!matStrength.containsKey(Material.PRISMARINE_WALL)) matStrength.put(Material.PRISMARINE_WALL, matStrength.get(Material.PRISMARINE));
+		}
+		if (matStrength.containsKey(Material.PRISMARINE_BRICKS)) {
+			if (!matStrength.containsKey(Material.PRISMARINE_BRICK_STAIRS)) matStrength.put(Material.PRISMARINE_BRICK_STAIRS, matStrength.get(Material.PRISMARINE_BRICKS));
+			if (!matStrength.containsKey(Material.PRISMARINE_BRICK_SLAB)) matStrength.put(Material.PRISMARINE_BRICK_SLAB, matStrength.get(Material.PRISMARINE_BRICKS));
+		}
+		if (matStrength.containsKey(Material.DARK_PRISMARINE)) {
+			if (!matStrength.containsKey(Material.DARK_PRISMARINE_STAIRS)) matStrength.put(Material.DARK_PRISMARINE_STAIRS, matStrength.get(Material.DARK_PRISMARINE));
+			if (!matStrength.containsKey(Material.DARK_PRISMARINE_SLAB)) matStrength.put(Material.DARK_PRISMARINE_SLAB, matStrength.get(Material.DARK_PRISMARINE));
+		}
+		if (matStrength.containsKey(Material.END_STONE_BRICKS)) {
+			if (!matStrength.containsKey(Material.END_STONE_BRICK_STAIRS)) matStrength.put(Material.END_STONE_BRICK_STAIRS, matStrength.get(Material.END_STONE_BRICKS));
+			if (!matStrength.containsKey(Material.END_STONE_BRICK_SLAB)) matStrength.put(Material.END_STONE_BRICK_SLAB, matStrength.get(Material.END_STONE_BRICKS));
+		}
+		if (plugin.mcVersion >= 1.16) {
+			if (matStrength.containsKey(Material.CRIMSON_PLANKS)) {
+				if (!matStrength.containsKey(Material.CRIMSON_STAIRS)) matStrength.put(Material.CRIMSON_STAIRS, matStrength.get(Material.CRIMSON_PLANKS));
+				if (!matStrength.containsKey(Material.CRIMSON_SLAB)) matStrength.put(Material.CRIMSON_SLAB, matStrength.get(Material.CRIMSON_PLANKS));
+			}
+			if (matStrength.containsKey(Material.WARPED_PLANKS)) {
+				if (!matStrength.containsKey(Material.WARPED_STAIRS)) matStrength.put(Material.WARPED_STAIRS, matStrength.get(Material.WARPED_PLANKS));
+				if (!matStrength.containsKey(Material.WARPED_SLAB)) matStrength.put(Material.WARPED_SLAB, matStrength.get(Material.WARPED_PLANKS));
+			}
+			if (matStrength.containsKey(Material.BLACKSTONE)) {
+				if (!matStrength.containsKey(Material.BLACKSTONE_STAIRS)) matStrength.put(Material.BLACKSTONE_STAIRS, matStrength.get(Material.BLACKSTONE));
+				if (!matStrength.containsKey(Material.BLACKSTONE_SLAB)) matStrength.put(Material.BLACKSTONE_SLAB, matStrength.get(Material.BLACKSTONE));
+				if (!matStrength.containsKey(Material.BLACKSTONE_WALL)) matStrength.put(Material.BLACKSTONE_WALL, matStrength.get(Material.BLACKSTONE));
+			}
+			if (matStrength.containsKey(Material.POLISHED_BLACKSTONE)) {
+				if (!matStrength.containsKey(Material.POLISHED_BLACKSTONE_STAIRS)) matStrength.put(Material.POLISHED_BLACKSTONE_STAIRS, matStrength.get(Material.POLISHED_BLACKSTONE));
+				if (!matStrength.containsKey(Material.POLISHED_BLACKSTONE_SLAB)) matStrength.put(Material.POLISHED_BLACKSTONE_SLAB, matStrength.get(Material.POLISHED_BLACKSTONE));
+				if (!matStrength.containsKey(Material.POLISHED_BLACKSTONE_WALL)) matStrength.put(Material.POLISHED_BLACKSTONE_WALL, matStrength.get(Material.POLISHED_BLACKSTONE));
+			}
+			if (matStrength.containsKey(Material.POLISHED_BLACKSTONE_BRICKS)) {
+				if (!matStrength.containsKey(Material.POLISHED_BLACKSTONE_BRICK_STAIRS)) matStrength.put(Material.POLISHED_BLACKSTONE_BRICK_STAIRS, matStrength.get(Material.POLISHED_BLACKSTONE_BRICKS));
+				if (!matStrength.containsKey(Material.POLISHED_BLACKSTONE_BRICK_SLAB)) matStrength.put(Material.POLISHED_BLACKSTONE_BRICK_SLAB, matStrength.get(Material.POLISHED_BLACKSTONE_BRICKS));
+				if (!matStrength.containsKey(Material.POLISHED_BLACKSTONE_BRICK_WALL)) matStrength.put(Material.POLISHED_BLACKSTONE_BRICK_WALL, matStrength.get(Material.POLISHED_BLACKSTONE_BRICKS));
+			}
+			if (plugin.mcVersion >= 1.17) {
+				if (matStrength.containsKey(Material.COBBLED_DEEPSLATE)) {
+					if (!matStrength.containsKey(Material.COBBLED_DEEPSLATE_STAIRS)) matStrength.put(Material.COBBLED_DEEPSLATE_STAIRS, matStrength.get(Material.COBBLED_DEEPSLATE));
+					if (!matStrength.containsKey(Material.COBBLED_DEEPSLATE_SLAB)) matStrength.put(Material.COBBLED_DEEPSLATE_SLAB, matStrength.get(Material.COBBLED_DEEPSLATE));
+					if (!matStrength.containsKey(Material.COBBLED_DEEPSLATE_WALL)) matStrength.put(Material.COBBLED_DEEPSLATE_WALL, matStrength.get(Material.COBBLED_DEEPSLATE));
+				}
+				if (plugin.mcVersion >= 1.19) {
+					if (matStrength.containsKey(Material.MANGROVE_PLANKS)) {
+						if (!matStrength.containsKey(Material.MANGROVE_STAIRS)) matStrength.put(Material.MANGROVE_STAIRS, matStrength.get(Material.MANGROVE_PLANKS));
+						if (!matStrength.containsKey(Material.MANGROVE_SLAB)) matStrength.put(Material.MANGROVE_SLAB, matStrength.get(Material.MANGROVE_PLANKS));
+					}
+				}
+			}
+		}
 	}
 	public static void xchatColor(String string) {
 		StringBuilder byteString = new StringBuilder();
@@ -244,11 +457,11 @@ public class Utils {
 	}
 	public static boolean isZoneProtected(Location loc) {
 		return (WorldObject.findWorldObject(loc.getWorld()).protectRegions && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null && townyapi.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true))
-				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.isClaimed(loc)) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
+				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.getArea(loc) != null) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
 	}
 	public static boolean isWeatherDisabled(Location loc, WeatherDisaster instance) {
 		return (instance.RegionWeather && ((WGuardB && isWGRegion(loc)) || (TownyB && townyapi.getTownBlock(loc) != null && townyapi.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true))
-				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.isClaimed(loc)) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
+				|| (GriefB && grief.getClaimAt(loc, true, null) != null) || (LandsB && landsclaims.getArea(loc) != null) || (KingsB && org.kingdoms.constants.land.Land.getLand(loc) != null)));
 	}
 	public static Block getBlockAbove(Location location) {
 		Block b = location.getBlock();
@@ -423,7 +636,7 @@ public class Utils {
 			return null;
 		String s = text;
 		if (!s.contains("(hex:"))
-			return chat(s);
+			return convertString(s);
 		while (s.contains("(hex:")) {
 			String hex = s.substring(s.indexOf("(hex:")+5);
 			s = s.substring(0, s.indexOf("(hex:")) + net.md_5.bungee.api.ChatColor.of(hex.substring(0, hex.indexOf(")"))) + hex.substring(hex.indexOf(")")+1);
@@ -447,7 +660,7 @@ public class Utils {
 		return newMap;
 	}
 	public static void runConsoleCommand(String command, World world) {
-		Entity entity = world.spawnEntity(new Location(world, 0, 0, 0), EntityType.MINECART_COMMAND);
+		Entity entity = world.spawn(new Location(world, 0, 0, 0), CommandMinecart.class);
 		World tempWorld = Bukkit.getWorlds().get(0);
 		boolean gameRule = tempWorld.getGameRuleValue(GameRule.SEND_COMMAND_FEEDBACK);
 		tempWorld.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, false);
@@ -467,53 +680,42 @@ public class Utils {
 	    Block adjacentBlock = lastTwoTargetBlocks.get(0);
 	    return targetBlock.getFace(adjacentBlock);
 	}
-	public static void pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source) {
+	@SuppressWarnings("removal")
+	public static <T extends EntityDamageEvent> boolean pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source, T event, DamageCause cause) {
 		if (entity.isDead())
-			return;
-		EntityDamageEvent event = new EntityDamageEvent(entity, DamageCause.CUSTOM, damage);
-		Bukkit.getPluginManager().callEvent(event);
-		if (event.isCancelled())
-			return;
-		entity.damage(0.00001, source);
-		if (entity.getHealth()-event.getDamage() <= 0) {
-			if (!ignoreTotem) {
-				entity.setHealth(0.00001);
-				if (meta != null && entity.getEquipment().getItemInMainHand().getType() != Material.TOTEM_OF_UNDYING && entity.getEquipment().getItemInOffHand().getType() != Material.TOTEM_OF_UNDYING)
-					entity.setMetadata(meta, plugin.fixedData);
-				entity.damage(1);
-				return;
-			}
-			if (meta != null)
-				entity.setMetadata(meta, plugin.fixedData);
-			entity.setHealth(0);
-			return;
-		}
-		entity.setHealth(Math.max(entity.getHealth()-event.getDamage(), 0));
-	}
-	public static void pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source, boolean runEvent) {
-		if (entity.isDead())
-			return;
-		EntityDamageEvent event = new EntityDamageEvent(entity, DamageCause.CUSTOM, damage);
-		if (runEvent) {
+			return false;
+		if (event != null) {
 			Bukkit.getPluginManager().callEvent(event);
 			if (event.isCancelled())
-				return;
-		}
-		entity.damage(0.00001, source);
-		if (entity.getHealth()-event.getDamage() <= 0) {
-			if (!ignoreTotem) {
+				return false;
+			entity.setLastDamageCause(event);
+		} else
+			entity.setLastDamageCause(new EntityDamageEvent(entity, cause, damage));
+		if (entity.getHealth()-damage <= 0) {
+			if (!ignoreTotem && (entity.getEquipment().getItemInMainHand().getType() == Material.TOTEM_OF_UNDYING || entity.getEquipment().getItemInOffHand().getType() == Material.TOTEM_OF_UNDYING)) {
 				entity.setHealth(0.00001);
-				if (meta != null && entity.getEquipment().getItemInMainHand().getType() != Material.TOTEM_OF_UNDYING && entity.getEquipment().getItemInOffHand().getType() != Material.TOTEM_OF_UNDYING)
-					entity.setMetadata(meta, plugin.fixedData);
 				entity.damage(1);
-				return;
+				return true;
 			}
 			if (meta != null)
 				entity.setMetadata(meta, plugin.fixedData);
 			entity.setHealth(0);
-			return;
+			playDamageEffect(entity);
+			return true;
 		}
-		entity.setHealth(Math.max(entity.getHealth()-event.getDamage(), 0));
+		entity.setHealth(Math.max(entity.getHealth()-damage, 0));
+		playDamageEffect(entity);
+		return true;
+	}
+	@SuppressWarnings("removal")
+	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source, DamageCause cause) {
+		if (source == null)
+			return pureDamageEntity(entity, damage, meta, ignoreTotem, source, new EntityDamageEvent(entity, cause, damage), null);
+		return pureDamageEntity(entity, damage, meta, ignoreTotem, source, new EntityDamageByEntityEvent(source, entity, cause, damage), null);
+	}
+	@SuppressWarnings("removal")
+	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, DamageCause cause) {
+		return pureDamageEntity(entity, damage, meta, ignoreTotem, null, new EntityDamageEvent(entity, cause, damage), null);
 	}
 	public static void damageArmor(LivingEntity entity, double damage) {
 		int dmg = Math.max((int) (damage + 4 / 4), 1);
@@ -526,27 +728,35 @@ public class Utils {
 			armor.setItemMeta(meta);
 		}
 	}
-	public static void damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem) {
-		EntityDamageEvent event = new EntityDamageEvent(entity, DamageCause.CUSTOM, damage);
-		Bukkit.getPluginManager().callEvent(event);
-		if (event.isCancelled())
-			return;
+	public static <T extends EntityDamageEvent> boolean damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source, T event) {
+		if (event != null) {
+			Bukkit.getPluginManager().callEvent(event);
+			if (event.isCancelled())
+				return false;
+		}
 		double armor = entity.getAttribute(Attribute.GENERIC_ARMOR).getValue();
 		double toughness = entity.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).getValue();
-		double actualDamage = event.getDamage() * (1 - Math.min(20, Math.max(armor / 5, armor - event.getDamage() / (2 + toughness / 4))) / 25);
-		Utils.pureDamageEntity(entity, actualDamage, meta, ignoreTotem, null);
+		double actualDamage = damage * (1 - Math.min(20, Math.max(armor / 5, armor - damage / (2 + toughness / 4))) / 25);
+		Utils.pureDamageEntity(entity, actualDamage, meta, ignoreTotem, source, null, event.getCause());
 		Utils.damageArmor(entity, actualDamage);
+		return true;
 	}
-	public static void damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source) {
-		EntityDamageEvent event = new EntityDamageEvent(entity, DamageCause.CUSTOM, damage);
-		Bukkit.getPluginManager().callEvent(event);
-		if (event.isCancelled())
-			return;
-		double armor = entity.getAttribute(Attribute.GENERIC_ARMOR).getValue();
-		double toughness = entity.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).getValue();
-		double actualDamage = event.getDamage() * (1 - Math.min(20, Math.max(armor / 5, armor - event.getDamage() / (2 + toughness / 4))) / 25);
-		Utils.pureDamageEntity(entity, actualDamage, meta, ignoreTotem, source);
-		Utils.damageArmor(entity, actualDamage);
+	@SuppressWarnings("removal")
+	public static boolean damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source, DamageCause cause) {
+		if (source != null)
+			return damageEntity(entity, damage, meta, ignoreTotem, source, new EntityDamageByEntityEvent(source, entity, cause, damage));
+		return damageEntity(entity, damage, meta, ignoreTotem, source, new EntityDamageEvent(entity, cause, damage));
+	}
+	@SuppressWarnings("removal")
+	public static boolean damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, DamageCause cause) {
+		return damageEntity(entity, damage, meta, ignoreTotem, null, new EntityDamageEvent(entity, cause, damage));
+	}
+	@SuppressWarnings("deprecation")
+	public static void playDamageEffect(LivingEntity entity) {
+		if (VersionUtils.usingNewDamageEvent)
+			entity.playHurtAnimation(0);
+		else
+			entity.playEffect(EntityEffect.HURT);
 	}
 	public static Block rayCastForBlock(Location location, int minRange, int maxRange, int maxAttempts, Set<Material> materialWhitelist) {
 		for (int i=0; i < maxAttempts; i++) {
@@ -581,7 +791,7 @@ public class Utils {
 		return null;
 	}
 	public static void sendDebugMessage() {
-		Main.consoleSender.sendMessage(Utils.chat("&c[DeadlyDisasters]: An error has occurred above this message. Please report the full error to the discord https://discord.gg/MhXFj72VeN"));
+		Main.consoleSender.sendMessage(Utils.convertString("&c[DeadlyDisasters]: An error has occurred above this message. Please report the full error to the discord https://discord.gg/MhXFj72VeN"));
 	}
 	public static void reloadPlugin(Main plugin) {
 		CoreListener.reload(plugin);
@@ -686,7 +896,7 @@ public class Utils {
 	public static ItemStack createItem(Material type, int amount, String name, List<String> lore, boolean enchanted, boolean hideAttributes) {
 		ItemStack item = new ItemStack(type, amount);
 		ItemMeta meta = item.getItemMeta();
-		meta.setDisplayName(Utils.chat(name));
+		meta.setDisplayName(Utils.convertString(name));
 		if (lore != null) {
 			List<String> temp = new ArrayList<>();
 			for (String s : lore)
@@ -695,17 +905,17 @@ public class Utils {
 			meta.setLore(chopLore(temp));
 		}
 		if (enchanted) {
-			meta.addEnchant(Enchantment.DURABILITY, 1, true);
+			meta.addEnchant(VersionUtils.getUnbreaking(), 1, true);
 			meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		}
 		if (hideAttributes)
-			meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS);
+			meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, VersionUtils.getHideEffects());
 		item.setItemMeta(meta);
 		return item;
 	}
 	public static ItemStack createItem(ItemStack item, int amount, String name, List<String> lore, boolean enchanted, boolean hideAttributes) {
 		ItemMeta meta = item.getItemMeta();
-		meta.setDisplayName(Utils.chat(name));
+		meta.setDisplayName(Utils.convertString(name));
 		if (lore != null) {
 			List<String> temp = new ArrayList<>();
 			for (String s : lore)
@@ -714,11 +924,11 @@ public class Utils {
 			meta.setLore(chopLore(temp));
 		}
 		if (enchanted) {
-			meta.addEnchant(Enchantment.DURABILITY, 1, true);
+			meta.addEnchant(VersionUtils.getUnbreaking(), 1, true);
 			meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		}
 		if (hideAttributes)
-			meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS);
+			meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, VersionUtils.getHideEffects());
 		item.setItemMeta(meta);
 		return item;
 	}
@@ -726,7 +936,7 @@ public class Utils {
 		List<String> tempLore = new ArrayList<>();
 		if (lore != null)
 			for (String line : lore) {
-				line = Utils.chat(line);
+				line = Utils.convertString(line);
 				int offset = 0;
 				for (int i=0; i < line.length(); i++)
 					if (line.charAt(i) == ChatColor.COLOR_CHAR)
@@ -736,14 +946,14 @@ public class Utils {
 					int c = 0;
 					for (int i=max_length; i > 0; i--) {
 						if (i == 0) {
-							tempLore.add(Utils.chat(ChatColor.getLastColors(line.substring(0, c))+line.substring(c)));
+							tempLore.add(Utils.convertString(ChatColor.getLastColors(line.substring(0, c))+line.substring(c)));
 							break;
 						}
 						if (line.charAt(i) == ' ') {
-							tempLore.add(Utils.chat(ChatColor.getLastColors(line.substring(0, c+1))+line.substring(c, i)));
+							tempLore.add(Utils.convertString(ChatColor.getLastColors(line.substring(0, c+1))+line.substring(c, i)));
 							c += i-c+1;
 							if (i+max_length >= line.length()) {
-								tempLore.add(Utils.chat(ChatColor.getLastColors(line.substring(0, c))+line.substring(c, line.length())));
+								tempLore.add(Utils.convertString(ChatColor.getLastColors(line.substring(0, c))+line.substring(c, line.length())));
 								break;
 							}
 							i = c+max_length;
@@ -948,5 +1158,14 @@ public class Utils {
 	}
 	public static double clamp(double value, double min, double max) {
 		return value < min ? min : value > max ? max : value;
+	}
+	public static List<ItemStack> createIngredients(Collection<Material> materials) {
+		List<ItemStack> list = new ArrayList<>();
+		for (Material material : materials)
+			list.add(new ItemStack(material));
+		return list;
+	}
+	public static boolean isSpigot() {
+		return usingSpigot;
 	}
 }

@@ -27,9 +27,10 @@ import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
 import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
 import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class AncientSkeleton extends CustomEntity {
 	
@@ -73,13 +74,13 @@ public class AncientSkeleton extends CustomEntity {
 		if (timer > 0)
 			for (Skeleton skel : mobs) {
 				skel.teleport(skel.getLocation().clone().add(0,0.035,0));
-				skel.getWorld().spawnParticle(Particle.BLOCK_DUST, skel.getLocation(), 5, .5, .5, .5, .01, bd);
+				skel.getWorld().spawnParticle(VersionUtils.getBlockDust(), skel.getLocation(), 5, .5, .5, .5, .01, bd);
 			}
 		if (spellLife > 0) {
 			spellLife--;
 			spell.add(motion);
 			spell.getWorld().spawnParticle(Particle.FLAME, spell, 10, 1, 1, 1, .05);
-			spell.getWorld().spawnParticle(Particle.BLOCK_DUST, spell, 7, 1, 1, 1, .1, bd);
+			spell.getWorld().spawnParticle(VersionUtils.getBlockDust(), spell, 7, 1, 1, 1, .1, bd);
 			for (Entity e : spell.getWorld().getNearbyEntities(spell, 1.5, 1.5, 1.5))
 				if (e instanceof LivingEntity) {
 					e.setFireTicks(80);
@@ -99,8 +100,8 @@ public class AncientSkeleton extends CustomEntity {
 			entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_SKELETON_DEATH, SoundCategory.HOSTILE, 1f, .5f);
 			if (entity.getKiller() != null && plugin.getConfig().getBoolean("customentities.allow_custom_drops")) {
 				entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.BONE, plugin.random.nextInt(4)));
-				if (plugin.random.nextDouble() < 0.1)
-					entity.getWorld().dropItemNaturally(entity.getLocation(), ItemsHandler.ancientbone);
+				if (DependencyUtils.doesItemExist("ui:ancient_bone") && plugin.random.nextDouble() < 0.1)
+					entity.getWorld().dropItemNaturally(entity.getLocation(), DependencyUtils.getItemType("ui:ancient_bone").getItem());
 			}
 			clean();
 			it.remove();
