@@ -16,6 +16,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Zombie;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
@@ -191,7 +192,7 @@ public class InfestedDevourer extends CustomEntity {
 					updateTarget();
 					damageTicks = 15;
 				} else if (entity.hasLineOfSight(entity.getTarget())) {
-					Utils.damageEntity(entity.getTarget(), damage, "dd-devourdeath", false);
+					Utils.damageEntity(entity.getTarget(), damage, "dd-devourdeath", false, DamageCause.ENTITY_ATTACK);
 					entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation().add(entity.getLocation().getDirection().multiply(0.3)), 5, .2, .2, .2, 0.1, Material.REDSTONE_BLOCK.createBlockData());
 					damageTicks = 15;
 					cooldown = 8;

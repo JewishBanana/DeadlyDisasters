@@ -17,6 +17,7 @@ public class VersionUtils {
 	private static Enchantment unbreaking;
 	
 	public static boolean displaysAllowed;
+	public static boolean usingNewDamageEvent;
 	
 	private static Particle block_dust;
 	private static Particle block_crack;
@@ -53,6 +54,8 @@ public class VersionUtils {
 		slow_dig = Registry.EFFECT.get(NamespacedKey.minecraft("mining_fatigue"));
 		
 		Integer[] version = Arrays.stream(Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf('-')).split("\\.")).map(e -> Integer.parseInt(e)).toArray(Integer[]::new);
+		if (version[1] > 20 || (version[1] == 20 && version[2] >= 4))
+			usingNewDamageEvent = true;
 		if (version[1] >= 20 || (version[1] == 19 && version[2] >= 4))
 			displaysAllowed = true;
 		if (version[1] > 20 || (version[1] == 20 && version[2] >= 4))

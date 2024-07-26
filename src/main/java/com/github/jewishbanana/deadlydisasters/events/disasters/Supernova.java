@@ -207,7 +207,7 @@ public class Supernova extends DestructionDisaster {
 				for (Entity e : world.getNearbyEntities(loc, tick+100, tick+100, tick+100))
 					if (e instanceof LivingEntity && !e.isDead()) {
 						if (loc.distance(e.getLocation()) < tick) {
-							if (Utils.isZoneProtected(e.getLocation()) || (e instanceof Player && Utils.isPlayerImmune((Player) e)))
+							if (isEntityTypeProtected(e) || Utils.isZoneProtected(e.getLocation()) || (e instanceof Player && Utils.isPlayerImmune((Player) e)))
 								continue;
 							Utils.pureDamageEntity((LivingEntity) e, 20.0, "dd-supernova", true, null);
 						} else if (e instanceof Player) {

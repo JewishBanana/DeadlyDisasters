@@ -160,7 +160,7 @@ public class ExtremeWinds extends WeatherDisaster {
 						if (i < 0)
 							break;
 						Entity e = tempList.get(i);
-						if (e == null) {
+						if (e == null || isEntityTypeProtected(e)) {
 							tempList.remove(i);
 							continue;
 						}

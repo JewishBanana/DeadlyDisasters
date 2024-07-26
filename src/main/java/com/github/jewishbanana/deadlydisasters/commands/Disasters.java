@@ -1332,11 +1332,14 @@ public class Disasters implements CommandExecutor,TabCompleter {
 			Queue<Runnable> taskList = new ConcurrentLinkedDeque<>();
 			Map<Block, ItemStack[]> inventories = new HashMap<>();
 			Set<Block> gravityHoldBlocks = new HashSet<>();
+			Set<Material> blacklistedMaterials = WorldObject.findWorldObject(Bukkit.getWorlds().get(0)).blacklistedRegenBlocks;
 			regenTask = plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
 				Map<Block, BlockState> placeMap = new LinkedHashMap<>();
 				Map<Block, Block> syncMap = new HashMap<>();
 				Set<Block> removeBlocks = new LinkedHashSet<>();
 				for (Entry<Block, BlockState> entry : damagedBlocks.entrySet()) {
+					if (blacklistedMaterials.contains(entry.getValue().getType()))
+						continue;
 					if (regenTask == null)
 						return;
 					Block b = entry.getKey();

@@ -27,6 +27,7 @@ public class BasicCoatingBook extends com.github.jewishbanana.uiframework.items.
 		
 		type.registerRecipe(createAnvilBookRecipe(BasicCoating.REGISTERED_KEY, Utils.createIngredients(BasicCoating.applicableTypes)));
 	}
+	@SuppressWarnings("deprecation")
 	private static com.github.jewishbanana.uiframework.utils.AnvilRecipe createAnvilBookRecipe(String enchant, List<ItemStack> ingredients) {
 		com.github.jewishbanana.uiframework.items.UIEnchantment type = com.github.jewishbanana.uiframework.items.UIEnchantment.getEnchant(enchant);
 		if (type == null)

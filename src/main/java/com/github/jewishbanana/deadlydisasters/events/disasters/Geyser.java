@@ -224,7 +224,7 @@ public class Geyser extends DestructionDisaster {
 			@Override
 			public void run() {
 				for (Entity all : loc.getWorld().getNearbyEntities(loc, 2, loc.getY(), 2))
-					if (all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
+					if (!isEntityTypeProtected(all) && all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
 							&& all.getLocation().getBlockY() <= loc.getBlockY() && all.getLocation().getBlockY() >= mem.getBlockY()) all.setVelocity(velocity);
 				if (push) cancel();
 			}
@@ -233,7 +233,7 @@ public class Geyser extends DestructionDisaster {
 			@Override
 			public void run() {
 				for (Entity all : loc.getWorld().getNearbyEntities(loc, 2, loc.getY(), 2))
-					if (all instanceof LivingEntity && all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
+					if (!isEntityTypeProtected(all) && all instanceof LivingEntity && all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
 					&& all.getLocation().getBlockY() <= loc.getBlockY() && all.getLocation().getBlockY() >= mem.getBlockY() && !((LivingEntity) all).hasPotionEffect(PotionEffectType.FIRE_RESISTANCE))
 						Utils.pureDamageEntity((LivingEntity) all, damageAmount, "dd-geyserdeath", false, null);
 				if (finished) cancel();
@@ -344,7 +344,7 @@ public class Geyser extends DestructionDisaster {
 			@Override
 			public void run() {
 				for (Entity all : loc.getWorld().getNearbyEntities(loc, 2, loc.getY(), 2))
-					if (all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
+					if (!isEntityTypeProtected(all) && all.getLocation().getBlockX() >= px[0]-1 && all.getLocation().getBlockX() <= px[1]+1 && all.getLocation().getBlockZ() >= pz[0]-1 && all.getLocation().getBlockZ() <= pz[1]+1
 							&& all.getLocation().getBlockY() <= loc.getBlockY() && all.getLocation().getBlockY() >= mem.getBlockY()) all.setVelocity(velocity);
 				if (push) cancel();
 			}

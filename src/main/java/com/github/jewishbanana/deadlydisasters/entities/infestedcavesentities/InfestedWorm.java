@@ -21,6 +21,7 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -297,7 +298,7 @@ public class InfestedWorm extends CustomEntity {
 								if (plugin.mcVersion >= 1.19)
 									block.getWorld().playSound(block.getLocation().add(vec), Sound.ENTITY_WARDEN_ROAR, SoundCategory.HOSTILE, 1, 2);
 							} else if (player != null) {
-								Utils.damageEntity(player, entityType.getDamage(), "dd-infestedwormdeath", false);
+								Utils.damageEntity(player, entityType.getDamage(), "dd-infestedwormdeath", false, DamageCause.ENTITY_ATTACK);
 								if (plugin.mcVersion >= 1.19)
 									block.getWorld().playSound(player.getLocation(), Sound.ENTITY_WARDEN_ATTACK_IMPACT, SoundCategory.HOSTILE, 0.5F, 1.2F);
 							}
@@ -313,7 +314,7 @@ public class InfestedWorm extends CustomEntity {
 								swingVel = -0.2;
 							}
 							if (player != null) {
-								Utils.damageEntity(player, entityType.getDamage(), "dd-infestedwormdeath", false);
+								Utils.damageEntity(player, entityType.getDamage(), "dd-infestedwormdeath", false, DamageCause.ENTITY_ATTACK);
 								if (plugin.mcVersion >= 1.19)
 									block.getWorld().playSound(player.getLocation(), Sound.ENTITY_WARDEN_ATTACK_IMPACT, SoundCategory.HOSTILE, 0.5F, 1.2F);
 							}

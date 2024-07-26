@@ -45,6 +45,7 @@ import com.github.jewishbanana.deadlydisasters.entities.soulstormentities.SoulRe
 import com.github.jewishbanana.deadlydisasters.events.Disaster;
 import com.github.jewishbanana.deadlydisasters.events.disasters.BlackPlague;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
+import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
@@ -84,12 +85,12 @@ public class CustomEntitiesListener implements Listener {
 		}
 		if (damager.hasMetadata("dd-pumpkinkingbloodfang")) {
 			e.setCancelled(true);
-			Utils.damageEntity((LivingEntity) hurtEntity, 20.0, "dd-pumpkinkingblooddeath", false);
+			Utils.damageEntity((LivingEntity) hurtEntity, 20.0, "dd-pumpkinkingblooddeath", false, DamageCause.MAGIC);
 		}
 		if (!(damager instanceof LivingEntity))
 			return;
 		LivingEntity entity = (LivingEntity) damager;
-		if (hurtEntity.hasMetadata("dd-plague") && !damager.hasMetadata("dd-plague") && BlackPlague.time.size() < BlackPlague.maxInfectedMobs) {
+		if (hurtEntity.hasMetadata("dd-plague") && !damager.hasMetadata("dd-plague") && BlackPlague.time.size() < BlackPlague.maxInfectedMobs && !WorldObject.findWorldObject(entity.getWorld()).blacklistedEntities.contains(entity.getType())) {
 			if (entity instanceof Player) {
 				if (!Utils.isPlayerImmune((Player) entity)) {
 					entity.sendMessage(Utils.convertString("&c"+Languages.getString("misc.plagueCatch")));
@@ -238,7 +239,7 @@ public class CustomEntitiesListener implements Listener {
 				return;
 			}
 			((LivingEntity) e.getHitEntity()).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 40, 1, true, false));
-			Utils.damageEntity((LivingEntity) e.getHitEntity(), CustomEntityType.FROSTY.getDamage(), "dd-frostydeath", false);
+			Utils.damageEntity((LivingEntity) e.getHitEntity(), CustomEntityType.FROSTY.getDamage(), "dd-frostydeath", false, DamageCause.FREEZE);
 		}
 		if (e.getEntity().hasMetadata("dd-elfarrow")) {
 			e.getEntity().getWorld().createExplosion(e.getEntity().getLocation(), 1.5f, false, false, e.getEntity());

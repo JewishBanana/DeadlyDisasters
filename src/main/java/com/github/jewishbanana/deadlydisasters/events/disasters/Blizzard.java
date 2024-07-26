@@ -44,16 +44,14 @@ import com.github.jewishbanana.deadlydisasters.events.DisasterEvent;
 import com.github.jewishbanana.deadlydisasters.events.WeatherDisaster;
 import com.github.jewishbanana.deadlydisasters.events.WeatherDisasterEvent;
 import com.github.jewishbanana.deadlydisasters.handlers.DifficultyLevel;
-import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.handlers.SeasonsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.listeners.BlockRegenHandler;
 import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
-
-import net.md_5.bungee.api.ChatColor;
 
 public class Blizzard extends WeatherDisaster {
 	
@@ -104,7 +102,6 @@ public class Blizzard extends WeatherDisaster {
 		Random rand = plugin.random;
 		final double spawnRate = configFile.getDouble("blizzard.mob_spawn_rate");
 		EntityHandler handler = CustomEntity.handler;
-		String yetisBlessing = ChatColor.GRAY + Languages.getString("misc.yetiBlessing");
 		NamespacedKey key = new NamespacedKey(plugin, "dd-frozen-mob");
 		new RepeatingTask(plugin, delay, 5) {
 			@Override
@@ -121,10 +118,8 @@ public class Blizzard extends WeatherDisaster {
 				for (LivingEntity all : world.getLivingEntities()) {
 					if (entities.contains(all.getUniqueId()) && ((Mob) all).getTarget() == null && Bukkit.getEntity(targets.get(all.getUniqueId())) != null)
 						((Mob) all).setTarget((LivingEntity) Bukkit.getEntity(targets.get(all.getUniqueId())));
-					if (!all.hasMetadata("dd-yeti")
-							&& ((!seasonsAllowed && all.getLocation().getBlock().getTemperature() <= 0.15)
-									|| (seasonsAllowed && all instanceof Player
-											&& seasons.getTemperature((Player) all) <= minTemp))) {
+					if (!all.hasMetadata("dd-yeti") && !isEntityTypeProtected(all) && ((!seasonsAllowed && all.getLocation().getBlock().getTemperature() <= 0.15)
+							|| (seasonsAllowed && all instanceof Player && seasons.getTemperature((Player) all) <= minTemp))) {
 						if (Utils.isWeatherDisabled(all.getLocation(), obj))
 							continue;
 						Block b = all.getLocation().getBlock();
@@ -191,7 +186,7 @@ public class Blizzard extends WeatherDisaster {
 								if (armor[2] != null) {
 									if (armor[2].getType() == Material.LEATHER_CHESTPLATE)
 										tempDamage -= damage / 4;
-									int level = Utils.levelOfEnchant(yetisBlessing, armor[2]);
+									int level = DependencyUtils.getYetisBlessingLevel(armor[2]);
 									if (level > 0)
 										tempDamage -= (damage / 4) * (level + 1);
 								}

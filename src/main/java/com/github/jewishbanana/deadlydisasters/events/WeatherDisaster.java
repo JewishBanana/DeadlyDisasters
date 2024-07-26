@@ -41,7 +41,8 @@ public abstract class WeatherDisaster extends DisasterEvent {
 		this.level = level;
 		if (this.level > 5 && !(this instanceof ExtremeWinds))
 			this.level = 5;
-		this.configFile = plugin.getConfig();
+		this.worldObject = WorldObject.findWorldObject(Bukkit.getWorlds().get(0));
+		this.configFile = worldObject.configFile;
 		this.dropItems = configFile.getBoolean("regeneration.drop_container_items");
 	}
 	public WeatherDisaster(int level, World world) {
@@ -49,7 +50,8 @@ public abstract class WeatherDisaster extends DisasterEvent {
 		this.level = level;
 		if (this.level > 5 && !(this instanceof ExtremeWinds))
 			this.level = 5;
-		this.configFile = WorldObject.findWorldObject(world).configFile;
+		this.worldObject = WorldObject.findWorldObject(world);
+		this.configFile = worldObject.configFile;
 		this.dropItems = configFile.getBoolean("regeneration.drop_container_items");
 	}
 	public void triggerRegen(boolean reverse) {
@@ -89,7 +91,7 @@ public abstract class WeatherDisaster extends DisasterEvent {
 							Entry<Block, Block> btb = it.next();
 							if (btb.getKey().equals(b)) {
 								Block toBlock = btb.getValue();
-								if (b.equals(toBlock)) {
+								if (b.equals(toBlock) || worldObject.blacklistedRegenBlocks.contains(toBlock.getType())) {
 									it.remove();
 									break;
 								}
@@ -119,9 +121,10 @@ public abstract class WeatherDisaster extends DisasterEvent {
 							gravityHoldBlocks.add(b);
 							BlockRegenHandler.gravityHold.add(b);
 						}
-						entry.getValue().update(true);
-						if (inventories.containsKey(b)) {
-							plugin.getServer().getScheduler().runTaskLater(plugin, () -> ((InventoryHolder) b.getState()).getInventory().setContents(inventories.get(b)), 7);
+						if (!worldObject.blacklistedRegenBlocks.contains(entry.getValue().getType())) {
+							entry.getValue().update(true);
+							if (inventories.containsKey(b))
+								plugin.getServer().getScheduler().runTaskLater(plugin, () -> ((InventoryHolder) b.getState()).getInventory().setContents(inventories.get(b)), 7);
 						}
 						damagedBlocks.remove(b);
 						disasterBlocks.remove(b);

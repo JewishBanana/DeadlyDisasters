@@ -59,7 +59,7 @@ public class Languages {
 	
 	public static String upgradeProMessage = Utils.convertString("&bThank you for upgrading to &4&lPRO &bThis introduces lots of new content (disasters, custom mobs, items, etc.) And worlds can naturally regenerate after disasters! To enable this feature the worlds disaster difficulty level must be set to &f&lCUSTOM &band the following field &dregenDelay &bin the &aworlds.yml &bfile must be greater then 0 (default value 120 = 2 minutes). The regenDelay is how many seconds after a disaster occurs should the regenerating begin, the rate of regeneration is different for each disaster and can be configured in the config. &ePlease note that this feature is in a &4&lBETA &estate and will be prone to bugs such as blocks missing and possibly some duplication glitches! Please use this feature at your own risk and report any bugs to the discord! (https://discord.com/invite/MhXFj72VeN)");
 	
-	public static String joinAfterUpdate = Utils.convertString("&bUpdate log for &4&lV14.4 \n&3- UIFramework implementation \n- 1.21 support \n- Easier to access lang file \n-KingdomsX support \n-Bug fixes");
+	public static String joinAfterUpdate = Utils.convertString("&bUpdate log for &4&lV14.5 \n&3- Bug fixes\n- Added mob type blacklist to config\n- Added regen block blacklist to the config");
 	
 	public static String getString(String path) {
 		return langFile.contains(path) ? langFile.getString(path) : defaultLang.getString(path);

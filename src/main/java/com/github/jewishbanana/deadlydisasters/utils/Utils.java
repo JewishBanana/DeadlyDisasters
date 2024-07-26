@@ -28,6 +28,7 @@ import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;
+import org.bukkit.EntityEffect;
 import org.bukkit.GameMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
@@ -48,6 +49,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.minecart.CommandMinecart;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.EquipmentSlot;
@@ -105,7 +107,6 @@ public class Utils {
 	private static boolean usingSpigot;
 	private static Pattern hexPattern;
 	private static Map<DyeColor, ChatColor> dyeChatMap;
-	
 	static {
 		hexPattern = Pattern.compile("\\(hex:#[a-fA-F0-9]{6}\\)");
 		decimalFormat = new DecimalFormat("0.0");
@@ -292,8 +293,6 @@ public class Utils {
 			else if (s.equals("terracottas") && plugin.mcVersion >= 1.18)
 				for (Material wool : Tag.TERRACOTTA.getValues())
 					matStrength.put(wool, yml.getDouble(s));
-			else
-				plugin.getLogger().info("Unreconized: "+s);
 		if (matStrength.containsKey(Material.OAK_PLANKS)) {
 			if (!matStrength.containsKey(Material.OAK_STAIRS)) matStrength.put(Material.OAK_STAIRS, matStrength.get(Material.OAK_PLANKS));
 			if (!matStrength.containsKey(Material.OAK_SLAB)) matStrength.put(Material.OAK_SLAB, matStrength.get(Material.OAK_PLANKS));
@@ -712,54 +711,43 @@ public class Utils {
 	    return targetBlock.getFace(adjacentBlock);
 	}
 	@SuppressWarnings("removal")
-	public static void pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source) {
+	public static <T extends EntityDamageEvent> boolean pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source, T event, DamageCause cause) {
 		if (entity.isDead())
-			return;
-		EntityDamageEvent event = new EntityDamageEvent(entity, DamageCause.CUSTOM, damage);
-		Bukkit.getPluginManager().callEvent(event);
-		if (event.isCancelled())
-			return;
-		entity.damage(0.00001, source);
-		if (entity.getHealth()-event.getDamage() <= 0) {
-			if (!ignoreTotem) {
-				entity.setHealth(0.00001);
-				if (meta != null && entity.getEquipment().getItemInMainHand().getType() != Material.TOTEM_OF_UNDYING && entity.getEquipment().getItemInOffHand().getType() != Material.TOTEM_OF_UNDYING)
-					entity.setMetadata(meta, plugin.fixedData);
-				entity.damage(1);
-				return;
-			}
-			if (meta != null)
-				entity.setMetadata(meta, plugin.fixedData);
-			entity.setHealth(0);
-			return;
-		}
-		entity.setHealth(Math.max(entity.getHealth()-event.getDamage(), 0));
-	}
-	@SuppressWarnings("removal")
-	public static void pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source, boolean runEvent) {
-		if (entity.isDead())
-			return;
-		EntityDamageEvent event = new EntityDamageEvent(entity, DamageCause.CUSTOM, damage);
-		if (runEvent) {
+			return false;
+		if (event != null) {
 			Bukkit.getPluginManager().callEvent(event);
 			if (event.isCancelled())
-				return;
-		}
-		entity.damage(0.00001, source);
-		if (entity.getHealth()-event.getDamage() <= 0) {
+				return false;
+			entity.setLastDamageCause(event);
+		} else
+			entity.setLastDamageCause(new EntityDamageEvent(entity, cause, damage));
+		if (entity.getHealth()-damage <= 0) {
 			if (!ignoreTotem) {
 				entity.setHealth(0.00001);
 				if (meta != null && entity.getEquipment().getItemInMainHand().getType() != Material.TOTEM_OF_UNDYING && entity.getEquipment().getItemInOffHand().getType() != Material.TOTEM_OF_UNDYING)
 					entity.setMetadata(meta, plugin.fixedData);
 				entity.damage(1);
-				return;
+				return true;
 			}
 			if (meta != null)
 				entity.setMetadata(meta, plugin.fixedData);
 			entity.setHealth(0);
-			return;
+			playDamageEffect(entity);
+			return true;
 		}
-		entity.setHealth(Math.max(entity.getHealth()-event.getDamage(), 0));
+		entity.setHealth(Math.max(entity.getHealth()-damage, 0));
+		playDamageEffect(entity);
+		return true;
+	}
+	@SuppressWarnings("removal")
+	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source, DamageCause cause) {
+		if (source == null)
+			return pureDamageEntity(entity, damage, meta, ignoreTotem, source, new EntityDamageEvent(entity, cause, damage), null);
+		return pureDamageEntity(entity, damage, meta, ignoreTotem, source, new EntityDamageByEntityEvent(source, entity, cause, damage), null);
+	}
+	@SuppressWarnings("removal")
+	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, DamageCause cause) {
+		return pureDamageEntity(entity, damage, meta, ignoreTotem, null, new EntityDamageEvent(entity, cause, damage), null);
 	}
 	public static void damageArmor(LivingEntity entity, double damage) {
 		int dmg = Math.max((int) (damage + 4 / 4), 1);
@@ -772,29 +760,35 @@ public class Utils {
 			armor.setItemMeta(meta);
 		}
 	}
-	@SuppressWarnings("removal")
-	public static void damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem) {
-		EntityDamageEvent event = new EntityDamageEvent(entity, DamageCause.CUSTOM, damage);
-		Bukkit.getPluginManager().callEvent(event);
-		if (event.isCancelled())
-			return;
+	public static <T extends EntityDamageEvent> boolean damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source, T event) {
+		if (event != null) {
+			Bukkit.getPluginManager().callEvent(event);
+			if (event.isCancelled())
+				return false;
+		}
 		double armor = entity.getAttribute(Attribute.GENERIC_ARMOR).getValue();
 		double toughness = entity.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).getValue();
-		double actualDamage = event.getDamage() * (1 - Math.min(20, Math.max(armor / 5, armor - event.getDamage() / (2 + toughness / 4))) / 25);
-		Utils.pureDamageEntity(entity, actualDamage, meta, ignoreTotem, null);
+		double actualDamage = damage * (1 - Math.min(20, Math.max(armor / 5, armor - damage / (2 + toughness / 4))) / 25);
+		Utils.pureDamageEntity(entity, actualDamage, meta, ignoreTotem, source, null, event.getCause());
 		Utils.damageArmor(entity, actualDamage);
+		return true;
 	}
 	@SuppressWarnings("removal")
-	public static void damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source) {
-		EntityDamageEvent event = new EntityDamageEvent(entity, DamageCause.CUSTOM, damage);
-		Bukkit.getPluginManager().callEvent(event);
-		if (event.isCancelled())
-			return;
-		double armor = entity.getAttribute(Attribute.GENERIC_ARMOR).getValue();
-		double toughness = entity.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).getValue();
-		double actualDamage = event.getDamage() * (1 - Math.min(20, Math.max(armor / 5, armor - event.getDamage() / (2 + toughness / 4))) / 25);
-		Utils.pureDamageEntity(entity, actualDamage, meta, ignoreTotem, source);
-		Utils.damageArmor(entity, actualDamage);
+	public static boolean damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, Entity source, DamageCause cause) {
+		if (source != null)
+			return damageEntity(entity, damage, meta, ignoreTotem, source, new EntityDamageByEntityEvent(source, entity, cause, damage));
+		return damageEntity(entity, damage, meta, ignoreTotem, source, new EntityDamageEvent(entity, cause, damage));
+	}
+	@SuppressWarnings("removal")
+	public static boolean damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, DamageCause cause) {
+		return damageEntity(entity, damage, meta, ignoreTotem, null, new EntityDamageEvent(entity, cause, damage));
+	}
+	@SuppressWarnings("deprecation")
+	public static void playDamageEffect(LivingEntity entity) {
+		if (VersionUtils.usingNewDamageEvent)
+			entity.playHurtAnimation(0);
+		else
+			entity.playEffect(EntityEffect.HURT);
 	}
 	public static Block rayCastForBlock(Location location, int minRange, int maxRange, int maxAttempts, Set<Material> materialWhitelist) {
 		for (int i=0; i < maxAttempts; i++) {

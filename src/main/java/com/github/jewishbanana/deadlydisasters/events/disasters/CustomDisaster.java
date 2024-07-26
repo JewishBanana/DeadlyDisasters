@@ -22,6 +22,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
+import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
@@ -30,7 +31,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BarColor;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Flying;
@@ -211,7 +211,6 @@ public class CustomDisaster {
 		while (it.hasNext())
 			it.next().getValue().forEach(k -> k.initValues(world, p, startPos));
 	}
-	@SuppressWarnings("deprecation")
 	public void preInit() {
 		if (yaml.contains("items"))
 			for (String itemName : yaml.getConfigurationSection("items").getKeys(false))  {
@@ -229,7 +228,7 @@ public class CustomDisaster {
 				if (yaml.contains(path+"enchantments"))
 					for (String temp : yaml.getConfigurationSection(path+"enchantments").getKeys(false)) {
 						String tempPath = path+"enchantments."+temp+'.';
-						meta.addEnchant(Enchantment.getByKey(NamespacedKey.minecraft(yaml.getString(tempPath+"enchantment").toLowerCase())), yaml.getInt(tempPath+"level"), true);
+						meta.addEnchant(Registry.ENCHANTMENT.get(NamespacedKey.minecraft(yaml.getString(tempPath+"enchantment").toLowerCase())), yaml.getInt(tempPath+"level"), true);
 					}
 				if (yaml.contains(path+"hide_enchants") && yaml.getBoolean(path+"hide_enchants"))
 					meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);

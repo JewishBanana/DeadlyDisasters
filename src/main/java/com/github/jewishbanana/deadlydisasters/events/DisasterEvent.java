@@ -24,12 +24,14 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.BlockInventoryHolder;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.listeners.BlockRegenHandler;
 import com.github.jewishbanana.deadlydisasters.utils.BlockStateParser;
 import com.github.jewishbanana.deadlydisasters.utils.ChannelDataHolder;
@@ -42,6 +44,7 @@ public class DisasterEvent {
 	public Disaster type;
 	public int level;
 	public World world;
+	public WorldObject worldObject;
 	public FileConfiguration configFile;
 	public boolean dropItems;
 	
@@ -174,7 +177,7 @@ public class DisasterEvent {
 							Entry<Block, Block> btb = it.next();
 							if (btb.getKey().equals(b)) {
 								Block toBlock = btb.getValue();
-								if (b.equals(toBlock)) {
+								if (b.equals(toBlock) || worldObject.blacklistedRegenBlocks.contains(toBlock.getType())) {
 									it.remove();
 									break;
 								}
@@ -204,11 +207,12 @@ public class DisasterEvent {
 							gravityHoldBlocks.add(b);
 							BlockRegenHandler.gravityHold.add(b);
 						}
-						b.setBlockData(entry.getValue().getFirst());
-						if (entry.getValue().getSecond() != null)
-							BlockStateParser.deserializeToBlock(entry.getValue().getSecond(), b);
-						if (inventories.containsKey(b)) {
-							plugin.getServer().getScheduler().runTaskLater(plugin, () -> ((InventoryHolder) b.getState()).getInventory().setContents(inventories.get(b)), 7);
+						if (!worldObject.blacklistedRegenBlocks.contains(entry.getValue().getFirst().getMaterial())) {
+							b.setBlockData(entry.getValue().getFirst());
+							if (entry.getValue().getSecond() != null)
+								BlockStateParser.deserializeToBlock(entry.getValue().getSecond(), b);
+							if (inventories.containsKey(b))
+								plugin.getServer().getScheduler().runTaskLater(plugin, () -> ((InventoryHolder) b.getState()).getInventory().setContents(inventories.get(b)), 7);
 						}
 						threadSafeRegen.remove(b);
 						disasterBlocks.remove(b);
@@ -220,5 +224,8 @@ public class DisasterEvent {
 			}
 		};
 		regeneratingTasks.put(task[0], instance);
+	}
+	public boolean isEntityTypeProtected(Entity entity) {
+		return worldObject.blacklistedEntities.contains(entity.getType());
 	}
 }

@@ -20,6 +20,14 @@ regeneration:
     fire_spread: true
     # This setting will drop the contents of inventory blocks on the ground rather than regenerating them with the container
     drop_container_items: false
+    # The regen block blacklist is for block types you want to NOT regenerate after disasters. An example entry has been placed in the list below:
+    block_blacklist:
+    - example_entry
+protection_settings:
+    # Blacklisted mob types are mob types that are unaffected by all disasters (Keep in mind that disasters which displace the land can affect these entities e.g. Entity falling with Sinkhole)
+    blacklisted_mob_types:
+    - ender_dragon
+    - wither
 messages:
     # Modify messages sent by the plugin. Do not set this to be empty it will not work, if you do not want any messages then turn off event_broadcast in general
     console_error_message: '&cUnable to execute command from console!'

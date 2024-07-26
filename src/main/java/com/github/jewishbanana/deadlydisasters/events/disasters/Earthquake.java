@@ -131,7 +131,7 @@ public class Earthquake extends DestructionDisaster {
 									iterator.next().dig(iterator);
 								for (Map.Entry<BlockVector, Vector> entry : pullVectorMap.get(delay[1]).entrySet()) {
 									for (Entity e : world.getNearbyEntities(entry.getKey().subtract(entry.getValue()).toLocation(world), level*10, level*10, level*10)) {
-										if ((pushPlayersInRegions && Utils.isZoneProtected(e.getLocation())) || (e instanceof Player && ((Player) e).isFlying()))
+										if (isEntityTypeProtected(e) || (pushPlayersInRegions && Utils.isZoneProtected(e.getLocation())) || (e instanceof Player && ((Player) e).isFlying()))
 											continue;
 										double yVel = e.getVelocity().getY();
 										if (!e.isOnGround() || e.getVelocity().getY() > 3)

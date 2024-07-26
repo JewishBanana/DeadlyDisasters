@@ -135,6 +135,7 @@ public class ItemsHandler {
 		compatibilityMap.put(new NamespacedKey(plugin, "dd-goldenegg"), "ui:golden_egg");
 	}
 	
+	@SuppressWarnings("deprecation")
 	public static void refreshMetas(Main plugin) {
 		allItems.clear();
 //		String craftables = Utils.convertString("&7&o"+Languages.getString("misc.craftable"));

@@ -25,6 +25,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.Vector;
@@ -199,10 +200,10 @@ public class Tsunami extends DestructionDisaster implements Listener {
 							Location entityLoc = e.getLocation();
 							double dist = entityLoc.distance(pushLoc);
 							if (dist <= tick[1] && entityLoc.getBlockY() <= over && entityLoc.getBlockY() >= under) {
-								if (entityLoc.getBlock().getType() == liquid) {
+								if (!isEntityTypeProtected(e) && entityLoc.getBlock().getType() == liquid) {
 									e.setVelocity(new Vector(entityLoc.getX() - loc.getX(), 0.7, entityLoc.getZ() - loc.getZ()).normalize().multiply(0.5));
 									if (e instanceof LivingEntity)
-										Utils.damageEntity((LivingEntity) e, damage, "dd-tsunamideath", false);
+										Utils.damageEntity((LivingEntity) e, damage, "dd-tsunamideath", false, DamageCause.DROWNING);
 									if (e instanceof Player) {
 										((Player) e).spawnParticle(particleType, entityLoc, 30, 1, 1.5, 1, 1);
 										Location spawn = new Location(e.getWorld(), entityLoc.getX()+rand.nextInt(8)-4, entityLoc.getY()+rand.nextInt(5)+1, entityLoc.getZ()+rand.nextInt(8)-4);
@@ -283,18 +284,18 @@ public class Tsunami extends DestructionDisaster implements Listener {
 								continue;
 							}
 							for (Entity e : world.getNearbyEntities(fb.getLocation().add(.5,.5,.5), .8, .8, .8))
-								if (e instanceof LivingEntity) {
+								if (e instanceof LivingEntity && !isEntityTypeProtected(e)) {
 									if (e instanceof Player) {
 										if (Utils.isPlayerImmune((Player) e))
 											continue;
 										if (plugin.achievementsHandler.isMasteryActive(e.getUniqueId(), "disasters.survival.cavein")) {
 											e.setVelocity(fb.getVelocity().multiply(2.0));
-											Utils.damageEntity((LivingEntity) e, damage-((damage/100.0)*(plugin.achievementsHandler.getMasteryPower(e.getUniqueId(), "disasters.survival.cavein"))), "dd-tsunamideath", false);
+											Utils.damageEntity((LivingEntity) e, damage-((damage/100.0)*(plugin.achievementsHandler.getMasteryPower(e.getUniqueId(), "disasters.survival.cavein"))), "dd-tsunamideath", false, DamageCause.DROWNING);
 											continue;
 										}
 									}
 									e.setVelocity(fb.getVelocity().multiply(2.0));
-									Utils.damageEntity((LivingEntity) e, damage, "dd-tsunamideath", false);
+									Utils.damageEntity((LivingEntity) e, damage, "dd-tsunamideath", false, DamageCause.DROWNING);
 								}
 						}
 					}

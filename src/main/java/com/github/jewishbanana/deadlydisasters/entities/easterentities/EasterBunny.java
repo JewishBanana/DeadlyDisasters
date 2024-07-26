@@ -36,6 +36,7 @@ import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Rabbit.Type;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.entity.Slime;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -114,7 +115,7 @@ public class EasterBunny extends CustomEntity {
 			if (entity.getTarget() != null && entity.getTarget().getType() != EntityType.ARMOR_STAND && entity.getTarget().getWorld().equals(entity.getWorld())
 				&& entity.getTarget().getLocation().distanceSquared(entity.getLocation()) <= 1.25) {
 				biteTicks = 8;
-				Utils.damageEntity(entity.getTarget(), entityType.getDamage(), "dd-easterbunnybite", false, entity);
+				Utils.damageEntity(entity.getTarget(), entityType.getDamage(), "dd-easterbunnybite", false, entity, DamageCause.ENTITY_ATTACK);
 			}
 		} else
 			biteTicks--;
@@ -162,7 +163,7 @@ public class EasterBunny extends CustomEntity {
 			new RepeatingTask(plugin, 0, 20) {
 				@Override
 				public void run() {
-					if ((entity.getHealth() >= entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/2.0 && eggLay <= 17) || eggLay <= 15 || entity == null || entity.isDead()
+					if (entity == null || entity.isDead() || (entity.getHealth() >= entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/2.0 && eggLay <= 17) || eggLay <= 15
 							|| chickens.size() >= 10) {
 						cancel();
 						return;
@@ -227,7 +228,7 @@ public class EasterBunny extends CustomEntity {
 												continue;
 											e.setVelocity(new Vector(e.getLocation().getX() - entity.getLocation().getX(), 0, e.getLocation().getZ() - entity.getLocation().getZ()).normalize().multiply(0.7).setY(1.5));
 											if (e instanceof LivingEntity && !(e instanceof Player && Utils.isPlayerImmune((Player) e))) {
-												Utils.damageEntity((LivingEntity) e, 15.0, "dd-easterbunny", false, entity);
+												Utils.damageEntity((LivingEntity) e, 15.0, "dd-easterbunny", false, entity, DamageCause.ENTITY_ATTACK);
 											}
 										}
 									}

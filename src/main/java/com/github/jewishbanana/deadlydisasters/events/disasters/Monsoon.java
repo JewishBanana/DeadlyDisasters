@@ -126,7 +126,7 @@ public class Monsoon extends WeatherDisaster {
 					if (drowned.contains(all.getUniqueId()) && ((Mob) all).getTarget() == null && Bukkit.getEntity(targets.get(all.getUniqueId())) != null)
 						((Mob) all).setTarget((LivingEntity) Bukkit.getEntity(targets.get(all.getUniqueId())));
 					Location temp = all.getLocation();
-					if (temp.getBlock().getTemperature() <= 0.15 || temp.getBlock().getTemperature() > 0.95) continue;
+					if (isEntityTypeProtected(all) || temp.getBlock().getTemperature() <= 0.15 || temp.getBlock().getTemperature() > 0.95) continue;
 					if (Utils.isWeatherDisabled(temp, instance)) continue;
 					if (all instanceof LivingEntity) {
 						if (all instanceof Player) {

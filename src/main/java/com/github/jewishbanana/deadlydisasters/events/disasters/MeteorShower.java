@@ -23,6 +23,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BlockVector;
@@ -431,12 +432,12 @@ class Meteor {
 			}
 		}
 		for (Entity e : blocks[0].getWorld().getNearbyEntities(blocks[0].getLocation(), size, size, size))
-			if (e instanceof LivingEntity && !e.isDead()) {
+			if (e instanceof LivingEntity && !e.isDead() && !classInstance.isEntityTypeProtected(e)) {
 				if (e instanceof Player && Utils.isPlayerImmune((Player) e))
 					continue;
 				if (Utils.rayTraceForSolidBlock(blocks[0].getLocation(), e.getLocation().clone().add(0,.5,0)))
 					continue;
-				Utils.damageEntity((LivingEntity) e, 20.0, "dd-meteorcrush", false);
+				Utils.damageEntity((LivingEntity) e, 20.0, "dd-meteorcrush", false, DamageCause.FALLING_BLOCK);
 			}
 		for (Entity e : blocks[0].getWorld().getNearbyEntities(blocks[0].getLocation(), size*5, size*5, size*5))
 			if (e instanceof Player) ((Player) e).playSound(blocks[0].getLocation(), Sound.BLOCK_FIRE_AMBIENT, (float) (1*volume), 2);
@@ -519,12 +520,12 @@ class Meteor {
 						}
 				double damage = classInstance.explosionDamage;
 				for (Entity e : loc.getWorld().getNearbyEntities(loc, width, width, width))
-					if (e instanceof LivingEntity && !e.isDead()) {
+					if (e instanceof LivingEntity && !e.isDead() && !classInstance.isEntityTypeProtected(e)) {
 						if (e instanceof Player && (((Player) e).getGameMode() == GameMode.CREATIVE || ((Player) e).getGameMode() == GameMode.SPECTATOR)) continue;
 						LivingEntity entity = (LivingEntity) e;
 						if (Utils.rayTraceForSolidBlock(loc, e.getLocation().clone().add(0,.5,0)))
 							continue;
-						Utils.damageEntity(entity, damage, "dd-meteorcrush", false);
+						Utils.damageEntity(entity, damage, "dd-meteorcrush", false, DamageCause.FALLING_BLOCK);
 					}
 				classInstance.smoke.put(loc.clone().subtract(0,width,0), Arrays.asList(classInstance.smokeTime, width/2));
 			} else {
@@ -546,7 +547,7 @@ class Meteor {
 						for (int i = 0; i < blocks.length; i++) {
 							if (blocks[i].isDead()) continue;
 							for (Entity e : world.getNearbyEntities(blocks[i].getLocation(), .5, .5, .5))
-								if (e instanceof LivingEntity && !e.isDead())
+								if (e instanceof LivingEntity && !e.isDead() && !classInstance.isEntityTypeProtected(e))
 									Utils.pureDamageEntity((LivingEntity) e, 6, "dd-meteorcrush", true, null);
 						}
 						depth++;

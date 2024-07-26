@@ -11,9 +11,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.EntityType;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.events.Disaster;
@@ -38,6 +40,8 @@ public class WorldObject {
 	public Set<UUID> whitelist = new HashSet<>();
 	public boolean curePlagueInRegions;
 	public FileConfiguration configFile;
+	public Set<EntityType> blacklistedEntities = new HashSet<>();
+	public Set<Material> blacklistedRegenBlocks = new HashSet<>();
 	
 	public WorldObject(World world, Main plugin) {
 		this.world = world;
@@ -95,6 +99,24 @@ public class WorldObject {
 		this.naturalAllowed = (boolean) settings.get("natural_disasters");
 		this.difficulty = diff;
 		this.maxRadius = (int) settings.get("minDistanceRadius");
+		
+		blacklistedEntities.clear();
+		configFile.getStringList("protection_settings.blacklisted_mob_types").forEach(e -> {
+			try {
+				blacklistedEntities.add(EntityType.valueOf(e.toUpperCase()));
+			} catch (Exception ex) {
+				Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&cIncorrect mob type for blacklist &d'"+e+"' &cno such mob type exists! Ignoring this entry."));
+			}
+		});
+		blacklistedRegenBlocks.clear();
+		configFile.getStringList("regeneration.block_blacklist").forEach(e -> {
+			try {
+				blacklistedRegenBlocks.add(Material.valueOf(e.toUpperCase()));
+			} catch (Exception ex) {
+				if (!e.equals("example_entry"))
+					Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&cIncorrect material type for block regen blacklist &d'"+e+"' &cno such material type exists! Ignoring this entry."));
+			}
+		});
 	}
 	public World getWorld() {
 		return world;

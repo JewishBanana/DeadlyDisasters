@@ -21,6 +21,7 @@ import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.BlockVector;
@@ -178,16 +179,16 @@ public class CaveIn extends DestructionDisaster {
 						continue;
 					}
 					for (Entity e : world.getNearbyEntities(fb.getLocation().add(.5,.5,.5), .5, .5, .5))
-						if (e instanceof LivingEntity && ((LivingEntity) e).getNoDamageTicks() <= 0) {
+						if (e instanceof LivingEntity && !isEntityTypeProtected(e) && ((LivingEntity) e).getNoDamageTicks() <= 0) {
 							if (e instanceof Player) {
 								if (Utils.isPlayerImmune((Player) e))
 									continue;
 								if (plugin.achievementsHandler.isMasteryActive(e.getUniqueId(), "disasters.survival.cavein")) {
-									Utils.damageEntity((LivingEntity) e, damage-((damage/100.0)*(plugin.achievementsHandler.getMasteryPower(e.getUniqueId(), "disasters.survival.cavein"))), "dd-caveincrush", false);
+									Utils.damageEntity((LivingEntity) e, damage-((damage/100.0)*(plugin.achievementsHandler.getMasteryPower(e.getUniqueId(), "disasters.survival.cavein"))), "dd-caveincrush", false, DamageCause.FALLING_BLOCK);
 									continue;
 								}
 							}
-							Utils.damageEntity((LivingEntity) e, damage, "dd-caveincrush", false);
+							Utils.damageEntity((LivingEntity) e, damage, "dd-caveincrush", false, DamageCause.FALLING_BLOCK);
 						}
 				}
 			}

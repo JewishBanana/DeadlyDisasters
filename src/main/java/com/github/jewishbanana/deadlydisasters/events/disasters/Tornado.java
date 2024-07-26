@@ -271,6 +271,8 @@ public class Tornado extends DestructionDisaster {
 							addBlock(b, fixdata, pullForce, rand);
 					}
 				for (Entity e : world.getNearbyEntities(loc.clone().add(0,size-5,0), size, size, size)) {
+					if (isEntityTypeProtected(e))
+						continue;
 					if (!(entities.size() > max_blocks && !(e instanceof LivingEntity)) && !cooldownEntities.containsKey(e.getUniqueId()) && !(e instanceof Player && ((Player) e).isFlying())) {
 						entities.add(e.getUniqueId());
 						holdEntities.putIfAbsent(e.getUniqueId(), holdTicks);

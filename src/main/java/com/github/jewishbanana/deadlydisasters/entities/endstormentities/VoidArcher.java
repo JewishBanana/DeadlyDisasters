@@ -55,10 +55,7 @@ public class VoidArcher extends CustomEntity {
 			armor[i].setItemMeta(meta);
 		}
 		entity.getEquipment().setArmorContents(armor);
-		if (DependencyUtils.isUltimateContentEnabled())
-			entity.getEquipment().setItemInMainHand(com.github.jewishbanana.uiframework.items.ItemType.getItemType(com.github.jewishbanana.ultimatecontent.items.weapons.CallOfTheVoid.REGISTERED_KEY).getBuilder().getItem());
-		else
-			entity.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
+		entity.getEquipment().setItemInMainHand(DependencyUtils.doesItemExist("ui:call_of_the_void") ? DependencyUtils.getItemType("ui:call_of_the_void").getItem() : new ItemStack(Material.BOW));
 		EntityEquipment equip = entity.getEquipment();
 		equip.setHelmetDropChance(0);
 		equip.setChestplateDropChance(0);

@@ -206,7 +206,7 @@ public class Main extends JavaPlugin {
 			WorldObject.worlds.add(new WorldObject(w, this));
 		
 		PluginManager pm = getServer().getPluginManager();
-		if (pm.getPlugin("WorldGuard") != null) {
+		if (pm.isPluginEnabled("WorldGuard")) {
 			Utils.WGuardB = true;
 			getLogger().info("Successfully hooked into World Guard");
 		}
@@ -214,27 +214,27 @@ public class Main extends JavaPlugin {
 			CProtect = true;
 			getLogger().info("Successfully hooked into CoreProtect");
 		}
-		if (pm.getPlugin("Towny") != null) {
+		if (pm.isPluginEnabled("Towny")) {
 			Utils.TownyB = true;
 			new TownyListener(this);
 			this.getCommand("towndisasters").setTabCompleter(new TownyDisasters(this));
 			getLogger().info("Successfully hooked into Towny");
 		}
-		if (pm.getPlugin("GriefPrevention") != null) {
+		if (pm.isPluginEnabled("GriefPrevention")) {
 			Utils.GriefB = true;
 			getLogger().info("Successfully hooked into GriefPrevention");
 		}
-		if (pm.getPlugin("Lands") != null) {
+		if (pm.isPluginEnabled("Lands")) {
 			Utils.LandsB = true;
 			getLogger().info("Successfully hooked into Lands");
 		}
-		if (pm.getPlugin("Kingdoms") != null) {
+		if (pm.isPluginEnabled("Kingdoms")) {
 			Utils.KingsB = true;
 			getLogger().info("Successfully hooked into KingdomsX");
 		}
 		if (Utils.WGuardB || Utils.TownyB || Utils.GriefB || Utils.LandsB || Utils.KingsB)
 			RegionProtection = true;
-		if (Bukkit.getPluginManager().isPluginEnabled("NoteBlockAPI")) {
+		if (pm.isPluginEnabled("NoteBlockAPI")) {
 			this.noteBlockAPIEnabled = true;
 			NBSongs.init(this);
 			getLogger().info("Successfully hooked into NoteBlockAPI");
@@ -319,7 +319,11 @@ public class Main extends JavaPlugin {
 		if (eventHandler.isEnabled)
 			eventHandler.saveData();
 		Metrics.saveMetricsData(this);
-		saveDataFile();
+		try {
+			dataFile.save(dataf);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		regenHandler.saveRegenBlocks(this);
 	}
 	public void removeCustomEntities() {
@@ -539,11 +543,13 @@ public class Main extends JavaPlugin {
 		return CoreProtect;
 	}
 	public void saveDataFile() {
-		try {
-			dataFile.save(dataf);
-		} catch (IOException e) {
-			consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cError #00 Unable to save data file!"));
-		}
+		this.getServer().getScheduler().runTask(this, () -> {
+			try {
+				dataFile.save(dataf);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
 	}
 	public static Main getInstance() {
 		return instance;

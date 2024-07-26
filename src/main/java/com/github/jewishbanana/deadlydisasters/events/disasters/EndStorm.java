@@ -106,7 +106,7 @@ public class EndStorm extends WeatherDisaster {
 				for (LivingEntity e : world.getLivingEntities()) {
 					if (mobs.contains(e.getUniqueId()) && ((Mob) e).getTarget() == null && Bukkit.getEntity(targets.get(e.getUniqueId())) != null)
 						((Mob) e).setTarget((LivingEntity) Bukkit.getEntity(targets.get(e.getUniqueId())));
-					if (e instanceof Enderman || e instanceof Endermite || e instanceof EnderDragon || e instanceof ArmorStand)
+					if (isEntityTypeProtected(e) || e instanceof Enderman || e instanceof Endermite || e instanceof EnderDragon || e instanceof ArmorStand)
 						continue;
 					if (e instanceof Player && (((Player) e).getGameMode() == GameMode.CREATIVE || ((Player) e).getGameMode() == GameMode.SPECTATOR))
 						continue;

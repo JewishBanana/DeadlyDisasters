@@ -115,7 +115,7 @@ public class BlackPlague extends WeatherDisaster {
 				while (iterator.hasNext()) {
 					Entry<UUID,Integer> entry = iterator.next();
 					LivingEntity e = (LivingEntity) Bukkit.getEntity(entry.getKey());
-					if (e == null || e.isDead()) {
+					if (e == null || e.isDead() || isEntityTypeProtected(e)) {
 						if (e == null && infectedPlayers.contains(entry.getKey()))
 							continue;
 						if (e != null && e.hasMetadata("dd-plague"))
@@ -148,7 +148,7 @@ public class BlackPlague extends WeatherDisaster {
 					if (t <= 150 && e instanceof Player && rand.nextInt(4) == 0) ((Player) e).playSound(e.getLocation(), Sound.ENTITY_HORSE_BREATHE, 0.3F, 0.5F);
 					if (time.size() < maxInfectedMobs)
 						for (Entity near : e.getNearbyEntities(1, 1, 1)) {
-							if (near instanceof LivingEntity && !near.isDead() && !blacklisted.contains(near.getType()) && !near.hasMetadata("dd-plague")) {
+							if (near instanceof LivingEntity && !near.isDead() && !blacklisted.contains(near.getType()) && !isEntityTypeProtected(near) && !near.hasMetadata("dd-plague")) {
 								if (near instanceof Player) {
 									if (Utils.isPlayerImmune((Player) near))
 										continue;
@@ -167,7 +167,7 @@ public class BlackPlague extends WeatherDisaster {
 	}
 	public boolean isMobAvailable(World world) {
 		for (LivingEntity e : world.getLivingEntities()) {
-			if (blacklisted.contains(e.getType())) continue;
+			if (blacklisted.contains(e.getType()) || isEntityTypeProtected(e)) continue;
 			if (e.hasMetadata("dd-plague")) continue;
 			if (e instanceof Player) continue;
 			if (e.isInvulnerable()) continue;
@@ -179,7 +179,8 @@ public class BlackPlague extends WeatherDisaster {
 	public void infectNearTarget(LivingEntity target, double x, double y, double z, EntityType priority) {
 		List<LivingEntity> list = new ArrayList<>();
 		for (Entity e : target.getNearbyEntities(x, y, z))
-			if (e instanceof LivingEntity && !(e instanceof Player) && !blacklisted.contains(e.getType()) && !e.hasMetadata("dd-plague")) list.add((LivingEntity) e);
+			if (e instanceof LivingEntity && !(e instanceof Player) && !blacklisted.contains(e.getType()) && !e.hasMetadata("dd-plague") && !isEntityTypeProtected(e))
+				list.add((LivingEntity) e);
 		for (LivingEntity e : list)
 			if (e.getType() == priority) {
 				time.put(e.getUniqueId(), 300);
@@ -196,7 +197,7 @@ public class BlackPlague extends WeatherDisaster {
 	}
 	public void infectRandomMobs(int amount, World w) {
 		for (LivingEntity e : w.getLivingEntities()) {
-			if (blacklisted.contains(e.getType())) continue;
+			if (blacklisted.contains(e.getType()) || isEntityTypeProtected(e)) continue;
 			if (e.hasMetadata("dd-plague")) continue;
 			if (e instanceof Player) continue;
 			if (e.isInvulnerable()) continue;

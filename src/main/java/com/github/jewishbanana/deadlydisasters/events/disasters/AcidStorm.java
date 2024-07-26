@@ -31,6 +31,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Slime;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -137,7 +138,7 @@ public class AcidStorm extends WeatherDisaster {
 						if (temp.getBlock().getTemperature() <= 0.15 || temp.getBlock().getTemperature() > 0.95) continue;
 						if (Utils.isWeatherDisabled(temp, instance)) continue;
 						if (all instanceof LivingEntity) {
-							if (all instanceof Slime || all.isDead())
+							if (all instanceof Slime || all.isDead() || isEntityTypeProtected(all))
 								continue;
 							LivingEntity e = (LivingEntity) all;
 							if (DependencyUtils.getBasicCoatingLevel(e.getEquipment().getHelmet()) != 0)
@@ -149,7 +150,7 @@ public class AcidStorm extends WeatherDisaster {
 							}
 							for (Map.Entry<PotionEffectType, Integer> entry : potionEffects.entrySet())
 								e.addPotionEffect(new PotionEffect(entry.getKey(), entry.getValue(), 1, true, false, false));
-							Utils.pureDamageEntity(e, damage, "dd-acidstormdeath", false, null);
+							Utils.pureDamageEntity(e, damage, "dd-acidstormdeath", false, DamageCause.POISON);
 							if (!meltArmor) continue;
 							ItemStack helmet = e.getEquipment().getHelmet(),chest = e.getEquipment().getChestplate(),boots = e.getEquipment().getBoots(),pants = e.getEquipment().getLeggings();
 							if (helmet != null && (helmet.getType() == Material.IRON_HELMET || helmet.getType() == Material.GOLDEN_HELMET || helmet.getType() == Material.CHAINMAIL_HELMET)) {

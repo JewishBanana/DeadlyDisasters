@@ -124,7 +124,7 @@ public class Hurricane extends DestructionDisaster {
 				}
 				for (int i=ticker[0]; i < ticker[0]+divided; i++)
 					for (Entity e : world.getNearbyEntities(loc, i, i, i))
-						if (!storage.containsKey(e) && e.getLocation().getY() >= windHeight && !Utils.isZoneProtected(e.getLocation()))
+						if (!isEntityTypeProtected(e) && !storage.containsKey(e) && e.getLocation().getY() >= windHeight && !Utils.isZoneProtected(e.getLocation()))
 							storage.put(e, loc.distance(e.getLocation()));
 				ticker[0] += divided;
 				if (ticker[0] >= size) {
@@ -148,7 +148,7 @@ public class Hurricane extends DestructionDisaster {
 				if (time <= 0) {
 					DisasterEvent.ongoingDisasters.remove(obj);
 					Metrics.incrementValue(Metrics.disasterDestroyedMap, type.getMetricsLabel(), blocksDestroyed);
-					obj.triggerRegen(true);
+					plugin.getServer().getScheduler().runTask(plugin, () -> obj.triggerRegen(true));
 					id[0].cancel();
 					windTask.cancel();
 					DeathMessages.hurricanes.remove(obj);

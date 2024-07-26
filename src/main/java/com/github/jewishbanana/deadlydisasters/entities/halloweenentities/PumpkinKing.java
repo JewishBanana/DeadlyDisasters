@@ -41,6 +41,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Slime;
 import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.entity.Zombie;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -349,7 +350,7 @@ public class PumpkinKing extends CustomEntity {
 				if (stand.getLocation().distanceSquared(target.getLocation()) < 1) {
 					createSoulBombExplosion(stand.getLocation().add(0,1,0), range[0]);
 					if (!Utils.isEntityImmunePlayer(target)) {
-						Utils.pureDamageEntity(target, 4.0, "dd-soulbombdeath", false, entity);
+						Utils.pureDamageEntity(target, 4.0, "dd-soulbombdeath", false, entity, DamageCause.MAGIC);
 						target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0, true, false, false));
 						if (knockback)
 							target.setVelocity(Utils.getVectorTowards(loc, target.getLocation()).setY(0.6));
@@ -390,7 +391,7 @@ public class PumpkinKing extends CustomEntity {
 						if (Utils.rayTraceEntityConeForSolid(e, loc)) {
 							e.setVelocity(Utils.getVectorTowards(loc, e.getLocation().add(0,e.getHeight()/2.0,0)).multiply((0.05*range)*(1.0-(dist/range))));
 							if (((LivingEntity) e).getNoDamageTicks() == 0)
-								Utils.pureDamageEntity((LivingEntity) e, 2.0, "dd-soulbombdeath", false, entity);
+								Utils.pureDamageEntity((LivingEntity) e, 2.0, "dd-soulbombdeath", false, entity, DamageCause.MAGIC);
 							((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0, true, false, false));
 						}
 					} else if (Utils.rayTraceForSolid(loc, e.getLocation()))

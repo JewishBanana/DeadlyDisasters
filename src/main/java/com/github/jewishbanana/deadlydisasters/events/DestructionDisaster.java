@@ -41,13 +41,15 @@ public abstract class DestructionDisaster extends DisasterEvent {
 	public DestructionDisaster(int level) {
 		this.plugin = Main.getInstance();
 		this.level = level;
-		this.configFile = plugin.getConfig();
+		this.worldObject = WorldObject.findWorldObject(Bukkit.getWorlds().get(0));
+		this.configFile = worldObject.configFile;
 		this.dropItems = configFile.getBoolean("regeneration.drop_container_items");
 	}
 	public DestructionDisaster(int level, World world) {
 		this.plugin = Main.getInstance();
 		this.level = level;
-		this.configFile = WorldObject.findWorldObject(world).configFile;
+		this.worldObject = WorldObject.findWorldObject(world);
+		this.configFile = worldObject.configFile;
 		this.dropItems = configFile.getBoolean("regeneration.drop_container_items");
 	}
 	public Disaster getType() {
@@ -138,7 +140,7 @@ public abstract class DestructionDisaster extends DisasterEvent {
 							Entry<Block, Block> btb = it.next();
 							if (btb.getKey().equals(b)) {
 								Block toBlock = btb.getValue();
-								if (b.equals(toBlock)) {
+								if (b.equals(toBlock) || worldObject.blacklistedRegenBlocks.contains(toBlock.getType())) {
 									it.remove();
 									break;
 								}
@@ -168,9 +170,10 @@ public abstract class DestructionDisaster extends DisasterEvent {
 							gravityHoldBlocks.add(b);
 							BlockRegenHandler.gravityHold.add(b);
 						}
-						entry.getValue().update(true);
-						if (inventories.containsKey(b)) {
-							plugin.getServer().getScheduler().runTaskLater(plugin, () -> ((InventoryHolder) b.getState()).getInventory().setContents(inventories.get(b)), 7);
+						if (!worldObject.blacklistedRegenBlocks.contains(entry.getValue().getType())) {
+							entry.getValue().update(true);
+							if (inventories.containsKey(b))
+								plugin.getServer().getScheduler().runTaskLater(plugin, () -> ((InventoryHolder) b.getState()).getInventory().setContents(inventories.get(b)), 7);
 						}
 						damagedBlocks.remove(b);
 						disasterBlocks.remove(b);

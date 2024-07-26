@@ -40,6 +40,7 @@ import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -253,7 +254,7 @@ public class CustomEnchantHandler implements Listener {
 				}
 				if (!(e.getEntity() instanceof Player) || !Utils.isPlayerImmune((Player) e.getEntity())) {
 					e.getEntity().getWorld().spawnParticle(VersionUtils.getBlockCrack(), e.getEntity().getLocation().add(0,e.getEntity().getHeight()/2,0), 50, .2, e.getEntity().getHeight()/2, .2, 1, Material.REDSTONE_BLOCK.createBlockData());
-					Utils.damageEntity((LivingEntity) e.getEntity(), damage*plugin.getConfig().getDouble("customitems.enchants.blood_sacrifice.level "+enchantLevel+".damage"), "dd-bloodsacrifice", enchantLevel >= 3);
+					Utils.damageEntity((LivingEntity) e.getEntity(), damage*plugin.getConfig().getDouble("customitems.enchants.blood_sacrifice.level "+enchantLevel+".damage"), "dd-bloodsacrifice", enchantLevel >= 3, DamageCause.MAGIC);
 				}
 				if (e.getEntity().isDead() && enchantLevel < 3) {
 					int amount = item.getItemMeta().getPersistentDataContainer().get(ItemsHandler.bloodPactKey, PersistentDataType.INTEGER)+1;

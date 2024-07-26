@@ -177,8 +177,9 @@ public class SandStorm extends WeatherDisaster {
 				for (LivingEntity all : world.getLivingEntities()) {
 					if (mobs.contains(all.getUniqueId()) && ((Mob) all).getTarget() == null && Bukkit.getEntity(targets.get(all.getUniqueId())) != null)
 						((Mob) all).setTarget((LivingEntity) Bukkit.getEntity(targets.get(all.getUniqueId())));
-					if (all.getLocation().getY() < 50 || !sandStormBiomes.contains(all.getLocation().getBlock().getBiome()) || Utils.isWeatherDisabled(all.getLocation(), obj)
-							|| all instanceof Husk || all instanceof Stray || all instanceof Skeleton || all instanceof Zombie) continue;
+					if (isEntityTypeProtected(all) || all.getLocation().getY() < 50 || !sandStormBiomes.contains(all.getLocation().getBlock().getBiome()) || Utils.isWeatherDisabled(all.getLocation(), obj)
+							|| all instanceof Husk || all instanceof Stray || all instanceof Skeleton || all instanceof Zombie)
+						continue;
 					if (wither && spawnTick[0] >= 60 && rand.nextInt(4) == 0 && world.getHighestBlockYAt(all.getLocation()) <= all.getLocation().getBlockY()+1)
 						Utils.pureDamageEntity(all, 1D, "dd-sandstormdeath", false, null);
 					if (all instanceof Player && !Utils.isPlayerImmune((Player) all)) {

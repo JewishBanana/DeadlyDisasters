@@ -51,13 +51,8 @@ public class VoidGuardian extends CustomEntity {
 		entity.getAttribute(Attribute.GENERIC_FOLLOW_RANGE).setBaseValue(40);
 		entity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.25);
 		changeColor(50, 50, 50, CustomHead.VOIDGUARD.getHead());
-		if (DependencyUtils.isUltimateContentEnabled()) {
-			entity.getEquipment().setItemInMainHand(com.github.jewishbanana.uiframework.items.ItemType.getItemType(com.github.jewishbanana.ultimatecontent.items.weapons.VoidsEdge.REGISTERED_KEY).getBuilder().getItem());
-			entity.getEquipment().setItemInOffHand(com.github.jewishbanana.uiframework.items.ItemType.getItemType(com.github.jewishbanana.ultimatecontent.items.tools.AbyssalShield.REGISTERED_KEY).getBuilder().getItem());
-		} else {
-			entity.getEquipment().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
-			entity.getEquipment().setItemInOffHand(new ItemStack(Material.SHIELD));
-		}
+		entity.getEquipment().setItemInMainHand(DependencyUtils.doesItemExist("ui:voids_edge") ? DependencyUtils.getItemType("ui:voids_edge").getItem() : new ItemStack(Material.IRON_SWORD));
+		entity.getEquipment().setItemInOffHand(DependencyUtils.doesItemExist("ui:abyssal_shield") ? DependencyUtils.getItemType("ui:abyssal_shield").getItem() : new ItemStack(Material.SHIELD));
 		entity.setMetadata("dd-voidguardian", new FixedMetadataValue(plugin, "protected"));
 		EntityEquipment equip = entity.getEquipment();
 		equip.setHelmetDropChance(0);

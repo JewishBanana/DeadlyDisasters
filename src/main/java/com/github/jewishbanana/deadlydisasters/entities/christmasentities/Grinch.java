@@ -18,6 +18,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Slime;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -184,7 +185,7 @@ public class Grinch extends CustomEntity {
 					}
 					for (Entity e : projectile.getNearbyEntities(.5, .5, .5))
 						if (e instanceof LivingEntity && !e.equals(entity) && !(e instanceof Player && Utils.isPlayerImmune((Player) e))) {
-							Utils.pureDamageEntity((LivingEntity) e, 7.0, "dd-candycane", false, entity);
+							Utils.pureDamageEntity((LivingEntity) e, 7.0, "dd-candycane", false, entity, DamageCause.PROJECTILE);
 							((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 40, 1, true, false));
 							if (cursed)
 								((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 80, 2, true, false));

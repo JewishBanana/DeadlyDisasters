@@ -34,6 +34,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -232,12 +233,12 @@ public class LandSlide extends DestructionDisaster implements Listener {
 						fallingBlocksLocations.replace(entity.getUniqueId(), Pair.of(entity.getLocation(), ((FallingBlock) entity).getBlockData()));
 						Vector vel = entity.getVelocity().multiply(0.05).setY(0);
 						for (Entity e : entity.getNearbyEntities(1.8, 1.8, 1.8)) {
-							if (e instanceof FallingBlock)
+							if (e instanceof FallingBlock || isEntityTypeProtected(e))
 								continue;
 							if (e.getVelocity().distanceSquared(vel) < 0.28)
 								e.setVelocity(e.getVelocity().add(vel));
 							if (e instanceof LivingEntity && ((LivingEntity) e).getNoDamageTicks() == 0 && (!(e instanceof Player) || !Utils.isPlayerImmune((Player) e)))
-								Utils.damageEntity((LivingEntity) e, damage, "dd-" + (shouldBeAvalanche ? "avalanche" : "landslide"), false);
+								Utils.damageEntity((LivingEntity) e, damage, "dd-" + (shouldBeAvalanche ? "avalanche" : "landslide"), false, DamageCause.FALLING_BLOCK);
 						}
 					}
 				}
