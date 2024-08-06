@@ -22,21 +22,25 @@ public class DependencyUtils {
 	
 	public DependencyUtils(Main plugin) {
 		ultimateContent = plugin.getServer().getPluginManager().isPluginEnabled("UltimateContent");
-		if (plugin.getServer().getPluginManager().isPluginEnabled("UIFramework"))
+		if (plugin.getServer().getPluginManager().isPluginEnabled("UIFramework")) {
 			if (!UIFramework.isVersionOrAbove(UIFrameworkVersion))
-				Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cERROR Cannot start plugin because UIFramework is out of date! Please update to at least &a"+UIFrameworkVersion+" &c(Current version installed is &b"+(plugin.getServer().getPluginManager().getPlugin("UIFramework").getDescription().getVersion())+"&c)."));
+				Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cERROR Cannot hook into UIFramework because UIFramework is out of date! Please update to at least &a"+UIFrameworkVersion+" &c(Current version installed is &b"+(plugin.getServer().getPluginManager().getPlugin("UIFramework").getDescription().getVersion())+"&c). The only effect this error will have is all custom items related to DeadlyDisasters will be disabled. You can update UIFramework here:&6 https://www.spigotmc.org/resources/uiframework.110768/"));
 			else {
 				uif = true;
 				BasicCoating.register();
 				uifHook = new UIFHook();
 				if (ultimateContent)
 					ucHook = new UCHook();
+				else
+					Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&aThere is an optional dependency UltimateContent, that adds some really cool custom items to DeadlyDisasters such as custom swords, custom mob drops, custom enchants, and more! Get UltimateContent here:&6 https://www.spigotmc.org/resources/ultimatecontent.118256/"));
 				
 				BasicCoatingBook.register();
 				VoidTear.register();
 				PlagueCure.register();
 				SplashPlagueCure.register();
 			}
+		} else
+			Main.consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&bThere is an optional dependency UIFramework, that adds some custom items to DeadlyDisasters such as the plague cure potion, basic coating enchant, and more! Get UIFramework here:&6 https://www.spigotmc.org/resources/uiframework.110768/"));
 	}
 	public static boolean isUIFrameworkEnabled() {
 		return uif;

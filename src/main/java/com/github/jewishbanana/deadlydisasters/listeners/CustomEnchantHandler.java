@@ -303,11 +303,13 @@ public class CustomEnchantHandler implements Listener {
 			if (santaHatPlayers.containsKey(dmr.getUniqueId()) && santaHatPlayers.get(dmr.getUniqueId()) != null && !(e.getEntity() instanceof Tameable && ((Tameable) e.getEntity()).getOwner().equals((Player) dmr))
 					&& !Stream.of(santaHatPlayers.get(dmr.getUniqueId())).anyMatch(n -> n.getEntity() != null && n.getEntity().getUniqueId().equals(e.getEntity().getUniqueId()))) {
 				for (ElfPet pet : santaHatPlayers.get(dmr.getUniqueId()))
-					pet.target = (LivingEntity) e.getEntity();
+					if (pet != null)
+						pet.target = (LivingEntity) e.getEntity();
 			} else if (santaHatPlayers.containsKey(e.getEntity().getUniqueId()) && santaHatPlayers.get(e.getEntity().getUniqueId()) != null
 					&& !Stream.of(santaHatPlayers.get(e.getEntity().getUniqueId())).anyMatch(n -> n != null && n.getEntity().equals(e.getDamager()))) {
 				for (ElfPet pet : santaHatPlayers.get(e.getEntity().getUniqueId()))
-					pet.target = (LivingEntity) dmr;
+					if (pet != null)
+						pet.target = (LivingEntity) dmr;
 			}
 		}
 		if (!(e.getEntity() instanceof LivingEntity) || !(e.getDamager() instanceof LivingEntity))

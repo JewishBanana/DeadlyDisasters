@@ -185,8 +185,11 @@ supernova:
     particle_multiplier: 1.0
     # Flash toggles the flashing of the supernova
     flash: true
-    # Place fire toggles whether fire can be placed by the supernova or not
-    place_fire: true
+    # Places the materials listed in the debris list randomly around the perimeter of supernova blast zones
+    debris:
+    - obsidian
+    - black_concrete
+    - fire
     # If set to true then explosion particles can be seen from very far away by players but this drastically affects performance
     far_particles: true
     # Controls how fast the crystal falls from the sky

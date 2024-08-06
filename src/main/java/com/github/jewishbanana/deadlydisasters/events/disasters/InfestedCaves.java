@@ -86,8 +86,8 @@ public class InfestedCaves extends DestructionDisaster implements Listener {
 	public Map<UUID, UUID> targetMap = new HashMap<>();
 
 	@SuppressWarnings("unchecked")
-	public InfestedCaves(int level) {
-		super(level);
+	public InfestedCaves(int level, World world) {
+		super(level, world);
 		this.rand = plugin.random;
 		this.volume = configFile.getDouble("infestedcaves.volume");
 		switch (level) {
@@ -458,7 +458,8 @@ public class InfestedCaves extends DestructionDisaster implements Listener {
 			if (pos2 == null || pos1.distanceSquared(pos2) <= 3)
 				break;
 			tempLoc.getWorld().spawnParticle(Particle.VIBRATION, pos1, 1, 0, 0, 0, 1, new org.bukkit.Vibration(pos1, new org.bukkit.Vibration.Destination.BlockDestination(pos2), rand.nextInt(10)+10));
-			tempLoc.getWorld().playSound(pos1, Sound.BLOCK_SCULK_SENSOR_CLICKING, SoundCategory.BLOCKS, 0.5F, (rand.nextFloat()/2)+0.5F);
+			final Location soundPos = pos1;
+			plugin.getServer().getScheduler().runTask(plugin, () -> tempLoc.getWorld().playSound(soundPos, Sound.BLOCK_SCULK_SENSOR_CLICKING, SoundCategory.BLOCKS, 0.5F, (rand.nextFloat()/2)+0.5F));
 			success++;
 			if (success >= amount)
 				break;

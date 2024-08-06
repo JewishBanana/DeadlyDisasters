@@ -88,7 +88,7 @@ public class Grinch extends CustomEntity {
 		entity.setMetadata("dd-grinch", plugin.fixedData);
 		entity.setMetadata("dd-christmasmob", plugin.fixedData);
 		if (entity.getCustomName() == null)
-			entity.setCustomName(Languages.getString("entities.grinch"));
+			entity.setCustomName(Languages.getString("christmas.grinch"));
 	}
 
 	@Override

@@ -14,8 +14,8 @@ internal:
     onWord: '开启'
     offWord: '关闭'
     cfgUpdate: '已成功将配置更新到版本'
-    consoleUpdate: '一个新版本更新可用！ &e(^) &a请前往 https://www.spigotmc.org/resources/deadly-disasters.100918/ 下载最新版本'
-    playerUpdate: '一个新版本更新可用！&e(^) &a通知服务器管理在 https://www.spigotmc.org/resources/deadly-disasters.100918/ 下载最新版本 \n&7&o目前插件的版本为'
+    consoleUpdate: '一个新版本更新可用！ &e(^) &a请前往 ${plugin.page} 下载最新版本'
+    playerUpdate: '一个新版本更新可用！&e(^) &a通知服务器管理在 ${plugin.page} 下载最新版本 \n&7&o目前插件的版本为'
     allowFlight: '插件在 server.properties 文件中 "allow-flight" 选项为 &atrue &c时才能完美运行 ！'
     olderVersion: '你在运行一个早期Minecraft版本！ 请注意！此插件是为Minecraft 1.16及以上的版本开发的，因此早期版本可能会非常卡顿！'
     firstStart:

@@ -339,7 +339,7 @@ public class AchievementsHandler implements Listener {
 						Block b = e.getDamager().getLocation().add(0,2,0).getBlock();
 						for (int i=0; i < 10; i++) {
 							if (!b.isPassable()) {
-								CaveIn cavein = new CaveIn(1);
+								CaveIn cavein = new CaveIn(1, b.getWorld());
 								cavein.setRadius(plugin.random.nextInt(2)+2);
 								cavein.setDepth(plugin.random.nextInt(3)+1);
 								cavein.start(b.getLocation(), (Player) e.getEntity());
@@ -445,7 +445,7 @@ public class AchievementsHandler implements Listener {
 					Block b = e.getEntity().getLocation().add(0,2,0).getBlock();
 					for (int i=0; i < 10; i++) {
 						if (!b.isPassable()) {
-							CaveIn cavein = new CaveIn(1);
+							CaveIn cavein = new CaveIn(1, b.getWorld());
 							cavein.setRadius(plugin.random.nextInt(2)+2);
 							cavein.setDepth(plugin.random.nextInt(3)+1);
 							cavein.start(b.getLocation(), (Player) e.getTarget());

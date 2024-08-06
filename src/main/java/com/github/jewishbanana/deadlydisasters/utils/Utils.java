@@ -722,10 +722,8 @@ public class Utils {
 		} else
 			entity.setLastDamageCause(new EntityDamageEvent(entity, cause, damage));
 		if (entity.getHealth()-damage <= 0) {
-			if (!ignoreTotem) {
+			if (!ignoreTotem && (entity.getEquipment().getItemInMainHand().getType() == Material.TOTEM_OF_UNDYING || entity.getEquipment().getItemInOffHand().getType() == Material.TOTEM_OF_UNDYING)) {
 				entity.setHealth(0.00001);
-				if (meta != null && entity.getEquipment().getItemInMainHand().getType() != Material.TOTEM_OF_UNDYING && entity.getEquipment().getItemInOffHand().getType() != Material.TOTEM_OF_UNDYING)
-					entity.setMetadata(meta, plugin.fixedData);
 				entity.damage(1);
 				return true;
 			}

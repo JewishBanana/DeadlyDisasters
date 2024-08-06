@@ -92,6 +92,8 @@ public class Main extends JavaPlugin {
 	
 	private static Main instance;
 	
+	public static String pluginSpigotPage = "https://www.spigotmc.org/resources/deadlydisasters-pro.100918/";
+	
 	/* [Updates]
 	 * - list player command switch map
 	 * - Potion meta bug
@@ -353,7 +355,7 @@ public class Main extends JavaPlugin {
 					return;
 				}
 				if (!getDescription().getVersion().equals(latestVersion)) {
-					String msg = Languages.getString("internal.consoleUpdate");
+					String msg = Languages.getString("internal.consoleUpdate").replace("${plugin.page}", Main.pluginSpigotPage);
 					consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&a"+msg.substring(0, msg.indexOf('^'))+latestVersion+msg.substring(msg.indexOf('^')+1)));
 					if (getConfig().getBoolean("general.update_notify"))
 						updateNotify = true;

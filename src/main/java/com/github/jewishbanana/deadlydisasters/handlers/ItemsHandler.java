@@ -426,7 +426,7 @@ public class ItemsHandler {
 		
 		//candy cane
 		try {
-			candyCane = Utils.createItem(Material.DIAMOND_SWORD, 1, ChatColor.RED+Languages.getString("items.candyCane"), Arrays.asList(ChatColor.YELLOW+Languages.getString("items.candyCaneLore")), false, false);
+			candyCane = Utils.createItem(Material.DIAMOND_SWORD, 1, ChatColor.RED+Languages.getString("christmas.candyCane"), Arrays.asList(ChatColor.YELLOW+Languages.getString("christmas.candyCaneLore")), false, false);
 			meta = candyCane.getItemMeta();
 			candyCaneKey = new NamespacedKey(plugin, "dd-candyCane");
 			meta.getPersistentDataContainer().set(candyCaneKey, PersistentDataType.BYTE, (byte) 1);
@@ -443,7 +443,7 @@ public class ItemsHandler {
 		
 		//cursed candy cane
 		try {
-			cursedCandyCane = Utils.createItem(Material.DIAMOND_SWORD, 1, ChatColor.RED+Languages.getString("items.cursedCandyCane"), Arrays.asList(ChatColor.YELLOW+Languages.getString("items.cursedCandyCaneLore")), true, false);
+			cursedCandyCane = Utils.createItem(Material.DIAMOND_SWORD, 1, ChatColor.RED+Languages.getString("christmas.cursedCandyCane"), Arrays.asList(ChatColor.YELLOW+Languages.getString("christmas.cursedCandyCaneLore")), true, false);
 			meta = cursedCandyCane.getItemMeta();
 			cursedCandyCaneKey = new NamespacedKey(plugin, "dd-cursedCandyCane");
 			meta.getPersistentDataContainer().set(cursedCandyCaneKey, PersistentDataType.BYTE, (byte) 1);
@@ -460,7 +460,7 @@ public class ItemsHandler {
 		
 		//ornament
 		try {
-			ornament = Utils.createItem(Material.GHAST_TEAR, 1, ChatColor.RED+Languages.getString("items.ornament"), Arrays.asList(ChatColor.YELLOW+Languages.getString("items.ornamentLore")), false, false);
+			ornament = Utils.createItem(Material.GHAST_TEAR, 1, ChatColor.RED+Languages.getString("christmas.ornament"), Arrays.asList(ChatColor.YELLOW+Languages.getString("christmas.ornamentLore")), false, false);
 			meta = ornament.getItemMeta();
 			ornamentKey = new NamespacedKey(plugin, "dd-ornament");
 			meta.getPersistentDataContainer().set(ornamentKey, PersistentDataType.BYTE, (byte) 1);
@@ -474,7 +474,7 @@ public class ItemsHandler {
 		
 		//broken snow globe
 		try {
-			brokenSnowGlobe = Utils.createItem(CustomHead.BROKENSNOWGLOBE.getHead().clone(), 1, ChatColor.RED+Languages.getString("items.brokenSnowGlobe"), Arrays.asList(ChatColor.YELLOW+Languages.getString("items.brokenSnowGlobeLore")), false, false);
+			brokenSnowGlobe = Utils.createItem(CustomHead.BROKENSNOWGLOBE.getHead().clone(), 1, ChatColor.RED+Languages.getString("christmas.brokenSnowGlobe"), Arrays.asList(ChatColor.YELLOW+Languages.getString("christmas.brokenSnowGlobeLore")), false, false);
 			meta = brokenSnowGlobe.getItemMeta();
 			brokenSnowGlobeKey = new NamespacedKey(plugin, "dd-brokenSnowGlobe");
 			meta.getPersistentDataContainer().set(brokenSnowGlobeKey, PersistentDataType.BYTE, (byte) 1);
@@ -487,7 +487,7 @@ public class ItemsHandler {
 		
 		//snow globe
 		try {
-			snowGlobe = Utils.createItem(CustomHead.SNOWGLOBE.getHead().clone(), 1, ChatColor.RED+Languages.getString("items.snowGlobe"), Arrays.asList(ChatColor.YELLOW+Languages.getString("items.snowGlobeLore"), ChatColor.GRAY+"-"+Languages.getString("items.snowGlobeAbility")), false, false);
+			snowGlobe = Utils.createItem(CustomHead.SNOWGLOBE.getHead().clone(), 1, ChatColor.RED+Languages.getString("christmas.snowGlobe"), Arrays.asList(ChatColor.YELLOW+Languages.getString("christmas.snowGlobeLore"), ChatColor.GRAY+"-"+Languages.getString("christmas.snowGlobeAbility")), false, false);
 			meta = snowGlobe.getItemMeta();
 			snowGlobeKey = new NamespacedKey(plugin, "dd-snowGlobe");
 			meta.getPersistentDataContainer().set(snowGlobeKey, PersistentDataType.BYTE, (byte) 1);
@@ -500,7 +500,7 @@ public class ItemsHandler {
 		
 		//santa hat
 		try {
-			santaHat = Utils.createItem(Material.DIAMOND_HELMET, 1, ChatColor.RED+Languages.getString("items.santaHat"), Arrays.asList(ChatColor.YELLOW+Languages.getString("items.santaHatLore"), ChatColor.GRAY+"-"+Languages.getString("items.santaHatAbility")), false, false);
+			santaHat = Utils.createItem(Material.DIAMOND_HELMET, 1, ChatColor.RED+Languages.getString("christmas.santaHat"), Arrays.asList(ChatColor.YELLOW+Languages.getString("christmas.santaHatLore"), ChatColor.GRAY+"-"+Languages.getString("christmas.santaHatAbility")), false, false);
 			meta = santaHat.getItemMeta();
 			santaHatKey = new NamespacedKey(plugin, "dd-santaHat");
 			meta.getPersistentDataContainer().set(santaHatKey, PersistentDataType.INTEGER, 1);

@@ -21,6 +21,7 @@ import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.Tag;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
@@ -75,8 +76,8 @@ public class LandSlide extends DestructionDisaster implements Listener {
 	
 	private Set<ChannelDataHolder> survivingPlayers = new HashSet<>();
 
-	public LandSlide(int level) {
-		super(level);
+	public LandSlide(int level, World world) {
+		super(level, world);
 		this.rand = plugin.random;
 		switch (level) {
 		default:

@@ -400,7 +400,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start an acidstorm"));
 					return true;
 				}
-				AcidStorm storm = new AcidStorm(level);
+				AcidStorm storm = new AcidStorm(level, p.getWorld());
 				storm.start(p.getWorld(), p, broadcast);
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.ACIDSTORM.getMetricsLabel());
 				return true;
@@ -409,7 +409,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start a blizzard"));
 					return true;
 				}
-				Blizzard blizz = new Blizzard(level);
+				Blizzard blizz = new Blizzard(level, p.getWorld());
 				blizz.start(p.getWorld(), p, broadcast);
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.BLIZZARD.getMetricsLabel());
 				return true;
@@ -417,7 +417,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				Block b = p.getLocation().add(0,2,0).getBlock();
 				for (int i=0; i < 20; i++) {
 					if (!b.isPassable()) {
-						CaveIn cavein = new CaveIn(level);
+						CaveIn cavein = new CaveIn(level, p.getWorld());
 						if (broadcast)
 							cavein.broadcastMessage(b.getLocation(), p);
 						cavein.start(b.getLocation(), p);
@@ -433,7 +433,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				for (int c=loc.getBlockY()-1; c > 0; c--) {
 					loc.setY(c);
 					if (loc.getBlock().getType().isSolid()) {
-						Earthquake earthquake = new Earthquake(level);
+						Earthquake earthquake = new Earthquake(level, p.getWorld());
 						if (broadcast)
 							earthquake.broadcastMessage(loc, p);
 						earthquake.start(loc, p);
@@ -444,7 +444,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				sender.sendMessage(Utils.convertString("&cMust be ground below target player to start an earthquake!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("extremewinds")) {
-				ExtremeWinds winds = new ExtremeWinds(level);
+				ExtremeWinds winds = new ExtremeWinds(level, p.getWorld());
 				winds.start(p.getWorld(), p, broadcast);
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.EXTREMEWINDS.getMetricsLabel());
 				return true;
@@ -453,7 +453,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cMust be in an overworld or nether environment to start a geyser"));
 					return true;
 				}
-				Geyser geyser = new Geyser(level);
+				Geyser geyser = new Geyser(level, p.getWorld());
 				if (broadcast)
 					geyser.broadcastMessage(p.getLocation(), p);
 				geyser.start(p.getLocation(), p);
@@ -464,7 +464,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				for (int c=loc.getBlockY()-1; c > 0; c--) {
 					loc.setY(c);
 					if (loc.getBlock().getType().isSolid()) {
-						Sinkhole s = new Sinkhole(level);
+						Sinkhole s = new Sinkhole(level, p.getWorld());
 						if (broadcast)
 							s.broadcastMessage(loc, p);
 						s.start(loc, p);
@@ -479,7 +479,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cMust be in a nether environment to start a soulstorm"));
 					return true;
 				}
-				SoulStorm storm = new SoulStorm(level);
+				SoulStorm storm = new SoulStorm(level, p.getWorld());
 				storm.start(p.getWorld(), p, broadcast);
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.SOULSTORM.getMetricsLabel());
 				return true;
@@ -488,7 +488,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				for (int i=loc.getBlockY()-1; i > 0; i--) {
 					loc.setY(i);
 					if (loc.getBlock().getType().isSolid()) {
-						Tornado tornado = new Tornado(level);
+						Tornado tornado = new Tornado(level, p.getWorld());
 						if (broadcast)
 							tornado.broadcastMessage(loc.clone().add(0,1,0), p);
 						tornado.start(loc.clone().add(0,1,0), p);
@@ -503,12 +503,12 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start a sandstorm"));
 					return true;
 				}
-				SandStorm storm = new SandStorm(level);
+				SandStorm storm = new SandStorm(level, p.getWorld());
 				storm.start(p.getWorld(), p, broadcast);
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.SANDSTORM.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("plague")) {
-				BlackPlague plague = new BlackPlague(level);
+				BlackPlague plague = new BlackPlague(level, p.getWorld());
 				if (plague.isMobAvailable(p.getWorld())) {
 					plague.start(p.getWorld(), p, broadcast);
 					Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.PLAGUE.getMetricsLabel());
@@ -517,7 +517,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				sender.sendMessage(Utils.convertString("&cCould not find available mob nearby!"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("tsunami")) {
-				Tsunami tsu = new Tsunami(level);
+				Tsunami tsu = new Tsunami(level, p.getWorld());
 				Location test = tsu.findAvailabePool(p.getLocation());
 				if (test != null) {
 					if (broadcast)
@@ -533,7 +533,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start a meteor shower"));
 					return true;
 				}
-				MeteorShower shower = new MeteorShower(level);
+				MeteorShower shower = new MeteorShower(level, p.getWorld());
 				shower.start(p.getWorld(), p, broadcast);
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.METEORSHOWERS.getMetricsLabel());
 				return true;
@@ -546,19 +546,19 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cMust be in an end environment to start an endstorm"));
 					return true;
 				}
-				EndStorm storm = new EndStorm(level);
+				EndStorm storm = new EndStorm(level, p.getWorld());
 				storm.start(p.getWorld(), p, broadcast);
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.ENDSTORM.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("supernova")) {
-				Supernova nova = new Supernova(level);
+				Supernova nova = new Supernova(level, p.getWorld());
 				if (broadcast)
 					nova.broadcastMessage(p.getLocation().clone().add(0,10,0), p);
 				nova.start(p.getLocation().clone().add(0,10,0), p);
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.SUPERNOVA.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("hurricane")) {
-				Hurricane storm = new Hurricane(level);
+				Hurricane storm = new Hurricane(level, p.getWorld());
 				if (broadcast)
 					storm.broadcastMessage(p.getLocation().clone().add(0,7,0), p);
 				storm.start(p.getLocation().clone().add(0,7,0), p);
@@ -569,7 +569,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cCannot start a purge because player is already being targeted"));
 					return true;
 				}
-				Purge purge = new Purge(level);
+				Purge purge = new Purge(level, p.getWorld());
 				if (broadcast)
 					purge.broadcastMessage(p.getLocation(), p);
 				purge.start(p.getLocation(), p);
@@ -580,7 +580,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start a solar storm"));
 					return true;
 				}
-				SolarStorm storm = new SolarStorm(level);
+				SolarStorm storm = new SolarStorm(level, p.getWorld());
 				storm.start(p.getWorld(), p, broadcast);
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.SOLARSTORM.getMetricsLabel());
 				return true;
@@ -589,7 +589,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start a monsoon"));
 					return true;
 				}
-				Monsoon storm = new Monsoon(level);
+				Monsoon storm = new Monsoon(level, p.getWorld());
 				storm.start(p.getWorld(), p, broadcast);
 				return true;
 			} else if (args[1].equalsIgnoreCase("infestedcaves")) {
@@ -597,7 +597,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cMust be in an overworld environment to start a infestedcaves event"));
 					return true;
 				}
-				InfestedCaves caves = new InfestedCaves(level);
+				InfestedCaves caves = new InfestedCaves(level, p.getWorld());
 				if (broadcast)
 					caves.broadcastMessage(p.getLocation(), p);
 				caves.setEarlyBroadcast(true);
@@ -605,7 +605,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				Metrics.incrementValue(Metrics.disasterSpawnedMap, Disaster.INFESTEDCAVES.getMetricsLabel());
 				return true;
 			} else if (args[1].equalsIgnoreCase("landslide")) {
-				LandSlide slide = new LandSlide(level);
+				LandSlide slide = new LandSlide(level, p.getWorld());
 				Location test = slide.findApplicableLocation(p.getLocation(), p);
 				if (test != null) {
 					if (broadcast)
@@ -1014,7 +1014,12 @@ public class Disasters implements CommandExecutor,TabCompleter {
 					sender.sendMessage(Utils.convertString("&cCan only summon on solid block! Please look at a solid block when running this command!"));
 					return true;
 				}
-				handler.addFalseEntity(new InfestedWorm(block, Utils.getBlockFace((Player) sender), plugin, rand));
+				BlockFace face = Utils.getBlockFace((Player) sender);
+				if (face == null) {
+					sender.sendMessage(Utils.convertString("&cThe target block face is not suitable to spawn an infested worm on!"));
+					return true;
+				}
+				handler.addFalseEntity(new InfestedWorm(block, face, plugin, rand));
 				sender.sendMessage(Utils.convertString("&fSummoned &3Infested Worm"));
 				return true;
 			} else if (args[1].equalsIgnoreCase("elf")) {

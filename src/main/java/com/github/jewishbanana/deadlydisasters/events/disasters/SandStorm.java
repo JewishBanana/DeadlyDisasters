@@ -58,8 +58,8 @@ public class SandStorm extends WeatherDisaster {
 	private Set<Biome> badlands = new HashSet<>();
 	private Map<UUID,UUID> targets = new HashMap<>();
 	
-	public SandStorm(int level) {
-		super(level);
+	public SandStorm(int level, World world) {
+		super(level, world);
 		skulls = configFile.getBoolean("sandstorm.mobs_drop_skulls");
 		wither = configFile.getBoolean("sandstorm.wither_effect");
 		time = configFile.getInt("sandstorm.time.level "+this.level) * 20;
@@ -155,6 +155,7 @@ public class SandStorm extends WeatherDisaster {
 			public void run() {
 				if (time <= 0) {
 					clear();
+					DeathMessages.sandstorms.remove(obj);
 					for (UUID uuid : mobs) {
 						Mob mob = (Mob) Bukkit.getEntity(uuid);
 						if (mob == null)
@@ -246,7 +247,6 @@ public class SandStorm extends WeatherDisaster {
 	public void clear() {
 		time = 0;
 		clearEntities();
-		DeathMessages.sandstorms.remove(this);
 	}
 	public void clearEntities() {
 		for (UUID e : mobs)

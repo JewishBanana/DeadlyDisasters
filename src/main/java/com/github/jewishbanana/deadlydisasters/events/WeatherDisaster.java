@@ -36,15 +36,6 @@ public abstract class WeatherDisaster extends DisasterEvent {
 	public double volume;
 	public boolean RegionWeather;
 	
-	public WeatherDisaster(int level) {
-		this.plugin = Main.getInstance();
-		this.level = level;
-		if (this.level > 5 && !(this instanceof ExtremeWinds))
-			this.level = 5;
-		this.worldObject = WorldObject.findWorldObject(Bukkit.getWorlds().get(0));
-		this.configFile = worldObject.configFile;
-		this.dropItems = configFile.getBoolean("regeneration.drop_container_items");
-	}
 	public WeatherDisaster(int level, World world) {
 		this.plugin = Main.getInstance();
 		this.level = level;

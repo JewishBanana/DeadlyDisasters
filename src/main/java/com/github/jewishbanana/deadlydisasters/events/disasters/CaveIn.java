@@ -49,8 +49,8 @@ public class CaveIn extends DestructionDisaster {
 	
 	public Queue<UUID> fallingRoof = new ArrayDeque<>();
 	
-	public CaveIn(int level) {
-		super(level);
+	public CaveIn(int level, World world) {
+		super(level, world);
 		switch (level) {
 		default:
 		case 1:

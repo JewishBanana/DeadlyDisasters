@@ -89,7 +89,7 @@ public class ElfPet extends CustomEntity {
 		
 		entity.setMetadata("dd-petelf", plugin.fixedData);
 		if (entity.getCustomName() == null)
-			entity.setCustomName(Languages.getString("entities.christmasElf"));
+			entity.setCustomName(Languages.getString("christmas.christmasElf"));
 		entity.getPersistentDataContainer().set(EntityHandler.removalKey, PersistentDataType.BYTE, (byte) 0);
 		
 		if (isArcher) {

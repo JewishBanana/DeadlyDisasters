@@ -184,7 +184,7 @@ public class TimerCheck {
 										if (!worldObj.allowed.contains(Disaster.SINKHOLE) || loc.getBlockY() < Disaster.SINKHOLE.getMinHeight() || oceanBiomes.contains(biome)) continue;
 										if (level > Disaster.SINKHOLE.getMaxLevel())
 											level = Disaster.SINKHOLE.getMaxLevel();
-										Sinkhole s = new Sinkhole(level);
+										Sinkhole s = new Sinkhole(level, world);
 										s.createTimedStart((int) worldObj.settings.get("pet_warning_time"), offVec, all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -192,7 +192,7 @@ public class TimerCheck {
 										if (!worldObj.allowed.contains(Disaster.CAVEIN) || (loc.getBlockY() > Disaster.CAVEIN.getMinHeight() && world.getEnvironment() != Environment.NETHER) || world.getHighestBlockYAt(loc) <= loc.getBlockY()+1) continue;
 										if (level > Disaster.CAVEIN.getMaxLevel())
 											level = Disaster.CAVEIN.getMaxLevel();
-										CaveIn cavein = new CaveIn(level);
+										CaveIn cavein = new CaveIn(level, world);
 										cavein.createTimedStart((int) worldObj.settings.get("pet_warning_time"), offVec, all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -200,7 +200,7 @@ public class TimerCheck {
 										if (!worldObj.allowed.contains(Disaster.TORNADO) || loc.getBlockY() < Disaster.TORNADO.getMinHeight() || oceanBiomes.contains(biome)) continue;
 										if (level > Disaster.TORNADO.getMaxLevel())
 											level = Disaster.TORNADO.getMaxLevel();
-										Tornado tornado = new Tornado(level);
+										Tornado tornado = new Tornado(level, world);
 										tornado.createTimedStart((int) worldObj.settings.get("pet_warning_time"), offVec, all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -208,7 +208,7 @@ public class TimerCheck {
 										if (!worldObj.allowed.contains(Disaster.GEYSER) || loc.getBlockY() < Disaster.GEYSER.getMinHeight() || world.getEnvironment() == Environment.THE_END) continue;
 										if (level > Disaster.GEYSER.getMaxLevel())
 											level = Disaster.GEYSER.getMaxLevel();
-										Geyser geyser = new Geyser(level);
+										Geyser geyser = new Geyser(level, world);
 										geyser.createTimedStart((int) worldObj.settings.get("pet_warning_time"), offVec, all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -216,7 +216,7 @@ public class TimerCheck {
 										if (!worldObj.allowed.contains(Disaster.PLAGUE)) continue;
 										if (level > Disaster.PLAGUE.getMaxLevel())
 											level = Disaster.PLAGUE.getMaxLevel();
-										BlackPlague plague = new BlackPlague(level);
+										BlackPlague plague = new BlackPlague(level, world);
 										if (plague.isMobAvailable(all.getWorld())) {
 											plague.createTimedStart((int) worldObj.settings.get("pet_warning_time"), all.getWorld(), all);
 											resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
@@ -228,7 +228,7 @@ public class TimerCheck {
 										|| loc.getBlock().getTemperature() <= 0.15 || loc.getBlock().getTemperature() > 0.95 || DeathMessages.acidstorms.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.ACIDSTORM.getMaxLevel())
 											level = Disaster.ACIDSTORM.getMaxLevel();
-										AcidStorm acidstorm = new AcidStorm(level);
+										AcidStorm acidstorm = new AcidStorm(level, world);
 										acidstorm.createTimedStart((int) worldObj.settings.get("pet_warning_time"), all.getWorld(), all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -237,7 +237,7 @@ public class TimerCheck {
 										|| DeathMessages.extremewinds.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.EXTREMEWINDS.getMaxLevel())
 											level = Disaster.EXTREMEWINDS.getMaxLevel();
-										ExtremeWinds winds = new ExtremeWinds(level);
+										ExtremeWinds winds = new ExtremeWinds(level, world);
 										winds.createTimedStart((int) worldObj.settings.get("pet_warning_time"), all.getWorld(), all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -246,7 +246,7 @@ public class TimerCheck {
 										|| DeathMessages.soulstorms.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.SOULSTORM.getMaxLevel())
 											level = Disaster.SOULSTORM.getMaxLevel();
-										SoulStorm soulstorm = new SoulStorm(level);
+										SoulStorm soulstorm = new SoulStorm(level, world);
 										soulstorm.createTimedStart((int) worldObj.settings.get("pet_warning_time"), all.getWorld(), all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -255,7 +255,7 @@ public class TimerCheck {
 										|| DeathMessages.blizzards.stream().anyMatch(n -> n.getWorld() == world) || (!seasonsActive && loc.getBlock().getTemperature() > 0.15)) continue;
 										if (level > Disaster.BLIZZARD.getMaxLevel())
 											level = Disaster.BLIZZARD.getMaxLevel();
-										Blizzard blizz = new Blizzard(level);
+										Blizzard blizz = new Blizzard(level, world);
 										blizz.createTimedStart((int) worldObj.settings.get("pet_warning_time"), all.getWorld(), all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -264,7 +264,7 @@ public class TimerCheck {
 										|| loc.getBlockY() < Disaster.SANDSTORM.getMinHeight() || DeathMessages.sandstorms.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.SANDSTORM.getMaxLevel())
 											level = Disaster.SANDSTORM.getMaxLevel();
-										SandStorm sand = new SandStorm(level);
+										SandStorm sand = new SandStorm(level, world);
 										sand.createTimedStart((int) worldObj.settings.get("pet_warning_time"), all.getWorld(), all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -272,7 +272,7 @@ public class TimerCheck {
 										if (!worldObj.allowed.contains(Disaster.EARTHQUAKE) || loc.getBlockY() < Disaster.EARTHQUAKE.getMinHeight() || oceanBiomes.contains(biome)) continue;
 										if (level > Disaster.EARTHQUAKE.getMaxLevel())
 											level = Disaster.EARTHQUAKE.getMaxLevel();
-										Earthquake earthquake = new Earthquake(level);
+										Earthquake earthquake = new Earthquake(level, world);
 										earthquake.createTimedStart((int) worldObj.settings.get("pet_warning_time"), offVec, all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -280,7 +280,7 @@ public class TimerCheck {
 										if (!worldObj.allowed.contains(Disaster.TSUNAMI) || loc.getBlockY() < Disaster.TSUNAMI.getMinHeight()) continue;
 										if (level > Disaster.TSUNAMI.getMaxLevel())
 											level = Disaster.TSUNAMI.getMaxLevel();
-										Tsunami tsu = new Tsunami(level);
+										Tsunami tsu = new Tsunami(level, world);
 										if (tsu.findAvailabePool(loc) == null)
 											continue;
 										tsu.createTimedStart((int) worldObj.settings.get("pet_warning_time"), offVec, all);
@@ -291,7 +291,7 @@ public class TimerCheck {
 										|| DeathMessages.meteorshowers.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.METEORSHOWERS.getMaxLevel())
 											level = Disaster.METEORSHOWERS.getMaxLevel();
-										MeteorShower storm = new MeteorShower(level);
+										MeteorShower storm = new MeteorShower(level, world);
 										storm.createTimedStart((int) worldObj.settings.get("pet_warning_time"), all.getWorld(), all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -300,7 +300,7 @@ public class TimerCheck {
 										|| DeathMessages.endstorms.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.ENDSTORM.getMaxLevel())
 											level = Disaster.ENDSTORM.getMaxLevel();
-										EndStorm endstorm = new EndStorm(level);
+										EndStorm endstorm = new EndStorm(level, world);
 										endstorm.createTimedStart((int) worldObj.settings.get("pet_warning_time"), all.getWorld(), all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -308,7 +308,7 @@ public class TimerCheck {
 										if (!worldObj.allowed.contains(Disaster.SUPERNOVA) || !Utils.isEnvironment(world, Environment.NORMAL) || loc.getBlockY() < Disaster.SUPERNOVA.getMinHeight() || oceanBiomes.contains(biome)) continue;
 										if (level > Disaster.SUPERNOVA.getMaxLevel())
 											level = Disaster.SUPERNOVA.getMaxLevel();
-										Supernova nova = new Supernova(level);
+										Supernova nova = new Supernova(level, world);
 										nova.createTimedStart((int) worldObj.settings.get("pet_warning_time"), offVec, all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -317,7 +317,7 @@ public class TimerCheck {
 										|| (!Hurricane.oceans.contains(biome) && (loc.getBlock().getTemperature() <= 0.85 || loc.getBlock().getTemperature() >= 1.0))) continue;
 										if (level > Disaster.HURRICANE.getMaxLevel())
 											level = Disaster.HURRICANE.getMaxLevel();
-										Hurricane hurricane = new Hurricane(level);
+										Hurricane hurricane = new Hurricane(level, world);
 										hurricane.createTimedStart((int) worldObj.settings.get("pet_warning_time"), offVec, all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -325,7 +325,7 @@ public class TimerCheck {
 										if (!worldObj.allowed.contains(Disaster.PURGE) || Purge.targetedPlayers.contains(all.getUniqueId())) continue;
 										if (level > Disaster.PURGE.getMaxLevel())
 											level = Disaster.PURGE.getMaxLevel();
-										Purge purge = new Purge(level);
+										Purge purge = new Purge(level, world);
 										purge.createTimedStart((int) worldObj.settings.get("pet_warning_time"), offVec, all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -334,7 +334,7 @@ public class TimerCheck {
 												|| DeathMessages.solarstorms.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.SOLARSTORM.getMaxLevel())
 											level = Disaster.SOLARSTORM.getMaxLevel();
-										SolarStorm solarstorm = new SolarStorm(level);
+										SolarStorm solarstorm = new SolarStorm(level, world);
 										solarstorm.createTimedStart((int) worldObj.settings.get("pet_warning_time"), all.getWorld(), all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -343,7 +343,7 @@ public class TimerCheck {
 												|| DeathMessages.monsoons.stream().anyMatch(n -> n.getWorld() == world)) continue;
 										if (level > Disaster.MONSOON.getMaxLevel())
 											level = Disaster.MONSOON.getMaxLevel();
-										Monsoon monsoon = new Monsoon(level);
+										Monsoon monsoon = new Monsoon(level, world);
 										monsoon.createTimedStart((int) worldObj.settings.get("pet_warning_time"), all.getWorld(), all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -354,7 +354,7 @@ public class TimerCheck {
 											continue;
 										if (level > Disaster.INFESTEDCAVES.getMaxLevel())
 											level = Disaster.INFESTEDCAVES.getMaxLevel();
-										InfestedCaves infestedcaves = new InfestedCaves(level);
+										InfestedCaves infestedcaves = new InfestedCaves(level, world);
 										infestedcaves.createTimedStart((int) worldObj.settings.get("pet_warning_time"), offVec, all);
 										resetNearbyPlayers(all, worldObj.maxRadius, MinTime);
 										break breakthis;
@@ -363,7 +363,7 @@ public class TimerCheck {
 											continue;
 										if (level > Disaster.LANDSLIDE.getMaxLevel())
 											level = Disaster.LANDSLIDE.getMaxLevel();
-										LandSlide slide = new LandSlide(level);
+										LandSlide slide = new LandSlide(level, world);
 										Location test = slide.findApplicableLocation(loc, all);
 										if (test == null)
 											continue;

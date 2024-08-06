@@ -67,8 +67,8 @@ public class AcidStorm extends WeatherDisaster {
 	public static BukkitTask cropsMonitor;
 
 	@SuppressWarnings("deprecation")
-	public AcidStorm(int level) {
-		super(level);
+	public AcidStorm(int level, World world) {
+		super(level, world);
 		meltItems = configFile.getBoolean("acidstorm.melt_dropped_items");
 		meltArmor = configFile.getBoolean("acidstorm.melt_armor");
 		time = configFile.getInt("acidstorm.time.level "+this.level) * 20;

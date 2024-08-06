@@ -69,8 +69,8 @@ public class MeteorShower extends WeatherDisaster {
 	public List<Meteor> list = new ArrayList<>();
 	public Map<Location, List<Integer>> smoke = new HashMap<>();
 		
-	public MeteorShower(int level) {
-		super(level);
+	public MeteorShower(int level, World world) {
+		super(level, world);
 		night = configFile.getBoolean("meteorshowers.set_night");
 		max = configFile.getInt("meteorshowers.max_meteors");
 		time = configFile.getInt("meteorshowers.time.level "+this.level) * 20;
@@ -182,7 +182,7 @@ public class MeteorShower extends WeatherDisaster {
 		time = 0;
 	}
 	public static void spawnMeteor(int type, Location spawn, Location target, int size) {
-		MeteorShower instance = new MeteorShower(1);
+		MeteorShower instance = new MeteorShower(1, spawn.getWorld());
 		World world = spawn.getWorld();
 		instance.world = world;
 		ongoingDisasters.add(instance);

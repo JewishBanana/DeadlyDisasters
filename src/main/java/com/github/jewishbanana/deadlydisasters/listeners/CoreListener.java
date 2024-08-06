@@ -69,8 +69,14 @@ import com.github.jewishbanana.deadlydisasters.events.DestructionDisaster;
 import com.github.jewishbanana.deadlydisasters.events.DisasterEvent;
 import com.github.jewishbanana.deadlydisasters.events.disasters.AcidStorm;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Blizzard;
+import com.github.jewishbanana.deadlydisasters.events.disasters.EndStorm;
+import com.github.jewishbanana.deadlydisasters.events.disasters.ExtremeWinds;
+import com.github.jewishbanana.deadlydisasters.events.disasters.Hurricane;
+import com.github.jewishbanana.deadlydisasters.events.disasters.MeteorShower;
 import com.github.jewishbanana.deadlydisasters.events.disasters.Monsoon;
+import com.github.jewishbanana.deadlydisasters.events.disasters.SandStorm;
 import com.github.jewishbanana.deadlydisasters.events.disasters.SolarStorm;
+import com.github.jewishbanana.deadlydisasters.events.disasters.SoulStorm;
 import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
 import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.handlers.TimerCheck;
@@ -179,7 +185,7 @@ public class CoreListener implements Listener {
 					if (plugin.upgradeToPro)
 						e.getPlayer().sendMessage(Languages.prefix+Languages.upgradeProMessage);
 					if (plugin.updateNotify) {
-						String msg = Languages.getString("internal.playerUpdate");
+						String msg = Languages.getString("internal.playerUpdate").replace("${plugin.page}", Main.pluginSpigotPage);
 						e.getPlayer().sendMessage(Utils.convertString(Languages.prefix+"&a"+msg.substring(0, msg.indexOf('^'))+plugin.latestVersion+msg.substring(msg.indexOf('^')+1)+" &c"+plugin.getDescription().getVersion()));
 					}
 					notified.add(uuid);
@@ -241,46 +247,86 @@ public class CoreListener implements Listener {
 		if (e.getMessage().equalsIgnoreCase("/weather clear")) {
 			if (!e.getPlayer().hasPermission("deadlydisasters.clearweather")) return;
 			Player p = e.getPlayer();
-			DeathMessages.acidstorms.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.extremewinds.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.soulstorms.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.blizzards.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.sandstorms.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.meteorshowers.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.endstorms.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.hurricanes.stream().forEach(i -> {
-				if (i.world.equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.solarstorms.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
-			DeathMessages.monsoons.stream().forEach(i -> {
-				if (i.getWorld().equals(p.getWorld()))
-					i.clear();
-			});
+			Iterator<AcidStorm> acidStormIterator = DeathMessages.acidstorms.iterator();
+			while (acidStormIterator.hasNext()) {
+				AcidStorm storm = acidStormIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					acidStormIterator.remove();
+				}
+			}
+			Iterator<ExtremeWinds> extremeWindsIterator = DeathMessages.extremewinds.iterator();
+			while (extremeWindsIterator.hasNext()) {
+				ExtremeWinds storm = extremeWindsIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					extremeWindsIterator.remove();
+				}
+			}
+			Iterator<SoulStorm> soulstormIterator = DeathMessages.soulstorms.iterator();
+			while (soulstormIterator.hasNext()) {
+				SoulStorm storm = soulstormIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					soulstormIterator.remove();
+				}
+			}
+			Iterator<Blizzard> blizzardIterator = DeathMessages.blizzards.iterator();
+			while (blizzardIterator.hasNext()) {
+				Blizzard storm = blizzardIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					blizzardIterator.remove();
+				}
+			}
+			Iterator<SandStorm> sandstormIterator = DeathMessages.sandstorms.iterator();
+			while (sandstormIterator.hasNext()) {
+				SandStorm storm = sandstormIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					sandstormIterator.remove();
+				}
+			}
+			Iterator<MeteorShower> meteorshowerIterator = DeathMessages.meteorshowers.iterator();
+			while (meteorshowerIterator.hasNext()) {
+				MeteorShower storm = meteorshowerIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					meteorshowerIterator.remove();
+				}
+			}
+			Iterator<EndStorm> endstormIterator = DeathMessages.endstorms.iterator();
+			while (endstormIterator.hasNext()) {
+				EndStorm storm = endstormIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					endstormIterator.remove();
+				}
+			}
+			Iterator<Hurricane> hurricaneIterator = DeathMessages.hurricanes.iterator();
+			while (hurricaneIterator.hasNext()) {
+				Hurricane storm = hurricaneIterator.next();
+				if (storm.world.equals(p.getWorld())) {
+					storm.clear();
+					hurricaneIterator.remove();
+				}
+			}
+			Iterator<SolarStorm> solarstormIterator = DeathMessages.solarstorms.iterator();
+			while (solarstormIterator.hasNext()) {
+				SolarStorm storm = solarstormIterator.next();
+				if (storm.world.equals(p.getWorld())) {
+					storm.clear();
+					solarstormIterator.remove();
+				}
+			}
+			Iterator<Monsoon> monsoonIterator = DeathMessages.monsoons.iterator();
+			while (monsoonIterator.hasNext()) {
+				Monsoon storm = monsoonIterator.next();
+				if (storm.getWorld().equals(p.getWorld())) {
+					storm.clear();
+					monsoonIterator.remove();
+				}
+			}
 		}
 	}
 	@EventHandler

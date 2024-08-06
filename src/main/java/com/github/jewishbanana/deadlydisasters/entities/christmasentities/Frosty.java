@@ -62,7 +62,7 @@ public class Frosty extends CustomEntity {
 		entity.setMetadata("dd-frosty", plugin.fixedData);
 		entity.setMetadata("dd-christmasmob", plugin.fixedData);
 		if (entity.getCustomName() == null)
-			entity.setCustomName(Languages.getString("entities.frosty"));
+			entity.setCustomName(Languages.getString("christmas.frosty"));
 		entity.getPersistentDataContainer().set(EntityHandler.removalKey, PersistentDataType.BYTE, (byte) 0);
 	}
 	@Override

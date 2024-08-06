@@ -37,10 +37,8 @@ import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 
 import com.github.jewishbanana.deadlydisasters.Main;
-import com.github.jewishbanana.deadlydisasters.events.DestructionDisaster;
 import com.github.jewishbanana.deadlydisasters.events.Disaster;
 import com.github.jewishbanana.deadlydisasters.events.DisasterEvent;
-import com.github.jewishbanana.deadlydisasters.events.WeatherDisaster;
 import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
 import com.github.jewishbanana.deadlydisasters.utils.BlockStateParser;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
@@ -270,10 +268,7 @@ public class BlockRegenHandler implements Listener {
 		for (DisasterEvent dis : pool) {
 			String path = "d"+count;
 			yaml.createSection(path);
-			if (dis instanceof DestructionDisaster)
-				yaml.set(path+".world", ((DestructionDisaster) dis).getLocation().getWorld().getUID().toString());
-			else
-				yaml.set(path+".world", ((WeatherDisaster) dis).getWorld().getUID().toString());
+			yaml.set(path+".world", dis.world.getUID().toString());
 			yaml.set(path+".type", dis.type.toString());
 			List<String> damageList = new ArrayList<>();
 			for (Entry<Block, BlockState> entry : dis.damagedBlocks.entrySet()) {
@@ -317,7 +312,8 @@ public class BlockRegenHandler implements Listener {
 			DisasterEvent.regeneratingDisasters.add(dis);
 			World world = Bukkit.getWorld(UUID.fromString(yaml.getString(task+".world")));
 			dis.world = world;
-			dis.configFile = WorldObject.findWorldObject(world).configFile;
+			dis.worldObject = WorldObject.findWorldObject(world);
+			dis.configFile = dis.worldObject.configFile;
 			dis.type = Disaster.forName(yaml.getString(task+".type"));
 			if (world == null || dis.type == null)
 				continue;

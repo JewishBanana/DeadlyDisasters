@@ -43,8 +43,8 @@ public class SoulStorm extends WeatherDisaster {
 	
 	private Queue<UUID> souls = new ArrayDeque<>();
 	
-	public SoulStorm(int level) {
-		super(level);
+	public SoulStorm(int level, World world) {
+		super(level, world);
 		obj = this;
 		spawnVex = configFile.getBoolean("soulstorm.spawn_souls");
 		time = configFile.getInt("soulstorm.time.level "+this.level) * 20;
@@ -150,7 +150,6 @@ public class SoulStorm extends WeatherDisaster {
 	public void clear() {
 		time = 0;
 		clearEntities();
-		DeathMessages.soulstorms.remove(this);
 	}
 	public void clearEntities() {
 		for (UUID e : souls)

@@ -68,8 +68,8 @@ public class EndStorm extends WeatherDisaster {
 	public Set<UUID> mobs = new HashSet<>();
 	private Map<UUID,UUID> targets = new HashMap<>();
 	
-	public EndStorm(int level) {
-		super(level);
+	public EndStorm(int level, World world) {
+		super(level, world);
 		this.handler = CustomEntity.handler;
 		if (level > 5) level = 5;
 		time = configFile.getInt("endstorm.time.level "+this.level) * 20;
@@ -198,7 +198,7 @@ public class EndStorm extends WeatherDisaster {
 				world.spawnParticle(Particle.SQUID_INK, loc.clone().add(0,0.5,0), 30, .25, .25, .25, 0.0001);
 				world.playSound(loc, Sound.BLOCK_PORTAL_AMBIENT, SoundCategory.AMBIENT, .7f, 1);
 				for (Entity e : world.getNearbyEntities(loc, .5, .5, .5))
-					if (e instanceof Player && (((Player) e).getGameMode() == GameMode.SURVIVAL || ((Player) e).getGameMode() == GameMode.ADVENTURE))
+					if (!isEntityTypeProtected(e) && e instanceof Player && (((Player) e).getGameMode() == GameMode.SURVIVAL || ((Player) e).getGameMode() == GameMode.ADVENTURE))
 						Utils.pureDamageEntity((LivingEntity) e, 1, "dd-unstablerift", true, null);
 				if (var[0] > 0)
 					var[0]-=5;

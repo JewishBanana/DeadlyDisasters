@@ -1,6 +1,8 @@
 package com.github.jewishbanana.deadlydisasters.events.disasters;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -16,12 +18,15 @@ import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.Vector;
 
+import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.events.DestructionDisaster;
 import com.github.jewishbanana.deadlydisasters.events.DestructionDisasterEvent;
 import com.github.jewishbanana.deadlydisasters.events.Disaster;
+import com.github.jewishbanana.deadlydisasters.handlers.Languages;
 import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
 import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.RepeatingTask;
@@ -38,8 +43,8 @@ public class Supernova extends DestructionDisaster {
 	private boolean flash,farParticles;
 	private int blocksDestroyed;
 
-	public Supernova(int level) {
-		super(level);
+	public Supernova(int level, World world) {
+		super(level, world);
 		switch (level) {
 		default:
 		case 1:
@@ -66,9 +71,14 @@ public class Supernova extends DestructionDisaster {
 		flash = configFile.getBoolean("supernova.flash");
 		this.sizeMultiplier = configFile.getDouble("supernova.size");
 		this.particle = VersionUtils.getLargeExplosion();
-		materials = new Material[]{Material.OBSIDIAN, Material.BLACK_CONCRETE, Material.FIRE};
-		if (!configFile.getBoolean("supernova.place_fire"))
-			materials = new Material[]{Material.OBSIDIAN, Material.BLACK_CONCRETE};
+		List<Material> tempMaterials = new ArrayList<>();
+		for (String s : configFile.getStringList("supernova.debris"))
+			try {
+				tempMaterials.add(Material.valueOf(s.toUpperCase()));
+			} catch (Exception e) {
+				Main.consoleSender.sendMessage(Languages.prefix+Utils.convertString("&eERROR the material &d'"+s+"' &edoes not exist in &csupernova.debris &ethis material will not be included in blast zones until you fix this value!"));
+			}
+		materials = tempMaterials.toArray(new Material[0]);
 		farParticles = configFile.getBoolean("supernova.far_particles");
 		this.fallSpeedMultiplier = configFile.getDouble("supernova.fall_speed_multiplier");
 		this.type = Disaster.SUPERNOVA;
@@ -209,7 +219,7 @@ public class Supernova extends DestructionDisaster {
 						if (loc.distance(e.getLocation()) < tick) {
 							if (isEntityTypeProtected(e) || Utils.isZoneProtected(e.getLocation()) || (e instanceof Player && Utils.isPlayerImmune((Player) e)))
 								continue;
-							Utils.pureDamageEntity((LivingEntity) e, 20.0, "dd-supernova", true, null);
+							Utils.pureDamageEntity((LivingEntity) e, 20.0, "dd-supernova", true, DamageCause.BLOCK_EXPLOSION);
 						} else if (e instanceof Player) {
 							Location temp = e.getLocation().clone().add(new Vector(e.getLocation().getX() - loc.getX(), e.getLocation().getY() - loc.getY(), e.getLocation().getZ() - loc.getZ()).normalize().multiply(-4));
 							float vol = (float) ((2 - (0.0005 * (loc.distance(e.getLocation())) - tick))*volume);

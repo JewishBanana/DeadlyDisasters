@@ -38,13 +38,6 @@ public abstract class DestructionDisaster extends DisasterEvent {
 	
 	public static Map<World,Queue<Player>> currentLocations = new HashMap<>();
 	
-	public DestructionDisaster(int level) {
-		this.plugin = Main.getInstance();
-		this.level = level;
-		this.worldObject = WorldObject.findWorldObject(Bukkit.getWorlds().get(0));
-		this.configFile = worldObject.configFile;
-		this.dropItems = configFile.getBoolean("regeneration.drop_container_items");
-	}
 	public DestructionDisaster(int level, World world) {
 		this.plugin = Main.getInstance();
 		this.level = level;

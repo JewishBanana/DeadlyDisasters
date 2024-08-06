@@ -31,6 +31,7 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -38,6 +39,7 @@ import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Rabbit.Type;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.entity.Slime;
+import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
@@ -168,7 +170,28 @@ public class EasterBunny extends CustomEntity {
 						cancel();
 						return;
 					}
-					KillerChicken.createEgg(entity.getLocation(), plugin, target, chickens);
+					Location tempLoc = entity.getLocation();
+					Item egg = entity.getWorld().dropItemNaturally(tempLoc, new ItemStack(Material.EGG));
+					egg.setPickupDelay(100000);
+					plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+						if (egg == null || egg.isDead())
+							return;
+						tempLoc.getWorld().spawnParticle(VersionUtils.getItemCrack(), egg.getLocation(), 5, .3, .3, .3, 0.001, new ItemStack(Material.EGG));
+						tempLoc.getWorld().playSound(egg.getLocation(), Sound.ENTITY_TURTLE_EGG_HATCH, SoundCategory.HOSTILE, 1f, 0.7f);
+						for (int i=0; i < 8; i++) {
+							DustTransition dust = new DustTransition(Color.fromRGB(plugin.random.nextInt(125)+25, 255, plugin.random.nextInt(55)+25), Color.fromRGB(25, plugin.random.nextInt(155)+100, 255), plugin.random.nextFloat());
+							if (plugin.random.nextInt(2) == 0)
+								dust = new DustTransition(Color.fromRGB(plugin.random.nextInt(105)+150, 25, 255), Color.fromRGB(25, plugin.random.nextInt(155)+100, 255), plugin.random.nextFloat()/2f);
+							tempLoc.getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, egg.getLocation().add(0,.2,0).add(plugin.random.nextDouble()-.5,plugin.random.nextDouble()-.5,plugin.random.nextDouble()-.5), 1, 0, 0, 0, 0.001, dust);
+						}
+						Zombie zombie = (Zombie) tempLoc.getWorld().spawnEntity(egg.getLocation(), EntityType.ZOMBIE, false);
+						egg.remove();
+						KillerChicken kc = new KillerChicken(zombie, plugin);
+						kc.chickenList = chickens;
+						CustomEntity.handler.addEntity(kc);
+						zombie.setTarget(target);
+						chickens.add(kc);
+					}, 60);
 					entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_CHICKEN_EGG, SoundCategory.HOSTILE, 1f, 0f);
 				}
 			};

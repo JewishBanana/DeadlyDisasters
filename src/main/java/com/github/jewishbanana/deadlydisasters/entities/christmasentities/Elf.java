@@ -82,7 +82,7 @@ public class Elf extends CustomEntity {
 		entity.setMetadata("dd-elf", plugin.fixedData);
 		entity.setMetadata("dd-christmasmob", plugin.fixedData);
 		if (entity.getCustomName() == null)
-			entity.setCustomName(Languages.getString("entities.christmasElf"));
+			entity.setCustomName(Languages.getString("christmas.christmasElf"));
 		
 		if (rand.nextDouble()*100 < 35.0) {
 			entity.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));

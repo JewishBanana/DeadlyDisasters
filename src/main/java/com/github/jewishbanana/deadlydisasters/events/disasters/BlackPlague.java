@@ -49,8 +49,8 @@ public class BlackPlague extends WeatherDisaster {
 	public static int maxInfectedMobs;
 	private static Set<UUID> infectedPlayers = new HashSet<>();
 	
-	public BlackPlague(int level) {
-		super(level);
+	public BlackPlague(int level, World world) {
+		super(level, world);
 		if (maxInfectedMobs == 0)
 			maxInfectedMobs = configFile.getInt("plague.max_infected_mobs");
 		this.rand = plugin.random;

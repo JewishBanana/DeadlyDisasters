@@ -11,6 +11,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.potion.PotionEffectType;
 
+@SuppressWarnings("deprecation")
 public class VersionUtils {
 	
 	private static Enchantment sharpness;
@@ -44,16 +45,25 @@ public class VersionUtils {
 	private static Material short_grass;
 	
 	static {
+		Integer[] version = Arrays.stream(Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf('-')).split("\\.")).map(e -> Integer.parseInt(e)).toArray(Integer[]::new);
+		
 		sharpness = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("sharpness"));
 		unbreaking = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("unbreaking"));
 		
-		jump_boost = Registry.EFFECT.get(NamespacedKey.minecraft("jump_boost"));
-		slowness = Registry.EFFECT.get(NamespacedKey.minecraft("slowness"));
-		resistance = Registry.EFFECT.get(NamespacedKey.minecraft("resistance"));
-		confusion = Registry.EFFECT.get(NamespacedKey.minecraft("nausea"));
-		slow_dig = Registry.EFFECT.get(NamespacedKey.minecraft("mining_fatigue"));
+		if (version[1] > 20 || (version[1] == 20 && version[2] >= 3)) {
+			jump_boost = Registry.EFFECT.get(NamespacedKey.minecraft("jump_boost"));
+			slowness = Registry.EFFECT.get(NamespacedKey.minecraft("slowness"));
+			resistance = Registry.EFFECT.get(NamespacedKey.minecraft("resistance"));
+			confusion = Registry.EFFECT.get(NamespacedKey.minecraft("nausea"));
+			slow_dig = Registry.EFFECT.get(NamespacedKey.minecraft("mining_fatigue"));
+		} else {
+			jump_boost = PotionEffectType.getByName("jump");
+			slowness = PotionEffectType.getByName("slow");
+			resistance = PotionEffectType.getByName("damage_resistance");
+			confusion = PotionEffectType.getByName("confusion");
+			slow_dig = PotionEffectType.getByName("slow_digging");
+		}
 		
-		Integer[] version = Arrays.stream(Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf('-')).split("\\.")).map(e -> Integer.parseInt(e)).toArray(Integer[]::new);
 		if (version[1] > 20 || (version[1] == 20 && version[2] >= 4))
 			usingNewDamageEvent = true;
 		if (version[1] >= 20 || (version[1] == 19 && version[2] >= 4))

@@ -14,8 +14,8 @@ internal:
     onWord: 'ON'
     offWord: 'OFF'
     cfgUpdate: 'Successfully updated config to version'
-    consoleUpdate: 'A new update is available! &e(^) &aUpdate now at https://www.spigotmc.org/resources/deadlydisasters-pro.100918/'
-    playerUpdate: 'A new version is available! &e(^) &aNotify the server operator to update at https://www.spigotmc.org/resources/deadlydisasters-pro.100918/ \n&7&oCurrently installed version is'
+    consoleUpdate: 'A new update is available! &e(^) &aUpdate now at ${plugin.page}'
+    playerUpdate: 'A new version is available! &e(^) &aNotify the server operator to update at ${plugin.page} \n&7&oCurrently installed version is'
     allowFlight: 'This plugin works best when "allow-flight" is set to &atrue &cin the server properties file!'
     olderVersion: 'You are using an older version! Please know that this plugin is designed for version 1.16 and above so using older versions will be laggy!'
     firstStart:

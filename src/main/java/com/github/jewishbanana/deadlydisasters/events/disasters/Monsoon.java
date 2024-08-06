@@ -59,8 +59,8 @@ public class Monsoon extends WeatherDisaster {
 	
 	public static Queue<Block> globalPuddles = new ArrayDeque<>();
 
-	public Monsoon(int level) {
-		super(level);
+	public Monsoon(int level, World world) {
+		super(level, world);
 		time = configFile.getInt("monsoon.time.level "+this.level) * 20;
 		delay = configFile.getInt("monsoon.start_delay") * 20;
 		volume = configFile.getDouble("monsoon.volume");
@@ -108,6 +108,7 @@ public class Monsoon extends WeatherDisaster {
 			public void run() {
 				if (time <= 0) {
 					clear();
+					DeathMessages.monsoons.remove(instance);
 					cancel();
 					world.setStorm(false);
 					ongoingDisasters.remove(instance);

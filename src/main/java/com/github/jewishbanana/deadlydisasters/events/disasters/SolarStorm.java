@@ -52,8 +52,8 @@ public class SolarStorm extends WeatherDisaster {
 	
 	private Map<UUID,UUID> targets = new HashMap<>();
 	
-	public SolarStorm(int level) {
-		super(level);
+	public SolarStorm(int level, World world) {
+		super(level, world);
 		time = configFile.getInt("solarstorm.time.level "+this.level) * 20;
 		delay = configFile.getInt("solarstorm.start_delay") * 20;
 		volume = configFile.getDouble("solarstorm.volume");
@@ -140,6 +140,7 @@ public class SolarStorm extends WeatherDisaster {
 						return;
 					}
 					clear();
+					DeathMessages.solarstorms.remove(instance);
 					cancel();
 					ongoingDisasters.remove(instance);
 					triggerRegen(true);
@@ -175,7 +176,6 @@ public class SolarStorm extends WeatherDisaster {
 	public void clear() {
 		time = 0;
 		clearEntities();
-		DeathMessages.solarstorms.remove(this);
 		Iterator<UUID> it = fallingBlocks.iterator();
 		while (it.hasNext()) {
 			Entity entity = Bukkit.getEntity(it.next());
