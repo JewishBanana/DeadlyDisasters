@@ -51,8 +51,8 @@ public class ExtremeWinds extends WeatherDisaster {
 	
 	private ExtremeWinds me = this;
 		
-	public ExtremeWinds(int level) {
-		super(level);
+	public ExtremeWinds(int level, World world) {
+		super(level, world);
 		time = configFile.getInt("extremewinds.time.level "+this.level) * 20;
 		delay = configFile.getInt("extremewinds.start_delay") * 20;
 		tempForce = configFile.getDouble("extremewinds.force.level "+level);

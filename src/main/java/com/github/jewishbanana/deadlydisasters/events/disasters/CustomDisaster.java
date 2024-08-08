@@ -112,7 +112,7 @@ public class CustomDisaster {
 		plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 			public void run() {
 				preInit();
-				init(WorldObject.findWorldObject(loc.getWorld()).offset);
+				init(WorldObject.findWorldObject(loc.getWorld()));
 				updateValues(loc.getWorld(), p);
 				
 				String path = "core.level "+level+'.';
@@ -300,7 +300,7 @@ public class CustomDisaster {
 				entityMap.put(entityName, mob);
 			}
 	}
-	public void init(int worldOffset) {
+	public void init(WorldObject worldObject) {
 		String initial = "core.level "+level;
 		Map<Integer, Queue<CustomEvent>> tempList = new LinkedHashMap<>();
 		
@@ -323,7 +323,7 @@ public class CustomDisaster {
 						else if (yaml.getString(path+"target").equals("startPos"))
 							targets = -2;
 					}
-					int offset = Math.max(worldOffset, 1);
+					int offset = Math.max(worldObject.offset, 1);
 					if (yaml.contains(path+"offset"))
 						offset = Math.max(yaml.getInt(path+"offset"), 1);
 					String[] firstPoints = {"0", "0", "0"};
@@ -339,7 +339,7 @@ public class CustomDisaster {
 					//weathers
 					switch (yaml.getString(path+"type")) {
 					case "acidstorm":
-						AcidStorm acidstorm = new AcidStorm(disLevel);
+						AcidStorm acidstorm = new AcidStorm(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"time"))
 							acidstorm.setTime(yaml.getInt(path+"time") * 20);
 						if (yaml.contains(path+"melt_items"))
@@ -353,11 +353,11 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("wd", acidstorm, broadcastAllowed));
 						continue;
 					case "plague":
-						BlackPlague plague = new BlackPlague(disLevel);
+						BlackPlague plague = new BlackPlague(disLevel, worldObject.getWorld());
 						listOfEvents.add(new CustomEvent("wd", plague, broadcastAllowed));
 						continue;
 					case "blizzard":
-						Blizzard blizzard = new Blizzard(disLevel);
+						Blizzard blizzard = new Blizzard(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"time"))
 							blizzard.setTime(yaml.getInt(path+"time") * 20);
 						if (yaml.contains(path+"freezeMobs"))
@@ -369,7 +369,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("wd", blizzard, broadcastAllowed));
 						continue;
 					case "endstorm":
-						EndStorm endstorm = new EndStorm(disLevel);
+						EndStorm endstorm = new EndStorm(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"time"))
 							endstorm.setTime(yaml.getInt(path+"time") * 20);
 						if (yaml.contains(path+"maxEntities"))
@@ -381,7 +381,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("wd", endstorm, broadcastAllowed));
 						continue;
 					case "extremewinds":
-						ExtremeWinds winds = new ExtremeWinds(disLevel);
+						ExtremeWinds winds = new ExtremeWinds(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"time"))
 							winds.setTime(yaml.getInt(path+"time") * 20);
 						if (yaml.contains(path+"force"))
@@ -397,7 +397,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("wd", winds, broadcastAllowed));
 						continue;
 					case "meteorshower":
-						MeteorShower meteor = new MeteorShower(disLevel);
+						MeteorShower meteor = new MeteorShower(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"time"))
 							meteor.setTime(yaml.getInt(path+"time") * 20);
 						if (yaml.contains(path+"night"))
@@ -468,7 +468,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("wd", meteor, broadcastAllowed));
 						continue;
 					case "sandstorm":
-						SandStorm sandstorm = new SandStorm(disLevel);
+						SandStorm sandstorm = new SandStorm(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"time"))
 							sandstorm.setTime(yaml.getInt(path+"time") * 20);
 						if (yaml.contains(path+"customMobs"))
@@ -482,7 +482,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("wd", sandstorm, broadcastAllowed));
 						continue;
 					case "soulstorm":
-						SoulStorm soulstorm = new SoulStorm(disLevel);
+						SoulStorm soulstorm = new SoulStorm(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"time"))
 							soulstorm.setTime(yaml.getInt(path+"time") * 20);
 						if (yaml.contains(path+"customMobs"))
@@ -494,7 +494,7 @@ public class CustomDisaster {
 
 					//destructive
 					case "sinkhole":
-						Sinkhole sinkhole = new Sinkhole(disLevel);
+						Sinkhole sinkhole = new Sinkhole(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"size"))
 							sinkhole.setSize(yaml.getDouble(path+"size"));
 						if (yaml.contains(path+"tickSpeed"))
@@ -504,7 +504,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("dd", sinkhole, targets, offset, firstPoints));
 						continue;
 					case "earthquake":
-						Earthquake earthquake = new Earthquake(disLevel);
+						Earthquake earthquake = new Earthquake(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"size"))
 							earthquake.setSize(yaml.getDouble(path+"size"));
 						if (yaml.contains(path+"force"))
@@ -520,7 +520,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("dd", earthquake, targets, offset, firstPoints));
 						continue;
 					case "supernova":
-						Supernova supernova = new Supernova(disLevel);
+						Supernova supernova = new Supernova(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"size"))
 							supernova.setSizeMultiplier(yaml.getDouble(path+"size"));
 						if (yaml.contains(path+"particleChance"))
@@ -540,7 +540,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("dd", supernova, targets, offset, firstPoints));
 						continue;
 					case "cavein":
-						CaveIn cavein = new CaveIn(disLevel);
+						CaveIn cavein = new CaveIn(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"size"))
 							cavein.setSize(yaml.getDouble(path+"size"));
 						if (yaml.contains(path+"depth"))
@@ -558,7 +558,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("dd", cavein, targets, offset, firstPoints));
 						continue;
 					case "geyser":
-						Geyser geyser = new Geyser(disLevel);
+						Geyser geyser = new Geyser(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"width"))
 							geyser.setWidth(yaml.getInt(path+"width") - 1);
 						if (yaml.contains(path+"amount"))
@@ -588,7 +588,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("dd", geyser, targets, offset, firstPoints));
 						continue;
 					case "hurricane":
-						Hurricane hurricane = new Hurricane(disLevel);
+						Hurricane hurricane = new Hurricane(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"size"))
 							hurricane.setSize(yaml.getInt(path+"size"));
 						if (yaml.contains(path+"time"))
@@ -608,7 +608,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("dd", hurricane, targets, offset, firstPoints));
 						continue;
 					case "purge":
-						Purge purge = new Purge(disLevel);
+						Purge purge = new Purge(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"maxEntities"))
 							purge.setMax(yaml.getInt(path+"maxEntities"));
 						if (yaml.contains(path+"showBar"))
@@ -630,7 +630,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("dd", purge, targets, offset, firstPoints));
 						continue;
 					case "tornado":
-						Tornado tornado = new Tornado(disLevel);
+						Tornado tornado = new Tornado(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"size"))
 							tornado.setSize(yaml.getInt(path+"size"));
 						if (yaml.contains(path+"time"))
@@ -662,7 +662,7 @@ public class CustomDisaster {
 						listOfEvents.add(new CustomEvent("dd", tornado, targets, offset, firstPoints));
 						continue;
 					case "tsunami":
-						Tsunami tsunami = new Tsunami(disLevel);
+						Tsunami tsunami = new Tsunami(disLevel, worldObject.getWorld());
 						if (yaml.contains(path+"size"))
 							tsunami.setRadius(yaml.getInt(path+"size"));
 						if (yaml.contains(path+"height"))

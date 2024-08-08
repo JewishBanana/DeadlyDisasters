@@ -50,8 +50,8 @@ public class Sinkhole extends DestructionDisaster {
 	
 	public static Set<Material> treeBlocks = new HashSet<>();
 	
-	public Sinkhole(int level) {
-		super(level);
+	public Sinkhole(int level, World world) {
+		super(level, world);
 		this.rand = plugin.random;
 		this.maxD = plugin.maxDepth + 5;
 		this.speed = configFile.getInt("sinkhole.speed");

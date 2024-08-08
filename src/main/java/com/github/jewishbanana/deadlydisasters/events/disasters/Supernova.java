@@ -39,8 +39,8 @@ public class Supernova extends DestructionDisaster {
 	private boolean flash,farParticles;
 	private int blocksDestroyed;
 
-	public Supernova(int level) {
-		super(level);
+	public Supernova(int level, World world) {
+		super(level, world);
 		switch (level) {
 		default:
 		case 1:

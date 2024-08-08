@@ -816,7 +816,7 @@ public class PumpkinKing extends CustomEntity {
 		}
 		ArmorStand target = kingObject.spawnTarget(block.getLocation().add(.5,.5,.5));
 		kingObject.basketTarget = target;
-		DeathParade parade = new DeathParade(5);
+		DeathParade parade = new DeathParade(5, block.getWorld());
 		parade.kingUUID = king.getUniqueId();
 		kingObject.parade = parade;
 		parade.start(spawn, null);

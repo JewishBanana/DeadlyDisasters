@@ -13,6 +13,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
@@ -57,8 +58,8 @@ public class DeathParade extends DestructionDisaster {
 	private Queue<UUID> entities = new ArrayDeque<>();
 	private Map<UUID,UUID> targetMap = new HashMap<>();
 
-	public DeathParade(int level) {
-		super(level);
+	public DeathParade(int level, World world) {
+		super(level, world);
 		this.rand = plugin.random;
 		spawnDistance = 25;
 		despawnSpeed = 40;

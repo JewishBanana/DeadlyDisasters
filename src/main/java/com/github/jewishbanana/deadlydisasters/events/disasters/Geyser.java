@@ -9,6 +9,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -46,8 +47,8 @@ public class Geyser extends DestructionDisaster {
 	private int spawnInterval = 10;
 	private int blocksDestroyed;
 	
-	public Geyser(int level) {
-		super(level);
+	public Geyser(int level, World world) {
+		super(level, world);
 		damageAmount = configFile.getDouble("geyser.water_damage");
 		volume = configFile.getDouble("geyser.volume");
 		amount = level;
@@ -57,8 +58,8 @@ public class Geyser extends DestructionDisaster {
 		
 		this.type = Disaster.GEYSER;
 	}
-	public Geyser(int level, Particle particle, double damage, Vector velocity, int tickSpeed, Material material, int width, int min, int max, double volume, Sound sound) {
-		super(level);
+	public Geyser(int level, World world, Particle particle, double damage, Vector velocity, int tickSpeed, Material material, int width, int min, int max, double volume, Sound sound) {
+		super(level, world);
 		damageAmount = damage;
 		this.material = material;
 		this.particleType = particle;
@@ -112,7 +113,7 @@ public class Geyser extends DestructionDisaster {
 		new RepeatingTask(plugin, 0, spawnInterval) {
 			@Override
             public void run() {
-				Geyser shoot = new Geyser(1, particleType, damageAmount, velocity, tickSpeed, material, width, minReach, maxReach, volume, sound);
+				Geyser shoot = new Geyser(1, world, particleType, damageAmount, velocity, tickSpeed, material, width, minReach, maxReach, volume, sound);
 				Location location = new Location(loc.getWorld(), ThreadLocalRandom.current().nextInt(loc.getBlockX()-range, loc.getBlockX()+range+1), loc.getY(), ThreadLocalRandom.current().nextInt(loc.getBlockZ()-range, loc.getBlockZ()+range+1));
 				if (overworld) shoot.createWater(location, rand);
 				else shoot.createLava(location, rand);

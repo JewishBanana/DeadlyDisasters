@@ -52,8 +52,8 @@ public class SolarStorm extends WeatherDisaster {
 	
 	private Map<UUID,UUID> targets = new HashMap<>();
 	
-	public SolarStorm(int level) {
-		super(level);
+	public SolarStorm(int level, World world) {
+		super(level, world);
 		time = configFile.getInt("solarstorm.time.level "+this.level) * 20;
 		delay = configFile.getInt("solarstorm.start_delay") * 20;
 		volume = configFile.getDouble("solarstorm.volume");

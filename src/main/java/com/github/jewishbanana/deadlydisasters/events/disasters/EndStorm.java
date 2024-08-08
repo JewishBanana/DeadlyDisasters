@@ -63,8 +63,8 @@ public class EndStorm extends WeatherDisaster {
 	public Set<UUID> mobs = new HashSet<>();
 	private Map<UUID,UUID> targets = new HashMap<>();
 
-	public EndStorm(int level) {
-		super(level);
+	public EndStorm(int level, World world) {
+		super(level, world);
 		if (level > 5) level = 5;
 		time = configFile.getInt("endstorm.time.level "+this.level) * 20;
 		delay = configFile.getInt("endstorm.start_delay") * 20;

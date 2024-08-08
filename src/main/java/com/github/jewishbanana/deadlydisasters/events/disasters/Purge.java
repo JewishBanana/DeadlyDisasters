@@ -67,8 +67,8 @@ public class Purge extends DestructionDisaster {
 	
 	public static Set<UUID> targetedPlayers = new HashSet<>();
 
-	public Purge(int level) {
-		super(level);
+	public Purge(int level, World world) {
+		super(level, world);
 		this.rand = plugin.random;
 		custom = CustomEntityType.mobsEnabled;
 		max = configFile.getInt("purge.horde_size.level "+this.level);

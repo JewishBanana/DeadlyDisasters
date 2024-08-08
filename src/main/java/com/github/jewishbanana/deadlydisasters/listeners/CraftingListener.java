@@ -97,6 +97,7 @@ public class CraftingListener implements Listener {
 				}
 		}
 	}
+	@SuppressWarnings("removal")
 	@EventHandler
 	public void onAnvil(PrepareAnvilEvent e) {
 		if (e.getInventory().getItem(0) == null || e.getInventory().getItem(1) == null || !e.getInventory().getItem(1).hasItemMeta())

@@ -51,8 +51,8 @@ public class Blizzard extends WeatherDisaster {
 	
 	private me.casperge.realisticseasons.api.SeasonsAPI seasons;
 	
-	public Blizzard(int level) {
-		super(level);
+	public Blizzard(int level, World world) {
+		super(level, world);
 		freeze = configFile.getBoolean("blizzard.freeze_entities");
 		despawnEntities = configFile.getBoolean("blizzard.despawn_frozen_entities");
 		leather = configFile.getBoolean("blizzard.leather_armor_protection");

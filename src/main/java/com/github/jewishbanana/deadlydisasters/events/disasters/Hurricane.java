@@ -50,8 +50,8 @@ public class Hurricane extends DestructionDisaster {
 	
 	public static Set<Biome> oceans = new HashSet<>();
 	
-	public Hurricane(int level) {
-		super(level);
+	public Hurricane(int level, World world) {
+		super(level, world);
 		size = (int) (level*60 * configFile.getDouble("hurricane.size"));
 		time = configFile.getInt("hurricane.time") * 20;
 		lightning = (int) (((7-level)*10) * configFile.getDouble("hurricane.lightning_frequency"));

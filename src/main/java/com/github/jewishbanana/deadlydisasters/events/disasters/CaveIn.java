@@ -55,8 +55,8 @@ public class CaveIn extends DestructionDisaster {
 	public Map<Block,Block> regenStates = new HashMap<>();
 	public Map<Block,Material[]> fallenBlocks = new LinkedHashMap<>();
 	
-	public CaveIn(int level) {
-		super(level);
+	public CaveIn(int level, World world) {
+		super(level, world);
 		switch (level) {
 		default:
 		case 1:

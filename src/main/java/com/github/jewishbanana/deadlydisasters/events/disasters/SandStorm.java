@@ -58,8 +58,8 @@ public class SandStorm extends WeatherDisaster {
 	private Set<Biome> badlands = new HashSet<>();
 	private Map<UUID,UUID> targets = new HashMap<>();
 	
-	public SandStorm(int level) {
-		super(level);
+	public SandStorm(int level, World world) {
+		super(level, world);
 		custom = CustomEntityType.mobsEnabled;
 		skulls = configFile.getBoolean("sandstorm.mobs_drop_skulls");
 		wither = configFile.getBoolean("sandstorm.wither_effect");

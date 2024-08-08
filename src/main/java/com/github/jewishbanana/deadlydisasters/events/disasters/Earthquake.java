@@ -44,13 +44,12 @@ public class Earthquake extends DestructionDisaster {
 
 	private Location mem;
 	private int len,wid,radius;
-	private World world;
 	private double size,tilt,force;
 	public int blocksDestroyed;
 	public boolean placeLava;
 
-	public Earthquake(int level) {
-		super(level);
+	public Earthquake(int level, World world) {
+		super(level, world);
 		size = configFile.getDouble("earthquake.size");
 		tilt = configFile.getDouble("earthquake.tilt");
 		force = configFile.getDouble("earthquake.force");

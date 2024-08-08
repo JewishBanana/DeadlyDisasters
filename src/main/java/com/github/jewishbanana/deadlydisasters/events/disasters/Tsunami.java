@@ -14,6 +14,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
@@ -57,8 +58,8 @@ public class Tsunami extends DestructionDisaster implements Listener {
 	private Set<Block> cleanMap = new LinkedHashSet<>();
 	private Queue<FallingBlock> debris = new ArrayDeque<>();
 	
-	public Tsunami(int level) {
-		super(level);
+	public Tsunami(int level, World world) {
+		super(level, world);
 		depth = configFile.getInt("tsunami.minimum_depth");
 		damage = configFile.getInt("tsunami.damage");
 		radius = (int) (15 * level * configFile.getDouble("tsunami.size"));

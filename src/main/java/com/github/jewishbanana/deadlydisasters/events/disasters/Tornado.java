@@ -52,8 +52,8 @@ public class Tornado extends DestructionDisaster {
 	public Map<UUID, Integer> holdEntities = new ConcurrentHashMap<>();
 	public Map<UUID, Double> velocityMap = new ConcurrentHashMap<>();
 		
-	public Tornado(int level) {
-		super(level);
+	public Tornado(int level, World world) {
+		super(level, world);
 		switch (level) {
 		default:
 		case 1:
