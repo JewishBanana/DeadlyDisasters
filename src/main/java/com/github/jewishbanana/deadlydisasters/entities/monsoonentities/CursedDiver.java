@@ -21,6 +21,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
@@ -101,7 +102,7 @@ public class CursedDiver extends CustomEntity {
 			return;
 		cooldown = 5;
 		entity.addPotionEffect(new PotionEffect(VersionUtils.getSlowness(), 40, 5, true, false, false));
-		castWaveSpell(entity.getLocation(), Utils.getVectorTowards(entity.getLocation(), entity.getTarget().getLocation()), 15, rand);
+		castWaveSpell(entity.getLocation(), entity, Utils.getVectorTowards(entity.getLocation(), entity.getTarget().getLocation()), 15, rand);
 		if (plugin.mcVersion >= 1.16)
 			entity.swingMainHand();
 		entity.getWorld().spawnParticle(VersionUtils.getDripWater(), entity.getLocation().add(0,1,0), 100, 0.9, 1, 0.9, 1);
@@ -113,7 +114,7 @@ public class CursedDiver extends CustomEntity {
 	@Override
 	public void update(FileConfiguration file) {
 	}
-	private void castWaveSpell(Location location, Vector dir, int distance, Random rand) {
+	private void castWaveSpell(Location location, Entity caster, Vector dir, int distance, Random rand) {
 		World world = location.getWorld();
 		int[] timer = {distance};
 		Vector angle = new Vector(dir.getZ(), 0, -dir.getX());
@@ -174,7 +175,7 @@ public class CursedDiver extends CustomEntity {
 								continue;
 							e.setVelocity(dir);
 							if (e instanceof LivingEntity && !(e instanceof Player && Utils.isPlayerImmune((Player) e)))
-								((LivingEntity) e).damage(4);
+								Utils.damageEntity((LivingEntity) e, 4.0, "dd-curseDiverWave", false, caster, DamageCause.DROWNING);
 						}
 					}
 				}

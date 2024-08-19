@@ -32,6 +32,7 @@ import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -199,7 +200,7 @@ public class EndStorm extends WeatherDisaster {
 				world.playSound(loc, Sound.BLOCK_PORTAL_AMBIENT, SoundCategory.AMBIENT, .7f, 1);
 				for (Entity e : world.getNearbyEntities(loc, .5, .5, .5))
 					if (!isEntityTypeProtected(e) && e instanceof Player && (((Player) e).getGameMode() == GameMode.SURVIVAL || ((Player) e).getGameMode() == GameMode.ADVENTURE))
-						Utils.pureDamageEntity((LivingEntity) e, 1, "dd-unstablerift", true, null);
+						Utils.pureDamageEntity((LivingEntity) e, 1, "dd-unstablerift", true, DamageCause.VOID);
 				if (var[0] > 0)
 					var[0]-=5;
 				else {

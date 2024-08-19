@@ -271,6 +271,11 @@ public class DeathMessages implements Listener {
 			e.setDeathMessage(p.getName()+" "+Languages.getString("halloween.pumpkinWormDeath"));
 			return;
 		}
+		if (p.hasMetadata("dd-curseDiverWave")) {
+			p.removeMetadata("dd-curseDiverWave", plugin);
+			e.setDeathMessage(p.getName()+" "+Languages.getString("deaths.curseDiverWave"));
+			return;
+		}
 		
 		if (cause == DamageCause.FALL || cause == DamageCause.LAVA) {
 			for (Sinkhole obj : sinkholes) {

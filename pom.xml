@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.jewishbanana</groupId>
 	<artifactId>deadly-disasters</artifactId>
-	<version>14.6</version>
+	<version>14.7</version>
 	<name>DeadlyDisasters</name>
 	
 	<properties>

@@ -525,7 +525,7 @@ class Meteor {
 						LivingEntity entity = (LivingEntity) e;
 						if (Utils.rayTraceForSolidBlock(loc, e.getLocation().clone().add(0,.5,0)))
 							continue;
-						Utils.damageEntity(entity, damage, "dd-meteorcrush", false, DamageCause.FALLING_BLOCK);
+						Utils.damageEntity(entity, damage, "dd-meteorcrush", false, DamageCause.BLOCK_EXPLOSION);
 					}
 				classInstance.smoke.put(loc.clone().subtract(0,width,0), Arrays.asList(classInstance.smokeTime, width/2));
 			} else {
@@ -548,7 +548,7 @@ class Meteor {
 							if (blocks[i].isDead()) continue;
 							for (Entity e : world.getNearbyEntities(blocks[i].getLocation(), .5, .5, .5))
 								if (e instanceof LivingEntity && !e.isDead() && !classInstance.isEntityTypeProtected(e))
-									Utils.pureDamageEntity((LivingEntity) e, 6, "dd-meteorcrush", true, null);
+									Utils.pureDamageEntity((LivingEntity) e, 6, "dd-meteorcrush", true, DamageCause.FALLING_BLOCK);
 						}
 						depth++;
 						if (depth >= 20)

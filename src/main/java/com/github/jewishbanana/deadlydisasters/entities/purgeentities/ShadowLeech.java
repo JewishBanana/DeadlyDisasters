@@ -19,6 +19,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
@@ -201,7 +202,7 @@ public class ShadowLeech extends CustomEntity {
 				entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation(), 3, .1, .1, .1, 1, Material.REDSTONE_BLOCK.createBlockData());
 			else
 				entity.getWorld().spawnParticle(VersionUtils.getBlockCrack(), entity.getLocation(), 8, .1, .1, .1, 1, Material.REDSTONE_BLOCK.createBlockData());
-			Utils.pureDamageEntity(attachedTo, damage, bloodleech ? "dd-bloodleechdeath" : "dd-leechdeath", false, null);
+			Utils.pureDamageEntity(attachedTo, damage, bloodleech ? "dd-bloodleechdeath" : "dd-leechdeath", false, DamageCause.ENTITY_ATTACK);
 			entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_ENDERMITE_DEATH, SoundCategory.HOSTILE, 0.5f, 0.8f);
 		} else {
 			if (rand.nextInt(8) == 0)

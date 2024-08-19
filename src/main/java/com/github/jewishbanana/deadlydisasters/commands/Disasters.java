@@ -887,7 +887,7 @@ public class Disasters implements CommandExecutor,TabCompleter {
 				handler.addEntity(new AncientMummy(entity, plugin, rand));
 				sender.sendMessage(Utils.convertString("&fSummoned &6Ancient Mummy"));
 				return true;
-			} else if (args[1].equalsIgnoreCase("tunneller")) {
+			} else if (args[1].equalsIgnoreCase("tunnellerzombie")) {
 				Mob entity = (Mob) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
 				handler.addEntity(new TunnellerZombie((Zombie) entity, null, plugin));
 				sender.sendMessage(Utils.convertString("&fSummoned &7Tunneller"));

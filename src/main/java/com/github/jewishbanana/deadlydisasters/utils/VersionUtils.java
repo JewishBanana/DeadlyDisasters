@@ -47,8 +47,13 @@ public class VersionUtils {
 	static {
 		Integer[] version = Arrays.stream(Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf('-')).split("\\.")).map(e -> Integer.parseInt(e)).toArray(Integer[]::new);
 		
-		sharpness = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("sharpness"));
-		unbreaking = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("unbreaking"));
+		if (version[1] > 17) {
+			sharpness = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("sharpness"));
+			unbreaking = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("unbreaking"));
+		} else {
+			sharpness = Enchantment.getByKey(NamespacedKey.minecraft("sharpness"));
+			unbreaking = Enchantment.getByKey(NamespacedKey.minecraft("unbreaking"));
+		}
 		
 		if (version[1] > 20 || (version[1] == 20 && version[2] >= 3)) {
 			jump_boost = Registry.EFFECT.get(NamespacedKey.minecraft("jump_boost"));

@@ -26,6 +26,7 @@ public class BasicCoatingBook extends com.github.jewishbanana.uiframework.items.
 		type.addEnchant(com.github.jewishbanana.uiframework.items.UIEnchantment.getEnchant(BasicCoating.REGISTERED_KEY), 1);
 		
 		type.registerRecipe(createAnvilBookRecipe(BasicCoating.REGISTERED_KEY, Utils.createIngredients(BasicCoating.applicableTypes)));
+//		type.registerRecipe(createAnvilBookRecipe("dd_basic_book_anvil_recipe", BasicCoating.REGISTERED_KEY, type, BasicCoating.applicableTypes, 10));
 	}
 	@SuppressWarnings("deprecation")
 	private static com.github.jewishbanana.uiframework.utils.AnvilRecipe createAnvilBookRecipe(String enchant, List<ItemStack> ingredients) {
@@ -54,6 +55,30 @@ public class BasicCoatingBook extends com.github.jewishbanana.uiframework.items.
 		recipe.setSlot(com.github.jewishbanana.uiframework.utils.AnvilRecipe.AnvilSlot.SECOND);
 		return recipe;
 	}
+//	private static com.github.jewishbanana.uiframework.utils.AnvilRecipe createAnvilBookRecipe(String key, String enchant, com.github.jewishbanana.uiframework.items.ItemType book, List<Material> ingredients, int levelCost) {
+//		com.github.jewishbanana.uiframework.items.UIEnchantment type = com.github.jewishbanana.uiframework.items.UIEnchantment.getEnchant(enchant);
+//		if (type == null)
+//			return null;
+//		return new com.github.jewishbanana.uiframework.utils.AnvilRecipe(new NamespacedKey(Main.getInstance(), key), new com.github.jewishbanana.uiframework.utils.AnvilRecipe.AnvilChoice(new RecipeChoice.MaterialChoice(ingredients), new RecipeChoice.ExactChoice(book.getItem())), (event) -> {
+//			ItemStack item = event.getInventory().getItem(0).clone();
+//			int level = type.getEnchantLevel(item);
+//			int bookLevel = type.getEnchantLevel(event.getInventory().getItem(1));
+//			if (level >= type.getMaxLevel() || item.getAmount() != 1 || !type.canBeEnchanted(item) || level > bookLevel)
+//				return new com.github.jewishbanana.uiframework.utils.AnvilRecipe.AnvilResult(new ItemStack(Material.AIR), 0);
+//			ItemMeta meta = item.getItemMeta();
+//			com.github.jewishbanana.uiframework.listeners.ItemListener.attachRecipeMetaFix(meta);
+//			item.setItemMeta(meta);
+//			com.github.jewishbanana.uiframework.items.GenericItem base = com.github.jewishbanana.uiframework.items.GenericItem.createItemBase(item);
+//			if (level > 0)
+//				type.unloadEnchant(base);
+//			if (type.addEnchant(base, bookLevel > level ? bookLevel : level+1, true)) {
+//				type.loadEnchant(base);
+//				base.getType().getBuilder().assembleLore(item, item.getItemMeta(), base.getType(), base);
+//				return new com.github.jewishbanana.uiframework.utils.AnvilRecipe.AnvilResult(item, levelCost);
+//			}
+//			return new com.github.jewishbanana.uiframework.utils.AnvilRecipe.AnvilResult(new ItemStack(Material.AIR), 0);
+//		});
+//	}
 	public String getDisplayName() {
 		return Utils.convertString("&7")+Languages.getString("items.basicCoatingBook");
 	}

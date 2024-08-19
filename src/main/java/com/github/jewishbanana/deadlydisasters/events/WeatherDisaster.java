@@ -41,6 +41,7 @@ public abstract class WeatherDisaster extends DisasterEvent {
 		this.level = level;
 		if (this.level > 5 && !(this instanceof ExtremeWinds))
 			this.level = 5;
+		this.world = world;
 		this.worldObject = WorldObject.findWorldObject(world);
 		this.configFile = worldObject.configFile;
 		this.dropItems = configFile.getBoolean("regeneration.drop_container_items");

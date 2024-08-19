@@ -69,6 +69,7 @@ deaths:
     avalancheDeath: 'was caught up in an avalanche'
     landslideDeath: 'was caught up in a landslide'
     soulBombDeath: 'has went psyco'
+    curseDiverWave: 'was swept away by a wave'
 entities:
     endTotem: 'End Totem'
     voidGuard: 'Void Guardian'

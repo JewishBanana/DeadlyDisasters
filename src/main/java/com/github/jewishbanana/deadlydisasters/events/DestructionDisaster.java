@@ -41,6 +41,7 @@ public abstract class DestructionDisaster extends DisasterEvent {
 	public DestructionDisaster(int level, World world) {
 		this.plugin = Main.getInstance();
 		this.level = level;
+		this.world = world;
 		this.worldObject = WorldObject.findWorldObject(world);
 		this.configFile = worldObject.configFile;
 		this.dropItems = configFile.getBoolean("regeneration.drop_container_items");
