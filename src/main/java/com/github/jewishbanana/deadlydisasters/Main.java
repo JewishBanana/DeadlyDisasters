@@ -6,339 +6,123 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import org.apache.commons.io.FileUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.bukkit.World.Environment;
-import org.bukkit.block.Biome;
 import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.github.jewishbanana.deadlydisasters.commands.Disasters;
-import com.github.jewishbanana.deadlydisasters.commands.TownyDisasters;
-import com.github.jewishbanana.deadlydisasters.entities.CustomDropsFactory;
-import com.github.jewishbanana.deadlydisasters.entities.CustomEntity;
-import com.github.jewishbanana.deadlydisasters.entities.CustomEntityType;
-import com.github.jewishbanana.deadlydisasters.entities.CustomHead;
-import com.github.jewishbanana.deadlydisasters.entities.EntityHandler;
-import com.github.jewishbanana.deadlydisasters.events.Disaster;
-import com.github.jewishbanana.deadlydisasters.events.disasters.BlackPlague;
-import com.github.jewishbanana.deadlydisasters.events.disasters.Blizzard;
-import com.github.jewishbanana.deadlydisasters.events.disasters.SandStorm;
-import com.github.jewishbanana.deadlydisasters.handlers.AchievementsHandler;
-import com.github.jewishbanana.deadlydisasters.handlers.Catalog;
-import com.github.jewishbanana.deadlydisasters.handlers.ConfigSwapper;
-import com.github.jewishbanana.deadlydisasters.handlers.ItemsHandler;
-import com.github.jewishbanana.deadlydisasters.handlers.Languages;
-import com.github.jewishbanana.deadlydisasters.handlers.SeasonsHandler;
-import com.github.jewishbanana.deadlydisasters.handlers.TimerCheck;
-import com.github.jewishbanana.deadlydisasters.handlers.WorldObject;
-import com.github.jewishbanana.deadlydisasters.handlers.specialevents.SpecialEvent;
-import com.github.jewishbanana.deadlydisasters.listeners.ArmorListener;
+import com.github.jewishbanana.deadlydisasters.commands.DisastersCommand;
+import com.github.jewishbanana.deadlydisasters.disasters.DisasterRegistry;
+import com.github.jewishbanana.deadlydisasters.disasters.DisasterSelector;
+import com.github.jewishbanana.deadlydisasters.disasters.destructive.Earthquake;
+import com.github.jewishbanana.deadlydisasters.disasters.destructive.Sinkhole;
+import com.github.jewishbanana.deadlydisasters.disasters.destructive.Supernova;
+import com.github.jewishbanana.deadlydisasters.disasters.weather.AcidStorm;
+import com.github.jewishbanana.deadlydisasters.disasters.weather.Blizzard;
+import com.github.jewishbanana.deadlydisasters.disasters.weather.ExtremeWinds;
+import com.github.jewishbanana.deadlydisasters.disasters.weather.MeteorShower;
+import com.github.jewishbanana.deadlydisasters.disasters.weather.Monsoon;
+import com.github.jewishbanana.deadlydisasters.disasters.weather.Sandstorm;
+import com.github.jewishbanana.deadlydisasters.disasters.weather.SoulStorm;
 import com.github.jewishbanana.deadlydisasters.listeners.BlockRegenHandler;
-import com.github.jewishbanana.deadlydisasters.listeners.CoreListener;
-import com.github.jewishbanana.deadlydisasters.listeners.CraftingListener;
-import com.github.jewishbanana.deadlydisasters.listeners.CustomEnchantHandler;
-import com.github.jewishbanana.deadlydisasters.listeners.CustomEntitiesListener;
-import com.github.jewishbanana.deadlydisasters.listeners.DeathMessages;
+import com.github.jewishbanana.deadlydisasters.listeners.DeathListener;
+import com.github.jewishbanana.deadlydisasters.listeners.DisasterFeaturesListener;
+import com.github.jewishbanana.deadlydisasters.listeners.EntitiesListener;
 import com.github.jewishbanana.deadlydisasters.listeners.LootGenerateListener;
-import com.github.jewishbanana.deadlydisasters.listeners.TownyListener;
-import com.github.jewishbanana.deadlydisasters.listeners.spawners.GlobalSpawner;
-import com.github.jewishbanana.deadlydisasters.listeners.spawners.InfestedSpawner;
-import com.github.jewishbanana.deadlydisasters.listeners.unloaders.Loader_ver_14;
-import com.github.jewishbanana.deadlydisasters.listeners.unloaders.Loader_ver_17;
+import com.github.jewishbanana.deadlydisasters.listeners.PlayerListener;
+import com.github.jewishbanana.deadlydisasters.listeners.WorldListener;
+import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.ConfigUpdater;
+import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
-import com.github.jewishbanana.deadlydisasters.utils.Metrics;
-import com.github.jewishbanana.deadlydisasters.utils.NBSongs;
+import com.github.jewishbanana.deadlydisasters.utils.RegenerationDataUtil;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class Main extends JavaPlugin {
 	
-	public boolean RegionProtection;
-	public boolean CProtect;
+	/*
+	 * TODO:
+	 * - Acid rain stop crop growth, melons and pumpkins, sugar cane, etc.
+	 * - Force regen does not account for fire spread after starting
+	 * - Yetis spawning in water
+	 * - Regen bug, if block is broken and player places new block on spot, if that next block gets broken it does not regen as first block occupies map. Create second map to store excess blocks and drop them according after regen.
+	 */
 	
-	public boolean updateNotify,firstSetup,firstAfterUpdate,upgradeToPro,debug,customNameSupport,isPro = true;
-	private TimerCheck tc;
-	private File dataf;
-	public FileConfiguration dataFile;
-	public String latestVersion;
+	private static final String pluginSpigotPage = "https://www.spigotmc.org/resources/deadlydisasters-pro.100918/";
+	
 	public static ConsoleCommandSender consoleSender;
-	public double mcVersion,lastVersion;
-	public SeasonsHandler seasonsHandler;
-	public CustomEnchantHandler enchantHandler;
-	public FixedMetadataValue fixedData;
-	public ConfigSwapper cfgSwapper;
-	public AchievementsHandler achievementsHandler;
-	private BlockRegenHandler regenHandler;
-	public SpecialEvent eventHandler;
-	public boolean noteBlockAPIEnabled;
-	
-	public Random random = new Random();
-	public int maxDepth;
+	public static boolean isDisablingPlugin;
 	
 	private static Main instance;
+	private static FixedMetadataValue fixedData;
 	
-	public static String pluginSpigotPage = "https://www.spigotmc.org/resources/deadlydisasters-pro.100918/";
-	
-	/* [Updates]
-	 * - list player command switch map
-	 * - Potion meta bug
-	 * - fix meteor and supernova killing immune players
-	 * - fix broadcast message in utils using player object instead of location
-	 * - fix utils upgrade enchant method duplicating lore (remake list when no line is found)
-	 * - add dead check for players in timer check
-	 * - substring team name to 16 chars in shadow leech
-	 * - patch bug with running world command to get world from container instead
-	 * - patch bow shoot event check for null bow in corelistener
-	 * - try catch seasons handler in timer check
-	 * - change health checks on void guardian function method
-	 * - lost soul classes stand null check in function method
-	 * - add despawn frozen entities feature to blizzard
-	 * - custom names to zombie and skeleton knight, tunneller
-	 * - switch supernova to linked set
-	 * - Change utils variables to be reloaded in proper section
-	 * 
-	 * [Todo]
-	 * - Fix catalog not registering installed on restart/reload
-	 * - Fix rampage goat not spawning because set to monsters only (move to easter handler class)
-	 * - Add help command for new commands and landslides
-	 * 
-	 * [Resources]
-	 * - https://pokechu22.github.io/Burger/1.20.html#sounds
-	 */
+	public DisasterSelector selector;
 	
 	public void onEnable() {
 		instance = this;
-		consoleSender = this.getServer().getConsoleSender();
-		this.mcVersion = Double.parseDouble(Bukkit.getBukkitVersion().substring(0,4));
-		if (mcVersion < 1.17)
-			this.maxDepth = 0;
-		else
-			this.maxDepth = -64;
 		fixedData = new FixedMetadataValue(this, "protected");
+		consoleSender = this.getServer().getConsoleSender();
 		
-		if (!(new File(getDataFolder().getAbsolutePath(), "config.yml").exists()))
-			firstSetup = true;
 		getConfig().options().copyDefaults(true);
 		saveDefaultConfig();
-		if (firstSetup)
-			try {
-				ConfigUpdater.update(this, getResource("config.yml"), new File(getDataFolder().getAbsolutePath(), "config.yml"), Arrays.asList(""));
-				this.reloadConfig();
-			} catch (IOException e) {
-				e.printStackTrace();
-				consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cUnable to initialize config! Please report the full error above to the discord."));
-			}
-		
-		dataf = new File(getDataFolder().getAbsolutePath(), "pluginData/data.yml");
-		if (!dataf.exists()) {
-			getLogger().info("Could not find data file in plugin directory! Creating new data file...");
-			dataf.getParentFile().mkdirs();
-			try {
-				FileUtils.copyInputStreamToFile(getResource("files/data.yml"), dataf);
-			} catch (IOException e) {
-				e.printStackTrace();
-				Utils.sendDebugMessage();
-			}
-			dataFile = YamlConfiguration.loadConfiguration(dataf);
-			dataFile.set("data.version", getDescription().getVersion());
-			saveDataFile();
-		} else {
-			dataFile = YamlConfiguration.loadConfiguration(dataf);
-		}
-		if (!dataFile.contains("data.lang")) {
-			dataFile.set("data.lang", 0);
-			saveDataFile();
-		}
-		if (!dataFile.contains("data.pro")) {
-			dataFile.set("data.pro", true);
-			saveDataFile();
-			upgradeToPro = true;
+		try {
+			ConfigUpdater.update(this, "config.yml", new File(getDataFolder().getAbsolutePath(), "config.yml"), null);
+			this.reloadConfig();
+		} catch (IOException e) {
+			Utils.sendExceptionLog(e);
 		}
 		
-		CustomHead.init(this);
+		registerDisasters();
 		
-		Languages.defaultLang = YamlConfiguration.loadConfiguration(new InputStreamReader(getResource("lang/langEnglish.yml")));
-		Languages.updateLang(dataFile.getInt("data.lang"), this, null);
-		cfgSwapper = new ConfigSwapper(this);
+		init();
 		
-		checkWorldsYaml();
+		BlockRegenHandler.loadAll(this);
+	}
+	public void registerDisasters() {
+		// Destructive
+		DisasterRegistry.registerDisaster("sinkhole", Sinkhole.class);
+		DisasterRegistry.registerDisaster("earthquake", Earthquake.class);
+		DisasterRegistry.registerDisaster("supernova", Supernova.class);
 		
-		seasonsHandler = new SeasonsHandler(this);
+		// Weather
+		DisasterRegistry.registerDisaster("acid_storm", AcidStorm.class);
+		DisasterRegistry.registerDisaster("sandstorm", Sandstorm.class);
+		DisasterRegistry.registerDisaster("blizzard", Blizzard.class);
+		DisasterRegistry.registerDisaster("extreme_winds", ExtremeWinds.class);
+		DisasterRegistry.registerDisaster("soul_storm", SoulStorm.class);
+		DisasterRegistry.registerDisaster("monsoon", Monsoon.class);
+		DisasterRegistry.registerDisaster("meteorshower", MeteorShower.class);
+	}
+	public void init() {
+		DataUtils.reload();
+		WorldWrapper.init();
+		DependencyUtils.init(this);
 		
-		File entityFile = new File(getDataFolder().getAbsolutePath(), "entities.yml");
-		if (!entityFile.exists())
-			try {
-				FileUtils.copyInputStreamToFile(getResource("files/entities.yml"), entityFile);
-			} catch (IOException e) {
-				e.printStackTrace();
-				Utils.sendDebugMessage();
-			}
-		CustomEntityType.yaml = YamlConfiguration.loadConfiguration(entityFile);
+		reload();
 		
-		lastVersion = dataFile.getDouble("data.version");
-		if (getConfig().contains("general.version") || lastVersion < Double.parseDouble(this.getDescription().getVersion())) {
-			updateConfig();
-			updateWorldsYaml();
-			if (seasonsHandler.isActive)
-				seasonsHandler.updateSeasonsFile();
-			dataFile.set("data.version", Double.parseDouble(this.getDescription().getVersion()));
-			saveDataFile();
-			firstAfterUpdate = true;
-			consoleSender.sendMessage(Languages.prefix+Languages.joinAfterUpdate);
-		}
-		this.debug = getConfig().getBoolean("general.debug_messages");
-		this.customNameSupport = getConfig().getBoolean("general.custom_name_support");
-		
-		for (World w : this.getServer().getWorlds())
-			WorldObject.worlds.add(new WorldObject(w, this));
-		
-		PluginManager pm = getServer().getPluginManager();
-		if (pm.isPluginEnabled("WorldGuard")) {
-			Utils.WGuardB = true;
-			getLogger().info("Successfully hooked into World Guard");
-		}
-		if (getCoreProtect() != null) {
-			CProtect = true;
-			getLogger().info("Successfully hooked into CoreProtect");
-		}
-		if (pm.isPluginEnabled("Towny")) {
-			Utils.TownyB = true;
-			new TownyListener(this);
-			this.getCommand("towndisasters").setTabCompleter(new TownyDisasters(this));
-			getLogger().info("Successfully hooked into Towny");
-		}
-		if (pm.isPluginEnabled("GriefPrevention")) {
-			Utils.GriefB = true;
-			getLogger().info("Successfully hooked into GriefPrevention");
-		}
-		if (pm.isPluginEnabled("Lands")) {
-			Utils.LandsB = true;
-			getLogger().info("Successfully hooked into Lands");
-		}
-		if (pm.isPluginEnabled("Kingdoms")) {
-			Utils.KingsB = true;
-			getLogger().info("Successfully hooked into KingdomsX");
-		}
-		if (Utils.WGuardB || Utils.TownyB || Utils.GriefB || Utils.LandsB || Utils.KingsB)
-			RegionProtection = true;
-		if (pm.isPluginEnabled("NoteBlockAPI")) {
-			this.noteBlockAPIEnabled = true;
-			NBSongs.init(this);
-			getLogger().info("Successfully hooked into NoteBlockAPI");
-		}
-		new DependencyUtils(this);
-		
-		CustomEntityType.reload(this);
-		CustomDropsFactory.reload(this);
-		
-		new ArmorListener(this);
-		tc = new TimerCheck(this, dataFile, random);
-		CustomEntity.handler = new EntityHandler(this);
-		if (mcVersion >= 1.17)
-			new Loader_ver_17(this, CustomEntity.handler);
-		else
-			new Loader_ver_14(this, CustomEntity.handler);
-		new CoreListener(this, tc, dataFile, random);
-		if (mcVersion >= 1.16 && DependencyUtils.isUIFrameworkEnabled())
-			new LootGenerateListener(this);
-		enchantHandler = new CustomEnchantHandler(this);
-		new CustomEntitiesListener(this);
-		new CraftingListener(this);
-		this.getCommand("disasters").setTabCompleter(new Disasters(this, tc, CustomEntity.handler, random, new Catalog(this)));
-		new DeathMessages(this);
-		new Utils(this);
-		new GlobalSpawner(this);
-		if (mcVersion >= 1.19)
-			new InfestedSpawner(this);
-		regenHandler = new BlockRegenHandler(this);
-		eventHandler = SpecialEvent.checkForEvent(this);
-		
-		Utils.easterEgg();
-		checkForUpdates();
-		
-		ItemsHandler.createRecipes(this);
-		
-		SandStorm.sandStormBiomes.addAll(Arrays.asList(Biome.DESERT, Biome.BADLANDS, Biome.ERODED_BADLANDS));
-		if (mcVersion < 1.18)
-			SandStorm.sandStormBiomes.addAll(Arrays.asList(Biome.valueOf("DESERT_HILLS"), Biome.valueOf("DESERT_LAKES"), Biome.valueOf("MODIFIED_WOODED_BADLANDS_PLATEAU")));
-		
-		Disaster.reload(this);
-		Disaster.GEYSER.setMetricsLabel("Water Geyser / Lava Geyser");
-		
-		File doomsday = new File(getDataFolder().getAbsolutePath(), "custom disasters/doomsday.yml");
-		if (!doomsday.exists()) {
-			try {
-				doomsday.getParentFile().mkdirs();
-				FileUtils.copyInputStreamToFile(getResource("files/doomsday.yml"), doomsday);
-				consoleSender.sendMessage(Languages.prefix+Utils.convertString("&bInstalled &e'doomsday' &bsuccessfully!"));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		Blizzard.refreshFrozen(this);
-		
-		achievementsHandler = new AchievementsHandler(this);
-		
-		regenHandler.readRegenData(this);
-		
-		Metrics.configureMetrics(this);
+		new DisastersCommand(this);
+		new WorldListener(this);
+		new BlockRegenHandler(this);
+		new EntitiesListener(this);
+		new PlayerListener(this);
+		new DeathListener(this);
+		new DisasterFeaturesListener(this);
+		selector = new DisasterSelector(this);
 	}
 	public void onDisable() {
-		try {
-			removeCustomEntities();
-			DeathMessages.purges.forEach(e -> e.clearBar());
-		} catch (NoClassDefFoundError e) {}
-		tc.saveTimerValues();
-		CustomEntity.handler.cleanEntities();
-		try {
-			BlackPlague.time.forEach((k,v) -> {
-				if (Bukkit.getEntity(k) != null)
-					Bukkit.getEntity(k).removeMetadata("dd-plague", this);
-			});
-		} catch (NoClassDefFoundError e) {}
-		long count = 0;
-		if (dataFile.contains("timers"))
-			count = dataFile.getConfigurationSection("timers").getKeys(false).stream().count();
-		dataFile.set("data.entries", count);
-		dataFile.set("data.firstStart", false);
-		Catalog.saveTimer(this);
-		achievementsHandler.saveData();
-		if (eventHandler.isEnabled)
-			eventHandler.saveData();
-		Metrics.saveMetricsData(this);
-		try {
-			dataFile.save(dataf);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		regenHandler.saveRegenBlocks(this);
+		isDisablingPlugin = true;
+		BlockRegenHandler.saveAll(this);
+		selector.saveData();
 	}
-	public void removeCustomEntities() {
-		DeathMessages.endstorms.forEach(e -> e.clearEntities());
-		DeathMessages.blizzards.forEach(e -> e.clearEntities());
-		DeathMessages.sandstorms.forEach(e -> e.clearEntities());
-		DeathMessages.soulstorms.forEach(e -> e.clearEntities());
-		DeathMessages.solarstorms.forEach(e -> e.clearEntities());
-		DeathMessages.purges.forEach(e -> e.clearEntities());
-		DeathMessages.monsoons.forEach(e -> e.clearEntities());
-		DeathMessages.acidstorms.forEach(e -> e.clearEntities());
-		DeathMessages.supernovas.forEach(e -> e.removeCrystal());
-		DeathMessages.infestedcaves.forEach(e -> e.clearEntities());
+	public void reload() {
+		DependencyUtils.reload(this);
+		DataUtils.reload();
+		DisastersCommand.reload();
+		BlockUtils.reload(this);
+		WorldWrapper.reload();
+		RegenerationDataUtil.reload();
+		LootGenerateListener.reload();
 	}
 	public void checkForUpdates() {
 		getLogger().info("Checking for update...");
@@ -350,210 +134,33 @@ public class Main extends JavaPlugin {
 				try {
 					checkURL = new URL("https://api.spigotmc.org/legacy/update.php?resource=100918");
 					con = checkURL.openConnection();
-					latestVersion = new BufferedReader(new InputStreamReader(con.getInputStream())).readLine();
+					BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+					String latestVersion = br.readLine();
+					br.close();
+					if (!getDescription().getVersion().equals(latestVersion)) {
+						consoleSender.sendMessage(Utils.convertString(Utils.prefix+DataUtils.getLanguageString("messages.internal.update_notify_console")
+								.replaceAll("%version%", getDescription().getVersion())
+								.replaceAll("%newversion%", latestVersion)
+								.replaceAll("%webpage%", pluginSpigotPage)));
+						
+						if (DataUtils.getMainConfigBoolean("general.update_notify_admins"))
+							PlayerListener.notifyAdminOfUpdate = true;
+					}
 				} catch (Exception e) {
-					return;
+					Utils.sendConsoleMessage("&cERROR could not connect to spigot to check if a new plugin version is available!");
 				}
-				if (!getDescription().getVersion().equals(latestVersion)) {
-					String msg = Languages.getString("internal.consoleUpdate").replace("${plugin.page}", Main.pluginSpigotPage);
-					consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&a"+msg.substring(0, msg.indexOf('^'))+latestVersion+msg.substring(msg.indexOf('^')+1)));
-					if (getConfig().getBoolean("general.update_notify"))
-						updateNotify = true;
-				}
-			}
-		});
-	}
-	private void updateConfig() {
-		try {
-			if (lastVersion < 13.0) {
-				if (getConfig().getInt("purge.spawn_distance") >= 45)
-					getConfig().set("purge.spawn_distance", 25);
-				if (getConfig().getInt("tornado.max_entities.level 1") == 300)
-					getConfig().set("tornado.max_entities.level 1", 200);
-				if (getConfig().getInt("tornado.max_entities.level 2") == 600)
-					getConfig().set("tornado.max_entities.level 2", 300);
-				if (getConfig().getInt("tornado.max_entities.level 3") == 800)
-					getConfig().set("tornado.max_entities.level 3", 500);
-				if (getConfig().getInt("tornado.max_entities.level 4") == 1200)
-					getConfig().set("tornado.max_entities.level 4", 800);
-				if (getConfig().getInt("tornado.max_entities.level 5") == 1800)
-					getConfig().set("tornado.max_entities.level 5", 1000);
-				if (getConfig().getInt("tornado.max_entities.level 6") == 3000)
-					getConfig().set("tornado.max_entities.level 6", 2000);
-				saveConfig();
-			}
-			if (lastVersion < 14.1) {
-				if (getConfig().contains("customentities")) {
-					for (String s : getConfig().getConfigurationSection("customentities").getKeys(true))
-						if (CustomEntityType.yaml.contains("customentities."+s))
-							CustomEntityType.yaml.set("customentities."+s, getConfig().get("customentities."+s));
-					if (getConfig().contains("customentities.allow_custom_mobs"))
-						CustomEntityType.yaml.set("settings.allow_custom_mobs", getConfig().get("customentities.allow_custom_mobs"));
-					if (getConfig().contains("customentities.allow_custom_drops"))
-						CustomEntityType.yaml.set("settings.allow_custom_drops", getConfig().get("customentities.allow_custom_drops"));
-					CustomEntityType.saveDataFile(this);
-				}
-			}
-			if (lastVersion < 14.3 && lastVersion >= 14.1) {
-				CustomEntityType.yaml.set("customentities.halloween_mobs", null);
-				CustomEntityType.saveDataFile(this);
-			}
-			ConfigUpdater.update(this, Languages.fetchNewConfig(this, null), new File(getDataFolder().getAbsolutePath(), "config.yml"), Arrays.asList(""));
-			reloadConfig();
-			cfgSwapper.updateConfigFolder();
-
-			if (lastVersion < 14.0) {
-				for (String world : WorldObject.yamlFile.getKeys(false))
-					WorldObject.yamlFile.set(world+".general.pet_warning_time", 0);
-				WorldObject.saveYamlFile(this);
-			}
-
-			if (new File(getDataFolder().getAbsolutePath(), "blocks.yml").exists())
-				ConfigUpdater.update(this, getResource("files/blocks.yml"), new File(getDataFolder().getAbsolutePath(), "blocks.yml"), Arrays.asList(""));
-			if (new File(getDataFolder().getAbsolutePath(), "achievements.yml").exists())
-				ConfigUpdater.update(this, getResource("files/achievements.yml"), new File(getDataFolder().getAbsolutePath(), "achievements.yml"), Arrays.asList(""));
-			if (new File(getDataFolder().getAbsolutePath(), "entities.yml").exists())
-				ConfigUpdater.update(this, getResource("files/entities.yml"), new File(getDataFolder().getAbsolutePath(), "entities.yml"), Arrays.asList(""));
-			consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&a"+Languages.getString("internal.cfgUpdate")+" "+getDescription().getVersion()));
-		} catch (IOException e) {
-			e.printStackTrace();
-			consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cUnable to update config! Please report the full error above to the discord."));
-		}
-	}
-	public void checkWorldsYaml() {
-		File worldsf = new File(getDataFolder().getAbsolutePath(), "worlds.yml");
-		FileConfiguration worldFile;
-		if (!worldsf.exists()) {
-			getLogger().info("Could not find worlds file in plugin directory! Creating new worlds file...");
-			worldFile = YamlConfiguration.loadConfiguration(worldsf);
-			for (World w : this.getServer().getWorlds())
-				createWorldSection(w.getName(), worldFile);
-			try {
-				worldFile.save(worldsf);
-			} catch (IOException e) {
-				consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cCould not save worlds file in first init!"));
-			}
-		} else {
-			worldFile = YamlConfiguration.loadConfiguration(worldsf);
-			Set<String> worldsList = worldFile.getKeys(false);
-			for (World w : this.getServer().getWorlds())
-				if (!worldsList.contains(w.getName()))
-					createWorldSection(w.getName(), worldFile);
-			try {
-				worldFile.save(worldsf);
-			} catch (IOException e) {
-				consoleSender.sendMessage(Utils.convertString(Languages.prefix+"&cCould not save worlds file in init!"));
-			}
-		}
-		WorldObject.yamlFile = worldFile;
-	}
-	@SuppressWarnings("serial")
-	public void createWorldSection(String name, FileConfiguration configuration) {
-		configuration.createSection(name);
-		Environment worldType = Bukkit.getWorld(name).getEnvironment();
-		
-		Map<String, Object> values = new LinkedHashMap<String, Object>() {{
-			put("natural_disasters", getConfig().getBoolean("general.auto_enable_on_generation"));
-	        put("min_timer", 90);
-	        put("level_six", true);
-	        put("event_broadcast", true);
-	        put("disaster_offset", 10);
-	        put("admin_override", true);
-	        put("pet_warning_time", 0);
-	        put("difficulty", "NORMAL");
-	        put("minDistanceRadius", 50);
-	        put("regenDelay", 120);
-	        put("custom_mob_spawning", getConfig().getBoolean("general.auto_enable_natural_spawning"));
-	        put("config", "DEFAULT");
-	    }};
-	    configuration.createSection(name+".general", values);
-		values = new LinkedHashMap<String, Object>();
-		for (Disaster type : Disaster.values()) {
-			if (worldType == Environment.NETHER && type == Disaster.TORNADO)
-				values.put(type.name(), false);
-			else
-				values.put(type.name(), true);
-		}
-		configuration.createSection(name+".disasters", values);
-		configuration.createSection(name+".external");
-		values = new LinkedHashMap<String, Object>() {{
-			put("region_protection", true);
-	        put("ignore_weather_effects_in_regions", true);
-	        put("cure_plague_in_regions", true);
-	    }};
-	    configuration.createSection(name+".external.region_plugins", values);
-	    values = new LinkedHashMap<String, Object>() {{
-			put("level_1", 30);
-			put("level_2", 25);
-			put("level_3", 20);
-			put("level_4", 15);
-			put("level_5", 9);
-			put("level_6", 1);
-	    }};
-	    configuration.createSection(name+".custom_table", values);
-	    configuration.set(name+".whitelist", new ArrayList<String>());
-	}
-	@SuppressWarnings("serial")
-	public void updateWorldsYaml() {
-		Map<String, Object> generalValues = new LinkedHashMap<String, Object>() {{
-			put("natural_disasters", getConfig().getBoolean("general.auto_enable_on_generation"));
-	        put("min_timer", 90);
-	        put("level_six", true);
-	        put("event_broadcast", true);
-	        put("disaster_offset", 10);
-	        put("admin_override", true);
-	        put("pet_warning_time", 0);
-	        put("difficulty", "NORMAL");
-	        put("minDistanceRadius", 50);
-	        put("regenDelay", 120);
-	        put("custom_mob_spawning", getConfig().getBoolean("general.auto_enable_natural_spawning"));
-	        put("config", "DEFAULT");
-	    }};
-	    Map<String, Object> custom_table = new LinkedHashMap<String, Object>() {{
-			put("level_1", 30);
-			put("level_2", 25);
-			put("level_3", 20);
-			put("level_4", 15);
-			put("level_5", 9);
-			put("level_6", 1);
-	    }};
-	    FileConfiguration worldFile = WorldObject.yamlFile;
-	    for (String s : worldFile.getKeys(false)) {
-	    	for (Map.Entry<String, Object> entries : generalValues.entrySet())
-	    		if (!worldFile.contains(s+".general."+entries.getKey()))
-	    			worldFile.set(s+".general."+entries.getKey(), entries.getValue());
-	    	for (Disaster type : Disaster.values())
-	    		if (!worldFile.contains(s+".disasters."+type.name()))
-	    			worldFile.set(s+".disasters."+type.name(), true);
-	    	for (Map.Entry<String, Object> entries : custom_table.entrySet())
-	    		if (!worldFile.contains(s+".custom_table."+entries.getKey()))
-	    			worldFile.set(s+".custom_table."+entries.getKey(), entries.getValue());
-	    	if (!worldFile.contains(s+".whitelist"))
-		    	worldFile.set(s+".whitelist", new ArrayList<String>());
-	    }
-	    WorldObject.saveYamlFile(this);
-	}
-	private net.coreprotect.CoreProtectAPI getCoreProtect() {
-		Plugin plugin = getServer().getPluginManager().getPlugin("CoreProtect");
-		if (plugin == null || !(plugin instanceof net.coreprotect.CoreProtect))
-			return null;
-		net.coreprotect.CoreProtectAPI CoreProtect = ((net.coreprotect.CoreProtect) plugin).getAPI();
-		if (CoreProtect.isEnabled() == false)
-			return null;
-		if (CoreProtect.APIVersion() < 6)
-			return null;
-		return CoreProtect;
-	}
-	public void saveDataFile() {
-		this.getServer().getScheduler().runTask(this, () -> {
-			try {
-				dataFile.save(dataf);
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
 		});
 	}
 	public static Main getInstance() {
 		return instance;
+	}
+	public FixedMetadataValue getFixedMetadata() {
+		if (fixedData == null)
+			fixedData = new FixedMetadataValue(getInstance(), "protected");
+		return fixedData;	
+	}
+	public boolean isPluginPro() {
+		return true;
 	}
 }

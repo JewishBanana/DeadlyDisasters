@@ -1,0 +1,161 @@
+###############################################################################################################################################################################
+#
+# LANGUAGE
+#
+# Language: English (CA)
+# By: JewishBanana
+#
+# This is the language file for the plugin. Here you can modify many different messages from the plugin, you can also modify the names of disasters, custom items, etc. 
+# There are many different place holders that can be added or removed in various messages, they are encapsulated with '%' signs and fairly self explanatory to understand. 
+# Place holders are typically unique to their specific message so don't use them in messages they are not already present in! You can also remove them from any message you wish. 
+# You can also translate to a different language the plugins messages. All characters must be in standard UTF-8 encoding! You may also find translations of this file in other 
+# languages on the discord server in the translations chat. If you are translating this file into another language and are willing to share please let me know on the discord!
+# Remember, if translating only translate the actual values and not the keys! So only translate what is in quotations ("") and on the right side of the colon (:).
+#
+# Discord: https://discord.gg/MhXFj72VeN
+# 
+###############################################################################################################################################################################
+
+messages:
+    internal:
+        update_notify_console: "&aA new version of this plugin is available!\n&7- Current version: &c&l%version%\n&7- New version: &6&l%newversion%\n&bUpdate now at &d%webpage%"
+        update_notify_player: "&aA new version of this plugin is available! Notify the server operator to update.\n&7- Current version: &c&l%version%\n&7- New version: &6&l%newversion%"
+        flight_kick: "&cThis plugin works best when &d'allow-flight' &cis set to &atrue &cin the server-properties file!"
+    commands:
+        console_error_message: "&cUnable to execute command from console!"
+        permission_error: "&cYou do not have permission to use that!"
+        disabled_disaster: "&cThis disaster is disabled in this world!"
+    disaster_broadcasts:
+        general:
+            level_1: "&aLevel: 1 &f%disaster% &6event starting at: &a%location% &e(%player%)"
+            level_2: "&2Level: 2 &f%disaster% &6event starting at: &a%location% &e(%player%)"
+            level_3: "&bLevel: 3 &f%disaster% &6event starting at: &a%location% &e(%player%)"
+            level_4: "&eLevel: 4 &f%disaster% &6event starting at: &a%location% &e(%player%)"
+            level_5: "&cLevel: 5 &f%disaster% &6event starting at: &a%location% &e(%player%)"
+            level_6: "&4&lLevel: 6 &f%disaster% &6event starting at: &a%location% &e(%player%)"
+        weather:
+            level_1: "&6A &avery mild &f%disaster% &6is about to begin at: &a%location% &e(%player%)"
+            level_2: "&6A &2mild &f%disaster% &6is about to begin at: &a%location% &e(%player%)"
+            level_3: "&6A &bdangerous &f%disaster% &6is about to begin at: &a%location% &e(%player%)"
+            level_4: "&6A &edeadly &f%disaster% &6is about to begin at: &a%location% &e(%player%)"
+            level_5: "&6A &csevere &f%disaster% &6is about to begin at: &a%location% &e(%player%)"
+            level_6: "&6An &4&lextremely severe &f%disaster% &6is about to begin at: &a%location% &e(%player%)"
+        extreme_winds:
+            level_1: "&aVery light &fWinds &6are approaching around: &a%location% &e(%player%)"
+            level_2: "&bLight &fWinds &6are approaching around: &a%location% &e(%player%)"
+            level_3: "&9Strong &fWinds &6are approaching around: &a%location% &e(%player%)"
+            level_4: "&eVery strong &fWinds &6are approaching around: &a%location% &e(%player%)"
+            level_5: "&cExtremely strong &fWinds &6are approaching around: &a%location% &e(%player%)"
+            level_6: "&4&lSeverely strong &fWinds &6are approaching around: &a%location% &e(%player%)"
+        plague:
+            started:
+                level_1: "&eA &avery small &egroup of mobs have contracted the %disaster% &enear &6%player%"
+                level_2: "&eA &2small &egroup of mobs have contracted the %disaster% &enear &6%player%"
+                level_3: "&eA &blarge &egroup of mobs have contracted the %disaster% &enear &6%player%"
+                level_4: "&eA &every large &egroup of mobs have contracted the %disaster% &enear &6%player%"
+                level_5: "&eAn &cextremely large &egroup of mobs have contracted the %disaster% &enear &6%player%"
+                level_6: "(hex:#8f0000)The %disaster% (hex:#8f0000)is running rampant near &6%player%"
+            plague_catch: "You have caught the %disaster%"
+            cure_message: "You feel relief as you recover from the %disaster%!"
+        purge:
+            started:
+                level_1: "&cA &avery small &cHorde is assembling, &6%player% &cwill be purged..."
+                level_2: "&cA &2small &cHorde is assembling, &6%player% &cwill be purged..."
+                level_3: "&cA &blarge &cHorde is assembling, &6%player% &cwill be purged..."
+                level_4: "&cA &every large &cHorde is assembling, &6%player% &cwill be purged..."
+                level_5: "&cAn (hex:#ff1c1c)extremely large &cHorde is assembling, &6%player% &cwill be purged..."
+                level_6: "(hex:#8f0000)The entire Horde is assembling, &6%player% (hex:#8f0000)will be purged..."
+            ended: "&eThe horde is clearing up.."
+    world_messages:
+        world_forecast:
+        - "&bWorld disaster forecast for &d%world%"
+        - "&3- Disaster targeting: %targeting%"
+        - "&3- Frequency: &6%lowminute%-%highminute% min &7/ &3Proximity: &6%offset%"
+        - "&3- Severity levels 1-6: &a%level1%% &2%level2%% &b%level3%% &e%level4%% &c%level5%% &4%level6%%"
+    status:
+        enabled: "ENABLED"
+        disabled: "DISABLED"
+        targetIndividual: "INDIVIDUAL"
+        targetGlobal: "GLOBAL"
+disasters:
+    destructive:
+        sinkhole: "(hex:#fcc84e)SinkHole"
+        earthquake: "(hex:#c9c0a9)Earthquake"
+        tornado: "(hex:#e3e3e3)Tornado"
+        water_geyser: "(hex:#64a5f5)Water Geyser"
+        lava_geyser: "(hex:#fc3838)Lava Geyser"
+        cavein: "(hex:#a6987e)Cave-In"
+        supernova: "(hex:#db42ab)Supernova"
+        tsunami: "(hex:#1b62bf)Tsunami"
+        hurricane: "(hex:#c8d6e6)Hurricane"
+        infested_cave: "(hex:#1b7894)Infested Cave"
+        landslide: "(hex:#d49639)Landslide"
+        avalanche: "(hex:#88d8f7)Avalanche"
+    weather:
+        acid_storm: "(hex:#a3ffa5)Acid Storm"
+        extreme_winds: "(hex:#f2f2f2)Extreme Winds"
+        sandstorm: "(hex:#e8bc6b)Sandstorm"
+        blizzard: "(hex:#b0eeff)Blizzard"
+        soul_storm: "(hex:#3989a3)Soul Storm"
+        meteorshower: "(hex:#8c20b0)Meteorshower"
+        monsoon: "(hex:#1f3dff)Monsoon"
+    mob:
+        black_plague: "(hex:#4d4d4d)Black Plague"
+        purge: "(hex:#917a7a)Purge"
+    tips:
+        sinkhole: "&7Tip: The ground around you becomes unstable, try placing blocks below you to stop falling."
+        acid_storm: "&7Tip: Seek immediate shelter to avoid the acid rain. Metal items and armor melt incredibly fast in the rain."
+        black_plague: "&7Tip: Avoid making contact with any mobs, if you see black particles near a mob it means they are infected."
+        blizzard: "&7Tip: Blizzards only affect those in cold biomes. Wear leather armor to nullify the freezing, standing close to strong heat sources also nullifies the freezing."
+        cavein: "&7Tip: Avoid cramped caves with low roofs."
+        earthquake: "&7Tip: Sneaking can really help during these. Also try boxing yourself in."
+        endstorm: "&7Tip: Hiding does not work during these storms. Try to slay void mobs as they appear from rifts to avoid crowding."
+        extreme_winds: "&7Tip: Strong winds do not affect you inside small buildings, just watch out for the walls being torn."
+        geyser: "&7Tip: Geysers appear deep underground, the higher you are the longer it takes for them to reach you."
+        hurricane: "&7Tip: Try going underground as fast as possible. Hurricanes only appear in tropical biomes or oceans."
+        meteor_shower: "&7Tip: Meteors land on the surface and cant penetrate many blocks, try going underground."
+        purge: "&7Tip: Try getting to high ground where most mobs cant reach. Beware of Tunnellers.."
+        sandstorm: "&7Tip: Sandstorms only affect those in desert biomes. If you get caught in one, dont stop running.."
+        solar_storm: "&7Tip: Watch out, standing near heat sources can ignite you! During solarstorms all burning last twice as long."
+        soul_storm: "&7Tip: Lost souls can travel through walls so shelter wont help you.."
+        supernova: "&7Tip: Run."
+        tornado: "&7Tip: Always carry a water bucket with you."
+        tsunami: "&7Tip: Tsunamis only happen near deep water. Do not get caught up in these."
+        monsoon: "&7Tip: Monsoons have such heavy rainfall that mobs cannot even breathe, as the water level rises drowned leave the ocean."
+        infested_cave: "&7Tip: Avoid breaking the infestation, it regenerates and might let it know where you are..."
+        landslide: "&7Tip: Try not to stay in one spot or you will get buried."
+deaths:
+    sinkhole: "%player% fell into a sinkhole"
+    earthquake: "%player% fell into an earthquake"
+    tornado: "%player% was swept away by a tornado"
+    water_geyser: "%player% melted in a water geyser"
+    lava_geyser: "%player% melted in a lava geyser"
+    cavein: "%player% was crushed in a cave-in"
+    supernova: "%player% was obliterated by a supernova"
+    tsunami: "%player% drowned in a tsunami"
+    hurricane: "%player% was caught up in a hurricane"
+    infested_cave: "%player% was devoured by the infestation"
+    landslide: "%player% was caught up in a landslide"
+    avalanche: "%player% was caught up in an avalanche"
+    acid_storm: "%player% dissolved in acid rain"
+    extreme_winds: "%player% was swept away by severe winds"
+    sandstorm: "%player% withered away in a sandstorm"
+    blizzard: "%player% froze to death in a blizzard"
+    meteor: "%player% was crushed by a meteor"
+    exploding_meteor: "%player% was exploded by a meteor"
+    monsoon: "%player% drowned in a monsoon"
+    black_plague: "%player% fell ill and died of the black plague"
+    purge: "%player% has been purged..."
+items:
+    plague_cure:
+        name: "&fPlague Cure"
+        lore:
+        - "&eCures one from the black plague"
+    splash_plague_cure:
+        name: "&fSplash Plague Cure"
+        lore:
+        - "&eCures one from the black plague"
+    basic_coating_book:
+        name: "&7Basic Coating Book"
+enchants:
+    basic_coating: "&7Basic Coating"

@@ -15,11 +15,18 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
 import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.palmergames.bukkit.towny.TownyMessaging;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.metadata.BooleanDataField;
 
+/**
+ * User contributed class to handle additional towny plugin flag toggle
+ * 
+ * @author ItsJuls
+ *
+ */
 public class TownyDisasters implements CommandExecutor,TabCompleter {
 	
 	private Main plugin;
@@ -31,7 +38,7 @@ public class TownyDisasters implements CommandExecutor,TabCompleter {
 	}
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-    	if (!Utils.TownyB) {
+    	if (DependencyUtils.getTownyAPI() == null) {
     		sender.sendMessage(Utils.convertString("&cTowny has not been detected on the server!"));
     		return true;
     	}
@@ -48,13 +55,13 @@ public class TownyDisasters implements CommandExecutor,TabCompleter {
     	}
     	Resident resident = null;
     	if (args.length == 2) {
-    		resident = Utils.getTownyAPI().getResident(args[1]);
+    		resident = DependencyUtils.getTownyAPI().getResident(args[1]);
     		if (resident == null) {
     			sender.sendMessage(Utils.convertString("&cCould not find player '"+args[1]+"'"));
         		return true;
     		}
     	} else
-    		resident = Utils.getTownyAPI().getResident((Player) sender);
+    		resident = DependencyUtils.getTownyAPI().getResident((Player) sender);
     	if (resident.getTownOrNull() == null) {
     		sender.sendMessage(Utils.convertString("&cPlayer '"+resident.getName()+"' does not have a town!"));
     		return true;

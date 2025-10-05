@@ -19,6 +19,7 @@ public class VersionUtils {
 	
 	public static boolean displaysAllowed;
 	public static boolean usingNewDamageEvent;
+	public static boolean is17OrHigher;
 	
 	private static Particle block_dust;
 	private static Particle block_crack;
@@ -108,6 +109,8 @@ public class VersionUtils {
 			snow_shovel = Particle.valueOf("SNOW_SHOVEL");
 			hide_effects = ItemFlag.valueOf("HIDE_POTION_EFFECTS");
 		}
+		
+		is17OrHigher = version[1] >= 17;
 	}
 	
 	public static Enchantment getSharpness() {

@@ -1,33 +1,39 @@
 package com.github.jewishbanana.deadlydisasters.listeners;
 
-import java.util.Random;
+import java.util.Objects;
+import java.util.random.RandomGenerator;
 
+import org.bukkit.Material;
 import org.bukkit.block.Chest;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.LootGenerateEvent;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.items.BasicCoatingBook;
+import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
+import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class LootGenerateListener implements Listener {
 	
-	private Random rand = new Random();
-	private static double basicBookLootChance;
+	private RandomGenerator rand;
+	private static float basicBookLootTableChance;
 	
 	public LootGenerateListener(Main plugin) {
+		this.rand = Utils.getRandomGenerator();
+		
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
-		reload(plugin);
 	}
-	@EventHandler
-	public void onLootGen(LootGenerateEvent e) {
-		if (e.getInventoryHolder() instanceof Chest) {
-			if (rand.nextDouble()*100 < basicBookLootChance) {
-				e.getLoot().add(com.github.jewishbanana.uiframework.items.ItemType.getItemType(BasicCoatingBook.REGISTERED_KEY).getBuilder().getItem());
-			}
-		}
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	public void onLootGen(LootGenerateEvent event) {
+		if (!(event.getInventoryHolder() instanceof Chest) || event.getLoot() == null)
+			return;
+		if (event.getLoot().stream().filter(Objects::nonNull).anyMatch(item -> item.getType() == Material.ENCHANTED_BOOK)
+				&& rand.nextFloat() < basicBookLootTableChance)
+			event.getLoot().add(com.github.jewishbanana.uiframework.items.UIItemType.getItemType(BasicCoatingBook.REGISTERED_KEY).getItem());
 	}
-	public static void reload(Main plugin) {
-		basicBookLootChance = plugin.getConfig().getDouble("customitems.items.basic_coating_book.chest_spawn_rate");
+	public static void reload() {
+		basicBookLootTableChance = (float) DataUtils.getMainConfigDouble("items.basic_coating_book.loot_table_chance");
 	}
 }

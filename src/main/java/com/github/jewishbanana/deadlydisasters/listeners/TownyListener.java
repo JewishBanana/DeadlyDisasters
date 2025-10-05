@@ -4,10 +4,16 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import com.github.jewishbanana.deadlydisasters.Main;
-import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.palmergames.bukkit.towny.event.NewTownEvent;
 import com.palmergames.bukkit.towny.object.metadata.BooleanDataField;
 
+/**
+ * User contributed class to handle flags in towny claims
+ * 
+ * @author ItsJuls
+ *
+ */
 public class TownyListener implements Listener {
 	
 	public TownyListener(Main plugin) {
@@ -18,7 +24,7 @@ public class TownyListener implements Listener {
 		event.getTown().addMetaData(new BooleanDataField("DeadlyDisasters", true));
 	}
 	public static void registerTowns() {
-		for (com.palmergames.bukkit.towny.object.Town town: Utils.getTownyAPI().getTowns())
+		for (com.palmergames.bukkit.towny.object.Town town: DependencyUtils.getTownyAPI().getTowns())
 			if (!((com.palmergames.bukkit.towny.object.Town) town).hasMeta("DeadlyDisasters"))
 				((com.palmergames.bukkit.towny.object.Town) town).addMetaData(new com.palmergames.bukkit.towny.object.metadata.BooleanDataField("DeadlyDisasters", true));
 	}

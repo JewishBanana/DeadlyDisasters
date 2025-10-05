@@ -3,7 +3,7 @@ version: ${project.version}
 author: JewishBanana
 main: ${mainClass}
 description: Adds deadly disasters to the game.
-api-version: 1.14
+api-version: 1.17
 softdepend: [WorldGuard, CoreProtect, Towny, GriefPrevention, Lands, RealisticSeasons, Kingdoms, NoteBlockAPI, UIFramework, UltimateContent]
 
 commands:

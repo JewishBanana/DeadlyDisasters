@@ -1,56 +1,79 @@
+###############################################################################################################################################################################
+#
+# Realistic Seasons
+#
+# If you are using the plugin RealisticSeasons then this file will be auto-generated. You can enable and disable different features within this file, keep in mind that this 
+# config is shared for all worlds and not individually configured.
+#
+###############################################################################################################################################################################
+
 general:
-    # Toggle if realistic seasons should take any affect on the plugin
+    # If realistic seasons should take any affect on Deadly Disasters.
     enabled: true
-    # The minimum temperature players must be at for blizzards to affect them
-    min_blizzard_temperature: 0
+    # The maximum temperature players can be at for blizzards to affect them. This uses the Realistic Seasons temperature for players.
+    blizzard_temperature_threshold: -1
+
+###############################################################################################################################################################################
+#
+# Disaster Season Settings
+#
+# You can control what seasons specific disasters can occur in. This uses the Realistic Seasons world season. Each disaster is listed below and has its own list of seasons 
+# which represent the seasons that the disaster can naturally occur on players. There is no need to remove all seasons to disable a disaster, you can simply disable disasters 
+# within the worlds disaster config file. The option 'ALL' has also been added for simplicity to represent all seasons.
+#
+###############################################################################################################################################################################
+
 disasters:
-    # Set what seasons each disaster can occur on
-    SINKHOLE:
+    sinkhole:
     - ALL
-    CAVEIN:
+    cavein:
     - ALL
-    EARTHQUAKE:
+    earthquake:
     - ALL
-    GEYSER:
+    geyser:
     - ALL
-    TORNADO:
+    tornado:
     - SPRING
     - SUMMER
-    TSUNAMI:
-    - ALL
-    PLAGUE:
-    - ALL
-    ACIDSTORM:
+    tsunami:
     - SPRING
     - SUMMER
     - FALL
-    BLIZZARD:
+    plague:
+    - SPRING
+    - SUMMER
+    - FALL
+    acid_storm:
+    - SPRING
+    - SUMMER
+    - FALL
+    blizzard:
     - WINTER
-    EXTREMEWINDS:
+    extreme_winds:
     - SPRING
     - FALL
-    SANDSTORM:
+    sandstorm:
     - SPRING
     - SUMMER
-    METEORSHOWERS:
+    meteor_shower:
     - SUMMER
     - FALL
-    SUPERNOVA:
+    supernova:
     - ALL
-    HURRICANE:
+    hurricane:
     - SPRING
     - SUMMER
     - FALL
-    PURGE:
+    purge:
     - FALL
     - WINTER
-    SOLARSTORM:
+    solar_storm:
     - SPRING
     - SUMMER
-    MONSOON:
+    monsoon:
     - SPRING
     - SUMMER
-    INFESTEDCAVES:
+    infested_cave:
     - ALL
-    LANDSLIDE:
+    landslide:
     - ALL
