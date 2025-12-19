@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.random.RandomGenerator;
@@ -32,6 +33,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.inventory.ItemStack;
@@ -169,7 +171,7 @@ public class Utils {
 //		double squaredMax = maxDist * maxDist;
 		for (int i=0; i < attempts; i++) {
 			double distance = random.nextDouble(minDist, maxDist);
-			Location temp = EntityUtils.findSmartYSpawn(initial, initial.clone().add(vector.get().multiply(distance)), height, (int) (maxDist - distance)); //(int) Math.floor(Math.sqrt(squaredMax - (distance * distance)))
+			Location temp = SpawnUtils.findSmartYSpawn(initial, initial.clone().add(vector.get().multiply(distance)), height, (int) (maxDist - distance)); //(int) Math.floor(Math.sqrt(squaredMax - (distance * distance)))
 			if (temp != null && temp.distanceSquared(initial) >= squaredMin && conditions.test(temp.clone()))
 				return temp;
 		}
@@ -181,9 +183,6 @@ public class Utils {
 	public static Location findRandomSpotInRadius(Location initial, double minDist, double maxDist, int height, int attempts) {
 		return findRandomSpotInRadius(initial, minDist, maxDist, height, attempts, () -> getRandomizedVector());
 	}
-	public static Location findRandomSpotInCircle(Location initial, double minDist, double maxDist) {
-		return initial.clone().add(getRandomizedVector(1.0, 0.0, 1.0).multiply(random.nextDouble(minDist, maxDist)));
-	}
 	public static Location findRandomSpotInCircle(Location initial, double minDist, double maxDist, int attempts, Predicate<Location> conditions) {
 		for (int i=0; i < attempts; i++) {
 			double distance = random.nextDouble(minDist, maxDist);
@@ -192,6 +191,9 @@ public class Utils {
 				return temp;
 		}
 		return null;
+	}
+	public static Location findRandomSpotInCircle(Location initial, double minDist, double maxDist) {
+		return initial.clone().add(getRandomizedVector(1.0, 0.0, 1.0).multiply(random.nextDouble(minDist, maxDist)));
 	}
 	public static Set<Chunk> getChunksInRadius(Location location, double radius) {
 		final double radiusSquared = radius * radius;
@@ -215,6 +217,70 @@ public class Utils {
 		for (int i=0; i < amount; i++)
 			set.add(location.getWorld().getHighestBlockAt(location.clone().add(random.nextInt(-range, range), 0, random.nextInt(-range, range))));
 		return set;
+	}
+	public static boolean isAreaFlatGrounded(Location location) {
+		int count = 0;
+		for (int i=0; i < 15; i++) {
+			Location temp = location.clone().add(getRandomizedVector(1, 0, 1).multiply(random.nextDouble(1, 12)));
+			if (BlockUtils.getHighestExposedBlock(temp.getBlock(), 12) != null)
+				if (++count == 12)
+					return true;
+		}
+		return count >= 12;
+	}
+	public static enum AreaClearing {
+		
+		CUBE_3X3_FROM_CENTER(block -> {
+			for (int x = block.getX() - 1; x <= block.getX() + 1; x++)
+				for (int y = block.getY() - 1; y <= block.getY() + 1; y++)
+					for (int z = block.getZ() - 1; z <= block.getZ() + 1; z++)
+						if (!block.getWorld().getBlockAt(x, y, z).isPassable())
+							return false;
+			return true;
+		}),
+		CUBE_3X3_FROM_CENTER_BOTTOM(block -> {
+			for (int x = block.getX() - 1; x <= block.getX() + 1; x++)
+				for (int y = block.getY(); y <= block.getY() + 2; y++)
+					for (int z = block.getZ() - 1; z <= block.getZ() + 1; z++)
+						if (!block.getWorld().getBlockAt(x, y, z).isPassable())
+							return false;
+			return true;
+		}),
+		CUBE_3X3_FROM_CENTER_TOP(block -> {
+			for (int x = block.getX() - 1; x <= block.getX() + 1; x++)
+				for (int y = block.getY() - 2; y <= block.getY(); y++)
+					for (int z = block.getZ() - 1; z <= block.getZ() + 1; z++)
+						if (!block.getWorld().getBlockAt(x, y, z).isPassable())
+							return false;
+			return true;
+		}),
+		PLUS_SIGN_3D_FROM_CENTER(block -> {
+			for (BlockFace face : Set.of(BlockFace.UP, BlockFace.DOWN, BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST))
+				if (!block.getRelative(face).isPassable())
+					return false;
+			return true;
+		});
+		
+		private Function<Block, Boolean> function;
+		
+		private AreaClearing(Function<Block, Boolean> function) {
+			this.function = function;
+		}
+	}
+	public static boolean isAreaClear(Block block, AreaClearing clearing) {
+		return clearing.function.apply(block);
+	}
+	public static boolean isAreaClear(Location location, double radius) {
+		for (Block b : BlockUtils.getBlocksInSphereRadius(location, radius))
+			if (!b.isPassable())
+				return false;
+		return true;
+	}
+	public static boolean isAreaClear(Location location, double radius, double height) {
+		for (Block b : BlockUtils.getBlocksInCylinderRadius(location, radius, height))
+			if (!b.isPassable())
+				return false;
+		return true;
 	}
 	public static boolean isLocationsWithinDistance(Location loc1, Location loc2, double distanceSquared) {
 		return loc1 != null && loc2 != null && loc1.getWorld().equals(loc2.getWorld()) && loc1.distanceSquared(loc2) <= distanceSquared;
@@ -242,6 +308,12 @@ public class Utils {
 	}
 	public static float clamp(float value, float min, float max) {
 		return value < min ? min : value > max ? max : value;
+	}
+	public static <T> boolean isNotNullAndCondition(T object, Predicate<T> condition) {
+		return object != null && condition.test(object);
+	}
+	public static <T, K> K getIfObjectNotNull(T object, Function<T, K> getter) {
+		return object == null ? null : getter.apply(object);
 	}
 	public static void sendExceptionLog(Exception exception) {
 		if (!sendErrors)

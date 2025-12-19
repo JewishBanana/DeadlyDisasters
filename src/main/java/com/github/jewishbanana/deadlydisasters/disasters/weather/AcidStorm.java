@@ -6,11 +6,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -35,8 +33,8 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
+import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
 import com.github.jewishbanana.deadlydisasters.disasters.WeatherDisaster;
-import com.github.jewishbanana.deadlydisasters.listeners.EntitiesListener;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
@@ -44,7 +42,7 @@ import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
-public class AcidStorm extends WeatherDisaster {
+public class AcidStorm extends WeatherDisaster implements MobDisaster {
 	
 	public static final Map<Block, Integer> poisonedCrops;
 	static {
@@ -120,8 +118,7 @@ public class AcidStorm extends WeatherDisaster {
 	private float soundVolume;
 	private Set<PotionEffect> effects;
 	private final Map<Material, Material[]> blockChanges = new HashMap<>();
-	private final Set<UUID> slimes = new HashSet<>();
-	private final Map<UUID, UUID> slimeTargets = new HashMap<>();
+	private Set<Entity> currentEntities = Set.of();
 	
 	public AcidStorm(@NotNull Location location, Player player, int level) {
 		super(location, player, level);
@@ -172,10 +169,7 @@ public class AcidStorm extends WeatherDisaster {
 	public void start() {
 		super.start();
 		location.setY(128);
-		final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
-		final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
 		final World world = location.getWorld();
-		final AtomicBoolean processEntities = new AtomicBoolean();
 		scheduleTask(new BukkitRunnable() {
 			private final float itemDissolveChance = (float) (0.02 * (scale / 2.0));
 			private final int toolDamage = (int) Math.ceil(damage * 2.0 * (scale / 2.0));
@@ -183,37 +177,23 @@ public class AcidStorm extends WeatherDisaster {
 			
 			@Override
 			public void run() {
-				processEntities.set(false);
-				foundEntities.clear();
-				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
-					foundEntities.put(entity, entity.getLocation());
-				final Set<Entity> currentEntities = Set.copyOf(entitiesInStorm);
-				processEntities.set(true);
 				for (Entity entity : currentEntities) {
 					Location loc = entity.getLocation();
 					if (entity instanceof Player player) {
 						if (EntityUtils.isPlayerImmune(player))
 							continue;
 						if (random.nextFloat() < mobSpawnRate) {
-							Location spawn = SpawnUtils.findSpawnLocation(loc, 1, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
+							Location spawn = SpawnUtils.findMonsterSpawnLocation(loc, 1, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
 							if (spawn != null)
 								world.spawn(spawn, Slime.class, slime -> {
 									slime.setSize(random.nextInt(3));
 									slime.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.3);
 									slime.setTarget(player);
-									slimes.add(slime.getUniqueId());
-									slimeTargets.put(slime.getUniqueId(), player.getUniqueId());
-									EntitiesListener.attachRemoveKey(slime);
+									addEntityToDisasterList(slime, player);
 								});
 						}
 					}
 					if (entity instanceof LivingEntity alive) {
-						if (entity instanceof Slime slime) {
-							UUID target = slimeTargets.get(slime.getUniqueId());
-							if (target != null && slime.getTarget() == null)
-								slime.setTarget(Bukkit.getPlayer(target));
-							continue;
-						}
 						ItemStack[] armor = alive.getEquipment().getArmorContents();
 						if (armor[3] != null && DependencyUtils.getBasicCoatingLevel(armor[3]) != 0)
 							continue;
@@ -258,6 +238,8 @@ public class AcidStorm extends WeatherDisaster {
 						case GOLD_NUGGET:
 						case GOLDEN_CARROT:
 						case GOLDEN_APPLE:
+							if (DependencyUtils.getBasicCoatingLevel(stack) != 0)
+								break;
 							if (random.nextFloat() > itemDissolveChance)
 								break;
 							stack.setAmount(0);
@@ -274,6 +256,8 @@ public class AcidStorm extends WeatherDisaster {
 						case GOLDEN_PICKAXE:
 						case GOLDEN_SHOVEL:
 						case GOLDEN_HOE:
+							if (DependencyUtils.getBasicCoatingLevel(stack) != 0)
+								break;
 							Utils.damageItem(stack, toolDamage);
 							if (stack.getAmount() == 0) {
 								world.dropItem(loc, new ItemStack(Material.STICK));
@@ -289,6 +273,8 @@ public class AcidStorm extends WeatherDisaster {
 						case GOLDEN_CHESTPLATE:
 						case GOLDEN_LEGGINGS:
 						case GOLDEN_BOOTS:
+							if (DependencyUtils.getBasicCoatingLevel(stack) != 0)
+								break;
 							Utils.damageItem(stack, armorDamage);
 							if (stack.getAmount() == 0) {
 								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
@@ -300,32 +286,47 @@ public class AcidStorm extends WeatherDisaster {
 						}
 					}
 				}
+				updateEntityTargets();
 				time -= 5;
 				if (time <= 0)
 					stop();
 			}
 		}.runTaskTimer(plugin, 0, 5));
 		scheduleTask(new BukkitRunnable() {
-			private final double radiusSquared = disasterRange * disasterRange;
-			
+			final AtomicBoolean processEntities = new AtomicBoolean();
+			final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
+			final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
+
 			@Override
 			public void run() {
-				if (!processEntities.get())
+				if (processEntities.get())
 					return;
-				Map<Entity, Location> map = Map.copyOf(foundEntities);
-				Set<Entity> set = new HashSet<>();
-				map.forEach((entity, loc) -> {
-					if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared))
-						return;
-					if (isEntityProtected(entity) || !isBlockInClimate(loc.getBlock()))
-						return;
-					if (world.getHighestBlockYAt(loc) <= loc.getY() + entity.getHeight())
-						set.add(entity);
-				});
-				entitiesInStorm.clear();
-				entitiesInStorm.addAll(set);
+				processEntities.set(true);
+				foundEntities.clear();
+				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
+					foundEntities.put(entity, entity.getLocation().add(0, entity.getHeight() / 2.0, 0));
+				currentEntities = Set.copyOf(entitiesInStorm);
+				scheduleTask(new BukkitRunnable() {
+					private final double radiusSquared = disasterRange * disasterRange;
+					
+					@Override
+					public void run() {
+						final Set<Entity> set = new HashSet<>();
+						foundEntities.forEach((entity, loc) -> {
+							if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared))
+								return;
+							if (isEntityProtected(entity) || !isBlockInClimate(loc.getBlock()))
+								return;
+							if (world.getHighestBlockYAt(loc) <= loc.getY() + (entity.getHeight() / 2.0))
+								set.add(entity);
+						});
+						entitiesInStorm.clear();
+						entitiesInStorm.addAll(set);
+						processEntities.set(false);
+					}
+				}.runTaskAsynchronously(plugin));
 			}
-		}.runTaskTimerAsynchronously(plugin, 1, 1));
+		}.runTaskTimer(plugin, 0, 1));
 		
 		final double distanceSquared = disasterRange * disasterRange;
 		final double trueSmoothingRange = (disasterRange + smoothingRange) * (disasterRange + smoothingRange);
@@ -410,14 +411,6 @@ public class AcidStorm extends WeatherDisaster {
 					});
 				}
 			}.runTaskTimerAsynchronously(plugin, 0, 5));
-		});
-	}
-	public void clean() {
-		super.clean();
-		slimes.forEach(uuid -> {
-			Entity entity = Bukkit.getEntity(uuid);
-			if (entity != null)
-				entity.remove();
 		});
 	}
 	public boolean isBlockInClimate(Block block) {

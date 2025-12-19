@@ -53,12 +53,18 @@ public class DependencyUtils {
 	private static SeasonsHook seasonsHook;
 	
 	private static final String UIFrameworkVersion = "3.0.0";
+	private static final String UltimateContentVersion = "2.0.0";
 	
 	public static void init(Main plugin) {
-		ultimateContent = plugin.getServer().getPluginManager().isPluginEnabled("UltimateContent");
+		if (plugin.getServer().getPluginManager().isPluginEnabled("UltimateContent")) {
+			if (!isVersionOrAbove(plugin.getServer().getPluginManager().getPlugin("UltimateContent"), UltimateContentVersion))
+				Utils.sendConsoleMessage("&cERROR Cannot hook into UltimateContent because UltimateContent is out of date! Please update to at least &a"+UltimateContentVersion+" &c(Current version installed is &b"+(plugin.getServer().getPluginManager().getPlugin("UltimateContent").getDescription().getVersion())+"&c). The only effect this error will have is that all custom items related to DeadlyDisasters will be disabled. You can update UltimateContent here:&6 https://www.spigotmc.org/resources/ultimatecontent.118256/");
+			else
+				ultimateContent = true;
+		}
 		if (plugin.getServer().getPluginManager().isPluginEnabled("UIFramework")) {
 			if (!UIFramework.isVersionOrAbove(UIFrameworkVersion))
-				Utils.sendConsoleMessage("&cERROR Cannot hook into UIFramework because UIFramework is out of date! Please update to at least &a"+UIFrameworkVersion+" &c(Current version installed is &b"+(plugin.getServer().getPluginManager().getPlugin("UIFramework").getDescription().getVersion())+"&c). The only effect this error will have is all custom items related to DeadlyDisasters will be disabled. You can update UIFramework here:&6 https://www.spigotmc.org/resources/uiframework.110768/");
+				Utils.sendConsoleMessage("&cERROR Cannot hook into UIFramework because UIFramework is out of date! Please update to at least &a"+UIFrameworkVersion+" &c(Current version installed is &b"+(plugin.getServer().getPluginManager().getPlugin("UIFramework").getDescription().getVersion())+"&c). The only effect this error will have is that all custom items related to DeadlyDisasters will be disabled. You can update UIFramework here:&6 https://www.spigotmc.org/resources/uiframework.110768/");
 			else {
 				uif = true;
 				BasicCoating.register();
@@ -168,6 +174,25 @@ public class DependencyUtils {
 		} catch (Exception e) {
 			Utils.sendExceptionLog(e);
 			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eRealistic Seasons &cseasonal disaster settings will NOT take affect!");
+		}
+	}
+	public static boolean isVersionOrAbove(Plugin plugin, String toCheckFor) {
+		try {
+			String[] current = plugin.getDescription().getVersion().split("\\.");
+			String[] test = toCheckFor.split("\\.");
+			for (int i = 0; i < test.length; i++) {
+	            if (i >= current.length)
+	                return false;
+	            int currentSegment = Integer.parseInt(current[i]);
+	            int testSegment = Integer.parseInt(test[i]);
+	            if (currentSegment > testSegment)
+	                return true;
+	            else if (currentSegment < testSegment)
+	                return false;
+	        }
+	        return true;
+		} catch (NumberFormatException ex) {
+			throw new NumberFormatException("The version string you supplied '"+toCheckFor+"' is not a valid version string! Format must be as follows: '1.2.3' or '1.2' or '1'!");
 		}
 	}
 	public static boolean isUIFrameworkEnabled() {

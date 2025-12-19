@@ -47,7 +47,8 @@ public class DisasterRegistry {
 	public Disaster createDisaster(Location location, Player player, int level, boolean initialize) {
 		try {
 			Disaster disaster = registeredClass.getDeclaredConstructor(Location.class, Player.class, int.class).newInstance(location, player, level);
-			disaster.init();
+			if (initialize)
+				disaster.init();
 			return disaster;
 		} catch (Exception e) {
 			Utils.sendExceptionLog(e);

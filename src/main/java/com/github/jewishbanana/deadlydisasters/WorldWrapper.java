@@ -124,29 +124,29 @@ public class WorldWrapper {
 			Utils.sendExceptionLog(e);
 		}
 	}
-	public static void reload(WorldWrapper link) {
-		if (!link.configFile.exists())
-			initWorld(link.world);
-		link.config = YamlConfiguration.loadConfiguration(link.configFile);
+	public static void reload(WorldWrapper wrapper) {
+		if (!wrapper.configFile.exists())
+			initWorld(wrapper.world);
+		wrapper.config = YamlConfiguration.loadConfiguration(wrapper.configFile);
 		
-		switch (DataUtils.getConfigString(link.config, link.configName, "world.targeting", "")) {
+		switch (DataUtils.getConfigString(wrapper.config, wrapper.configName, "world.targeting", "")) {
 		default:
 		case "DISABLED":
-			link.targetingMode = 0;
+			wrapper.targetingMode = 0;
 			break;
 		case "INDIVIDUAL":
-			link.targetingMode = 1;
+			wrapper.targetingMode = 1;
 			break;
 		case "GLOBAL":
-			link.targetingMode = 2;
+			wrapper.targetingMode = 2;
 			break;
 		}
 		Set<DisasterRegistry> disasters = new HashSet<>();
-		List<String> disabledList = DataUtils.getConfigStringList(link.config, link.configName, "world.disabled_disasters");
+		List<String> disabledList = DataUtils.getConfigStringList(wrapper.config, wrapper.configName, "world.disabled_disasters");
 		disabledList.forEach(disaster -> {
 			switch (disaster.toUpperCase()) {
 			case "ALL":
-				link.targetingMode = 0;
+				wrapper.targetingMode = 0;
 				break;
 			case "NONE":
 				break;
@@ -158,85 +158,85 @@ public class WorldWrapper {
 				}
 				DisasterRegistry registry = DisasterRegistry.getRegistry(disaster);
 				if (registry == null) {
-					Utils.sendConsoleMessage("&cERROR while trying to disable disaster in world &a'"+link.world.getName()+"'&c for disaster &e'"+disaster+"'&c! This disaster will not be disabled! Check this value in the &e'"+link.configName+"' &cconfig file.");
+					Utils.sendConsoleMessage("&cERROR while trying to disable disaster in world &a'"+wrapper.world.getName()+"'&c for disaster &e'"+disaster+"'&c! This disaster will not be disabled! Check this value in the &e'"+wrapper.configName+"' &cconfig file.");
 					break;
 				}
 				disasters.add(registry);
 				break;
 			}
 		});
-		link.disabledDisasters = Set.copyOf(disasters);
-		link.minimumTime = DataUtils.getConfigInt(link.config, link.configName, "world.minimum_time", 120);
-		link.maximumTime = DataUtils.getConfigInt(link.config, link.configName, "world.maximum_time", 180);
-		if (link.maximumTime < link.minimumTime) {
-			link.maximumTime = link.minimumTime;
-			Utils.sendConsoleMessage("&cERROR the maximum time must be greater than the minimum time! Something won't work until you fix this value in the world config &b'"+link.configName+"'&c!");
+		wrapper.disabledDisasters = Set.copyOf(disasters);
+		wrapper.minimumTime = DataUtils.getConfigInt(wrapper.config, wrapper.configName, "world.minimum_time", 120);
+		wrapper.maximumTime = DataUtils.getConfigInt(wrapper.config, wrapper.configName, "world.maximum_time", 180);
+		if (wrapper.maximumTime < wrapper.minimumTime) {
+			wrapper.maximumTime = wrapper.minimumTime;
+			Utils.sendConsoleMessage("&cERROR the maximum time must be greater than the minimum time! Something won't work until you fix this value in the world config &b'"+wrapper.configName+"'&c!");
 		}
-		if (DataUtils.getDataFile().contains("worlds."+link.world.getUID().toString()+".persisted_min") && DataUtils.getDataFile().contains("worlds."+link.world.getUID().toString()+".persisted_max")) {
-			if (DataUtils.getDataFileInt("worlds."+link.world.getUID().toString()+".persisted_min") != link.minimumTime
-					|| DataUtils.getDataFileInt("worlds."+link.world.getUID().toString()+".persisted_max") != link.maximumTime) {
+		if (DataUtils.getDataFile().contains("worlds."+wrapper.world.getUID().toString()+".persisted_min") && DataUtils.getDataFile().contains("worlds."+wrapper.world.getUID().toString()+".persisted_max")) {
+			if (DataUtils.getDataFileInt("worlds."+wrapper.world.getUID().toString()+".persisted_min") != wrapper.minimumTime
+					|| DataUtils.getDataFileInt("worlds."+wrapper.world.getUID().toString()+".persisted_max") != wrapper.maximumTime) {
 				DataUtils.writeToDataFile(file -> {
-					file.set("worlds."+link.world.getUID().toString()+".persisted_min", link.minimumTime);
-					file.set("worlds."+link.world.getUID().toString()+".persisted_max", link.maximumTime);
+					file.set("worlds."+wrapper.world.getUID().toString()+".persisted_min", wrapper.minimumTime);
+					file.set("worlds."+wrapper.world.getUID().toString()+".persisted_max", wrapper.maximumTime);
 				});
-				plugin.selector.refreshWorldTimers(link.world);
+				plugin.selector.refreshWorldTimers(wrapper.world);
 			}
 		} else
 			DataUtils.writeToDataFile(file -> {
-				file.set("worlds."+link.world.getUID().toString()+".persisted_min", link.minimumTime);
-				file.set("worlds."+link.world.getUID().toString()+".persisted_max", link.maximumTime);
+				file.set("worlds."+wrapper.world.getUID().toString()+".persisted_min", wrapper.minimumTime);
+				file.set("worlds."+wrapper.world.getUID().toString()+".persisted_max", wrapper.maximumTime);
 			});
-		link.disasterOffset = (float) DataUtils.getConfigDouble(link.config, link.configName, "world.disaster_offset", 15.0);
-		link.sharedDisasterRadius = (float) DataUtils.getConfigDouble(link.config, link.configName, "world.shared_disaster_radius", 50.0);
-		ConfigurationSection probabilityTable = DataUtils.getConfigSection(link.config, link.configName, "world.level_probabilities");
+		wrapper.disasterOffset = (float) DataUtils.getConfigDouble(wrapper.config, wrapper.configName, "world.disaster_offset", 15.0);
+		wrapper.sharedDisasterRadius = (float) DataUtils.getConfigDouble(wrapper.config, wrapper.configName, "world.shared_disaster_radius", 50.0);
+		ConfigurationSection probabilityTable = DataUtils.getConfigSection(wrapper.config, wrapper.configName, "world.level_probabilities");
 		if (probabilityTable != null) {
-			link.probabilityTable = new float[6];
+			wrapper.probabilityTable = new float[6];
 			for (int i=1; i <= 6; i++)
-				if (link.config.contains(probabilityTable.getCurrentPath()+".level_"+i, true))
-					link.probabilityTable[i-1] = DataUtils.getConfigInt(link.config, link.configName, probabilityTable.getCurrentPath()+".level_"+i, 0);
+				if (wrapper.config.contains(probabilityTable.getCurrentPath()+".level_"+i, true))
+					wrapper.probabilityTable[i-1] = DataUtils.getConfigInt(wrapper.config, wrapper.configName, probabilityTable.getCurrentPath()+".level_"+i, 0);
 		} else
-			link.probabilityTable = new float[] { 30f, 25f, 20f, 15f, 9f, 1f };
+			wrapper.probabilityTable = new float[] { 30f, 25f, 20f, 15f, 9f, 1f };
 		
-		if (DataUtils.getDataFile().contains("worlds."+link.world.getUID().toString()+".player_blacklist")) {
-			List<String> list = DataUtils.getDataFileStringList("worlds."+link.world.getUID().toString()+".player_blacklist");
+		if (DataUtils.getDataFile().contains("worlds."+wrapper.world.getUID().toString()+".player_blacklist")) {
+			List<String> list = DataUtils.getDataFileStringList("worlds."+wrapper.world.getUID().toString()+".player_blacklist");
 			Set<UUID> uuids = new HashSet<>();
 			list.forEach(uuid -> {
 				try {
 					UUID temp = UUID.fromString(uuid);
 					uuids.add(temp);
 				} catch (IllegalArgumentException e) {
-					Utils.sendConsoleMessage("&cERROR while trying to parse a players UUID from the player blacklist for world &a'"+link.world.getName()+"'&c for UUID: &e'"+uuid+"'&c! This value will be omitted and the player will be effected by disasters.");
+					Utils.sendConsoleMessage("&cERROR while trying to parse a players UUID from the player blacklist for world &a'"+wrapper.world.getName()+"'&c for UUID: &e'"+uuid+"'&c! This value will be omitted and the player will be effected by disasters.");
 				}
 			});
-			link.blacklistedPlayers = uuids.isEmpty() ? null : Set.copyOf(uuids);
+			wrapper.blacklistedPlayers = uuids.isEmpty() ? null : Set.copyOf(uuids);
 		}
 
-		link.dropContainerItems = DataUtils.getConfigBoolean(link.config, link.configName, "regeneration.drop_container_items", false);
-		List<String> list = DataUtils.getConfigStringList(link.config, link.configName, "regeneration.block_blacklist");
+		wrapper.dropContainerItems = DataUtils.getConfigBoolean(wrapper.config, wrapper.configName, "regeneration.drop_container_items", false);
+		List<String> list = DataUtils.getConfigStringList(wrapper.config, wrapper.configName, "regeneration.block_blacklist");
 		Set<Material> materials = new HashSet<>();
 		list.forEach(material -> {
 			Set<Material> set = BlockUtils.getMaterials(material);
 			if (set == null) {
-				Utils.sendConsoleMessage("&cERROR no such block type or category named &e'"+material+"' &cin the &d'"+link.configName+"' &cworld config file at &b'b'regeneration.block_blacklist' &clist! This value will be omitted and regenerated as usual.");
+				Utils.sendConsoleMessage("&cERROR no such block type or category named &e'"+material+"' &cin the &d'"+wrapper.configName+"' &cworld config file at &b'b'regeneration.block_blacklist' &clist! This value will be omitted and regenerated as usual.");
 				return;
 			}
 			materials.addAll(set);
 		});
-		link.blackListedBlocks = materials.isEmpty() ? null : Set.copyOf(materials);
+		wrapper.blackListedBlocks = materials.isEmpty() ? null : Set.copyOf(materials);
 
-		String soundString = DataUtils.getConfigString(link.config, link.configName, "world.start_sound.sound", null);
+		String soundString = DataUtils.getConfigString(wrapper.config, wrapper.configName, "world.start_sound.sound", null);
 		if (soundString != null && !soundString.equalsIgnoreCase("NONE"))
 			try {
-				link.startSound = Sound.valueOf(soundString.toUpperCase());
-				link.startVolume = (float) DataUtils.getConfigDouble(link.config, link.configName, "world.start_sound.volume", 1.0);
-				link.startPitch = (float) DataUtils.getConfigDouble(link.config, link.configName, "world.start_sound.pitch", 1.0);
-				link.soundTarget = DataUtils.getConfigString(link.config, link.configName, "world.start_sound.target", "ALL").toUpperCase();
+				wrapper.startSound = Sound.valueOf(soundString.toUpperCase());
+				wrapper.startVolume = (float) DataUtils.getConfigDouble(wrapper.config, wrapper.configName, "world.start_sound.volume", 1.0);
+				wrapper.startPitch = (float) DataUtils.getConfigDouble(wrapper.config, wrapper.configName, "world.start_sound.pitch", 1.0);
+				wrapper.soundTarget = DataUtils.getConfigString(wrapper.config, wrapper.configName, "world.start_sound.target", "ALL").toUpperCase();
 			} catch (Exception exception) {
-				Utils.sendConsoleMessage("&cERROR reading disaster start sound from world config &d'"+link.configName+"' &cfix this section!");
+				Utils.sendConsoleMessage("&cERROR reading disaster start sound from world config &d'"+wrapper.configName+"' &cfix this section!");
 			}
 	}
 	public static void reload() {
-		worldLinks.values().forEach(link -> reload(link));
+		worldLinks.values().forEach(wrapper -> reload(wrapper));
 	}
 	public static WorldWrapper getWorldWrapper(World world) {
 		return worldLinks.get(world);
@@ -269,6 +269,9 @@ public class WorldWrapper {
 	}
 	public List<String> getConfigStringList(String path) {
 		return DataUtils.getConfigStringList(config, configName, path);
+	}
+	public List<Map<?, ?>> getConfigMapList(String path) {
+		return DataUtils.getConfigMapList(config, configName, path);
 	}
 	public ConfigurationSection getConfigSection(String path) {
 		return DataUtils.getConfigSection(config, configName, path);

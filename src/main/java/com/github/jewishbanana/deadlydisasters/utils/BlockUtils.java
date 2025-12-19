@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayDeque;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,7 +36,7 @@ public class BlockUtils {
 	private static final RandomGenerator random;
 	private static final Map<String, Set<Material>> customCategories;
 	static {
-		resistances = new HashMap<>();
+		resistances = new EnumMap<>(Material.class);
 		random = Utils.getRandomGenerator();
 		
 		Map<String, Set<String>> createCategory = new HashMap<>();
@@ -318,6 +319,20 @@ public class BlockUtils {
 		World world = location.getWorld();
 		for (double x = -radius; x <= radius; x++)
 			for (double y = -radius; y <= radius; y++)
+				for (double z = -radius; z <= radius; z++) {
+					Vector position = block.clone().add(new Vector(x, y, z));
+					if (block.distanceSquared(position) <= radiusSquared)
+						queue.add(position.toLocation(world).getBlock());
+				}
+		return queue;
+	}
+	public static Queue<Block> getBlocksInCylinderRadius(Location location, double radius, double height) {
+		Queue<Block> queue = new ArrayDeque<>();
+		double radiusSquared = radius * radius;
+		Vector block = new Vector(location.getX(), location.getY(), location.getZ());
+		World world = location.getWorld();
+		for (double x = -radius; x <= radius; x++)
+			for (double y = -height; y <= height; y++)
 				for (double z = -radius; z <= radius; z++) {
 					Vector position = block.clone().add(new Vector(x, y, z));
 					if (block.distanceSquared(position) <= radiusSquared)

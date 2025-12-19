@@ -816,7 +816,6 @@ public final class RegenerationDataUtil {
 				switch (tag) {
 				case "container":
 					if (isInstance("org.bukkit.inventory.InventoryHolder", state)) {
-						Bukkit.broadcastMessage("decoded a chest");
 						Object o = deserializeWithBukkitObject(payload);
 						if (o instanceof ItemStack[] items) {
 							org.bukkit.inventory.Inventory inv = ((org.bukkit.inventory.InventoryHolder) state).getInventory();

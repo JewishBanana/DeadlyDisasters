@@ -37,7 +37,6 @@ import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import com.github.jewishbanana.deadlydisasters.Main;
@@ -49,6 +48,7 @@ import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.RegenerationDataUtil;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.ultimatecontent.utils.EntityUtils;
 import com.mojang.datafixers.util.Pair;
 
 public class BlockRegenHandler implements Listener {
@@ -59,7 +59,6 @@ public class BlockRegenHandler implements Listener {
 	private static final Map<Block, Block> blockToBlock;
 	private static final Map<Block, Set<BlockState>> physicBlocks;
 	private static final Map<UUID, Pair<Block, Disaster>> fallingBlocks;
-	private static final FixedMetadataValue fixedData;
 	static {
 		damagedBlocks = new HashMap<>();
 		placedBlocks = new HashMap<>();
@@ -67,8 +66,6 @@ public class BlockRegenHandler implements Listener {
 		blockToBlock = new HashMap<>();
 		physicBlocks = new HashMap<>();
 		fallingBlocks = new HashMap<>();
-		
-		fixedData = Main.getInstance().getFixedMetadata();
 	}
 	
 	public BlockRegenHandler(Main plugin) {
@@ -111,7 +108,7 @@ public class BlockRegenHandler implements Listener {
 		BlockState priorState = removeBlock(block, disaster, withPhysics);
 		if (priorState == null && damagedBlocks.putIfAbsent(block, block.getState()) == null)
 			damageTracker.put(block, disaster);
-		block.setBlockData(data);
+		block.setBlockData(data, withPhysics);
 		placedBlocks.put(block, data.getMaterial());
 		if (DependencyUtils.isCoreProtectEnabled())
 			DependencyUtils.logCoreProtectPlacement(block.getState());
@@ -142,10 +139,16 @@ public class BlockRegenHandler implements Listener {
 		if (state == null)
 			return null;
 		FallingBlock entity = block.getWorld().spawnFallingBlock(BlockUtils.getCenterOfBlock(block), state.getBlockData());
-		entity.setMetadata("dd-fb", fixedData);
+		EntityUtils.markFallingBlock(entity);
 		fallingBlocks.put(entity.getUniqueId(), Pair.of(block, disaster));
 		EntitiesListener.attachRemoveKey(entity);
 		return entity;
+	}
+	public static void replaceFallingBlockWithNew(UUID oldEntity, UUID newEntity) {
+		Pair<Block, Disaster> pair = fallingBlocks.remove(oldEntity);
+		if (pair == null)
+			return;
+		fallingBlocks.put(newEntity, pair);
 	}
 	public static void restoreBlock(Block block, boolean withPhysics) {
 		BlockState state = damagedBlocks.remove(block);

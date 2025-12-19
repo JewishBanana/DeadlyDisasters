@@ -23,13 +23,19 @@ world:
     #   "DISABLED" - This just simply disables disasters from naturally occurring in the world. Use this if you only intend to spawn them via commands or don't want them active. 
     #                This is also the fallback setting in case you make a typo in the targeting setting to prevent unwanted damage.
     #
-    #   "INDIVIDUAL" - Every player has their own count down timer which persists even when they leave or the server closes. When this timer reaches 0 a disaster will very 
-    #                  likely occur on the player if conditions around are suitable. This is the default targeting and means that disasters will be equally active for everyone!
+    #   "INDIVIDUAL" - Every player has their own count down timer which persists even when they leave, or the server closes. When this timer reaches 0 a disaster will very 
+    #                  likely occur on the player, if conditions around are suitable. This is the default targeting and means that disasters will be equally active for everyone!
     #
     #   "GLOBAL" - This targeting means that the entire world uses a global count down and when the timer reaches 0 a designated amount of players will each have a single 
     #              disaster occur around them. This is not ideal for servers with lots of players as it may be very rare to see a disaster happen.
     
     targeting: "INDIVIDUAL"
+    
+    # The global disaster count setting is a special setting that will only apply if you have the 'targeting' setting above set to "GLOBAL" This just controls how many disasters 
+    # will occur when the global timer reaches 0. Only 1 disaster can spawn per player, so if you have a higher value set here then there are players on the server, this will 
+    # spawn just 1 disaster on each player in the server. If you have it set to 1, then only a single disaster will occur on 1 random player.
+    
+    global_disaster_count: 1
     
     # This is a string list and controls what disasters are disabled in this world. By default the setting is set to 'NONE' which means all disasters are enabled on the world. 
     # You can simply set this section to 'ALL' and it will disable all disasters within the world from happening naturally. This list only controls disasters that spawn 
@@ -229,6 +235,34 @@ disasters:
             minimum_height: 50
         #######################################################################################################################################################################
         #
+        # Tornado
+        #
+        #######################################################################################################################################################################
+        tornado:
+            # Size multiplier, this amplifies the size for all levels!
+            size: 1.0
+            # Speed controls how fast the tornado itself moves
+            speed: 1.0
+            # Force multiplier for how strong tornados can pull nearby entities.
+            force_multiplier: 1.0
+            # Multiplier for how long tornados last for. Higher levels will last longer.
+            life_multiplier: 1.0
+            # Multiplier for how often blocks get picked up in tornados
+            block_pickup_rate: 1.0
+            # Block pickup range is the multiplier for how far blocks from the tornado can be picked up.
+            block_pickup_range_multiplier: 1.0
+            # The maximum amount of entities that can be within a tornado (mobs, blocks, etc.). Alive entities will always take priority.
+            max_entities:
+                level 1: 200
+                level 2: 300
+                level 3: 500
+                level 4: 800
+                level 5: 1000
+                level 6: 2000
+            # The minimum height on the Y block axis that this disaster can start at.
+            minimum_height: 60
+        #######################################################################################################################################################################
+        #
         # Cave-In
         #
         #######################################################################################################################################################################
@@ -237,10 +271,42 @@ disasters:
             size: 1.0
             # Damage dealt by falling cave-in blocks.
             damage: 7.0
+            # The speed multiplier affects how fast the cave-in expands from the center to its outer edges.
+            speed: 1.0
             # The maximum amount of falling cave-in blocks that can exist at a time. For very large cave-ins smaller numbers could make cave-ins take a very long time to finish.
             max_falling_blocks: 800
             # The maximum height on the Y block axis that this disaster can start at. NOTE this is maximum, not minimum height!
             maximum_height: 50
+        #######################################################################################################################################################################
+        #
+        # Water Geyser
+        #
+        #######################################################################################################################################################################
+        water_geyser:
+            # Size multiplier, this amplifies the size for all levels!
+            size: 1.0
+            # Damage dealt to entities caught within water geysers per damage tick.
+            damage: 1.5
+            # The speed multiplier affects how fast the water geyser rises to the surface.
+            speed: 1.0
+            # The radius from the outer edge of the geyser that blocks are damaged around.
+            damage_radius: 2.0
+            # The minimum height on the Y block axis that this disaster can start at.
+            minimum_height: -50
+        #######################################################################################################################################################################
+        #
+        # Lava Geyser
+        #
+        #######################################################################################################################################################################
+        lava_geyser:
+            # Size multiplier, this amplifies the size for all levels!
+            size: 1.0
+            # The speed multiplier affects how fast the lava geyser rises to the surface.
+            speed: 1.0
+            # The radius from the outer edge of the geyser that blocks are damaged around.
+            damage_radius: 2.0
+            # The minimum height on the Y block axis that this disaster can start at.
+            minimum_height: 10
         #######################################################################################################################################################################
         #
         # Supernova
@@ -268,6 +334,20 @@ disasters:
             minimum_height: 60
             # Global override on the frequency to make this disaster happen less frequently.
             frequency: 0.3
+        #######################################################################################################################################################################
+        #
+        # Landslide / Avalanche
+        #
+        #######################################################################################################################################################################
+        landslide:
+            # Size multiplier, this amplifies the size for all levels!
+            size: 1.0
+            # The damage done to mobs that are hit by falling blocks from landslides.
+            damage: 4.0
+            # The max amount of falling blocks that can exist at a given time during a landslide. A lower value means that landslides will take longer to finish.
+            max_falling_blocks: 500
+            # The minimum height on the Y block axis that this disaster can start at.
+            minimum_height: 70
     ###########################################################################################################################################################################
     #
     # Weather Disasters
@@ -295,7 +375,7 @@ disasters:
                 level_4: 250.0
                 level_5: 350.0
                 level_6: 500.0
-            # All weather disasters scale in all stats and settings by the given scaler amount. Keep in mind that not all settings scale!
+            # All weather disasters scale in all stats and settings by the given scaler amount. Keep in mind that only some select settings scale!
             scaling:
                 level_1: 1.0
                 level_2: 1.5
@@ -373,6 +453,8 @@ disasters:
             min_height: 55
             # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
             frequency: 0.6
+            blacklisted_mob_types:
+            - slime
         #######################################################################################################################################################################
         #
         # Sandstorm
@@ -399,6 +481,9 @@ disasters:
             minimum_entity_Y_level: 50
             # The minimum height on the Y block axis that this disaster can start at.
             min_height: 55
+            blacklisted_mob_types:
+            - skeleton
+            - husk
         #######################################################################################################################################################################
         #
         # Blizzard
@@ -464,6 +549,8 @@ disasters:
             maximum_meteors: 20
             # How long in seconds smoke will emit from fallen meteors and explosions.
             smoke_time: 15.0
+            # If regeneration is enabled on this disaster, this controls if meteors should decay with regeneration, or if they should remain buried in the ground after regeneration.
+            regenerate_meteors: true
             # The minimum height on the Y block axis that this disaster can start at.
             min_height: 55
             # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
@@ -501,6 +588,8 @@ disasters:
             min_height: 55
             # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
             frequency: 0.6
+            blacklisted_mob_types:
+            - drowned
         #######################################################################################################################################################################
         #
         # Soul Storm
@@ -519,3 +608,155 @@ disasters:
                     level: 2
             # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
             frequency: 0.6
+        #######################################################################################################################################################################
+        #
+        # End Storm
+        #
+        #######################################################################################################################################################################
+        end_storm:
+            # Controls how often entities are randomly teleported within end storms.
+            teleport_rate_multiplier: 1.0
+            # The maximum range that a player can be teleported randomly when caught in an end storm. This value scales with the scale factor.
+            max_teleport_range: 24.0
+            # Controls how often unstable rifts spawn near players in end storms. This value scales with the scale factor.
+            rift_spawn_multiplier: 1.0
+            # The damage dealt to entities that are caught in unstable rifts.
+            rift_damage_rate: 4.0
+            # If rifts will destroy items that get pulled into them.
+            rift_destroys_items: true
+            # Controls how many end storm related mobs spawn near players in end storms. By default endermen can spawn. If you are using UltimateContent then end type entities will spawn instead!
+            mob_spawn_multiplier: 1.0
+            # Controls what effects are applied to vulnerable entities exposed in end storms. Effects are applied every storm tick. You can add or remove any effect you wish with its in game name.
+            entity_effects:
+                darkness:
+                    ticks: 60
+                    level: 1
+                slowness:
+                    ticks: 40
+                    level: 2
+            # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
+            frequency: 1.0
+            blacklisted_mob_types:
+            - ender_dragon
+            - enderman
+            - endermite
+    ###########################################################################################################################################################################
+    #
+    # Mob Disasters
+    #
+    # This sub-section holds all of the mob type disaster settings. This section is mainly just for sorting convenience as these disasters are each very unique and there are
+    # no global settings for them.
+    #
+    ###########################################################################################################################################################################
+    mob:
+        #######################################################################################################################################################################
+        #
+        # Purge
+        #
+        #######################################################################################################################################################################
+        purge:
+            # If a boss bar should be displayed for nearby players. Without the boss bar, players will not have the dark fog effect. You can change the text in the language file.
+            display_boss_bar: true
+            # The minimum spawn distance from players that horde entities can spawn from. Do not set this value too high or the entities will just despawn immediately!
+            entity_spawn_distance: 30.0
+            # The rate at which entities spawn during the purge. This value scales with the level.
+            entity_spawn_rate: 1.0
+            # The max horde size controls how many horde entities can be spawned in at a single time during the horde for the level.
+            max_horde_size:
+                level_1: 5
+                level_2: 7
+                level_3: 9
+                level_4: 11
+                level_5: 15
+                level_6: 25
+            # The horde vanquish threshold is the amount of horde entities that must be slain for the corresponding level to end.
+            horde_vanquish_threshold:
+                level_1: 8
+                level_2: 10
+                level_3: 15
+                level_4: 20
+                level_5: 28
+                level_6: 50
+            # This section controls the entities that spawn in purges. You can easily add or remove any entities with their in game name as the "type" Also, if you are using UltimateContent, then you can also add any custom entity by using the "uc:" prefix!
+            # There are custom settings for entities that you can add in each entity section, below are the listed settings that can be applied:
+            #
+            #  * "type" - This is a mandatory field and is the minecraft entity command name. You can also list UltimateContent entities here with the "uc:" prefix.
+            #
+            #    "chance" - This is the chance of this mob spawning from the mob pool when a purge mob is being spawned. This will accumulate to all the mobs you have in the pool and DOES NOT affect the mob spawn rate of purges! Default value will be 5.
+            #
+            #    "health" - The health the entity will have. Will use the entity types default value if not added.
+            #
+            #    "damage" - The damage the entity will deal. Will use the entity types default value if not added.
+            #
+            #    "speed" - The movement speed the entity will have. Will use the entity types default value if not added.
+            #
+            #    "randomize" - This is a true/false value and will affect if the mob spawns with random equipment vanilla behavior or not. By default this is set to true.
+            #
+            #    "main_hand" - The item that the entity will have in its main hand slot.
+            #
+            #    "off_hand" - The item that the entity will have in its off hand slot.
+            #
+            #    "head" - The item that the entity will have in its head slot.
+            #
+            #    "chest" - The item that the entity will have in its chest slot.
+            #
+            #    "legs" - The item that the entity will have in its legs slot.
+            #
+            #    "feet" - The item that the entity will have in its feet slot.
+            #
+            #    "charged" - Unique to creeper mobs only. Sets whether they are charged or not.
+            entity_spawns:
+                - type: "zombie"
+                  health: 25.0
+                  damage: 6.0
+                  speed: 0.35
+                  head: "chainmail_helmet"
+                  chance: 5.0
+                - type: "skeleton"
+                  health: 25.0
+                  speed: 0.35
+                  head: "chainmail_helmet"
+                  chance: 4.0
+                - type: "slime"
+                  health: 15.0
+                  damage: 6.0
+                  speed: 0.35
+                  chance: 5.0
+                - type: "pillager"
+                  speed: 0.35
+                  chance: 3.0
+                - type: "vindicator"
+                  speed: 0.35
+                  chance: 3.0
+                - type: "ravager"
+                  speed: 0.35
+                  chance: 3.0
+                - type: "phantom"
+                  chance: 3.0
+                - type: "spider"
+                  chance: 4.0
+                - type: "cave_spider"
+                  chance: 3.0
+                - type: "enderman"
+                  chance: 4.0
+                - type: "creeper"
+                  chance: 5.0
+                - type: "creeper"
+                  charged: true
+                  chance: 3.0
+                - type: "uc:undead_miner"
+                  chance: 8.0
+                - type: "uc:skeleton_knight"
+                  chance: 6.0
+                - type: "uc:dark_mage"
+                  chance: 2.0
+                - type: "uc:shadow_leech"
+                  chance: 3.0
+                - type: "uc:swamp_beast"
+                  chance: 3.0
+                - type: "uc:zombie_knight"
+                  chance: 4.0
+            # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
+            frequency: 0.3
+            # Overridden from global disaster settings.
+            start_delay: 10.0

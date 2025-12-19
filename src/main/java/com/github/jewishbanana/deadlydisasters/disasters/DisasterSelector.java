@@ -107,8 +107,11 @@ public class DisasterSelector {
 							plugin.getServer().getScheduler().runTask(plugin, () -> {
 								List<Player> players = world.getPlayers();
 								Collections.shuffle(players);
+								int disasterCount = wrapper.getConfigInt("world.global_disaster_count");
 								for (Player player : players)
 									if (selectDisaster(player, wrapper)) {
+										if (--disasterCount > 0)
+											continue;
 										worldTimers.replace(worldID, random.nextInt(wrapper.minimumTime, wrapper.maximumTime + 1));
 										return;
 									}

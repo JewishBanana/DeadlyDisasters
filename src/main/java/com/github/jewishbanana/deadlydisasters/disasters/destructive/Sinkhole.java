@@ -80,6 +80,8 @@ public class Sinkhole extends Disaster {
 	public boolean canStart() {
 		if (getLocation().getBlockY() < minHeight)
 			return false;
+		if (!Utils.isAreaFlatGrounded(getLocation()))
+			return false;
 		return super.canStart();
 	}
 	public void start() {

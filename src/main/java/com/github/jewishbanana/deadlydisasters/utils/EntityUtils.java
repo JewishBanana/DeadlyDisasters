@@ -7,8 +7,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.LivingEntity;
@@ -31,10 +29,10 @@ import com.github.jewishbanana.deadlydisasters.Main;
 public class EntityUtils {
 	
 	private static final Main plugin;
-	private static final FixedMetadataValue fallingBlockData;
+	private static final FixedMetadataValue fallingBlockMeta;
 	static {
 		plugin = Main.getInstance();
-		fallingBlockData = new FixedMetadataValue(plugin, "protected");
+		fallingBlockMeta = new FixedMetadataValue(plugin, "protected");
 	}
 	
 	@SuppressWarnings("removal")
@@ -135,47 +133,8 @@ public class EntityUtils {
 		else
 			entity.playEffect(EntityEffect.HURT);
 	}
-	public static Location findSmartYSpawn(Location pivot, Location spawn, double height, int maxDistance) {
-		if (pivot == null || spawn == null)
-			return null;
-		Block b = spawn.getBlock();
-		Location loc1 = null, loc2 = null;
-		down:
-			for (int i = spawn.getBlockY(); i > spawn.getBlockY()-maxDistance; i--) {
-				b = b.getRelative(BlockFace.DOWN);
-				if (!b.isPassable() && b.getRelative(BlockFace.UP).isPassable() && !b.getRelative(BlockFace.UP).isLiquid()) {
-					for (int c = 2; c <= height-1; c++)
-						if (!b.getRelative(BlockFace.UP, c).isPassable())
-							continue down;
-					loc1 = b.getRelative(BlockFace.UP).getLocation().add(0.5,0.01,0.5);
-					break down;
-				}
-			}
-		b = spawn.getBlock();
-		up:
-			for (int i = spawn.getBlockY(); i < spawn.getBlockY()+maxDistance; i++) {
-				b = b.getRelative(BlockFace.UP);
-				if (b.isPassable() && !b.getRelative(BlockFace.DOWN).isPassable() && !b.isLiquid()) {
-					for (int c = 1; c < height; c++)
-						if (!b.getRelative(BlockFace.UP, c).isPassable())
-							continue up;
-					loc2 = b.getLocation().add(0.5,0.01,0.5);
-					break up;
-				}
-			}
-		if (loc1 != null && loc2 == null)
-			return loc1;
-		else if (loc1 == null && loc2 != null)
-			return loc2;
-		else if (loc1 == null && loc2 == null)
-			return null;
-		if (Math.abs(pivot.getY()-loc2.getY()) < Math.abs(pivot.getY()-loc1.getY()))
-			return loc1;
-		else
-			return loc2;
-	}
 	public static void markFallingBlock(FallingBlock block) {
-		block.setMetadata("dd-fb", fallingBlockData);
+		block.setMetadata("dd-fb", fallingBlockMeta);
 	}
 	public static boolean rayTraceEntityConeForSolid(Entity entity, Location initial) {
 		double height = entity.getHeight(), width = entity.getWidth();

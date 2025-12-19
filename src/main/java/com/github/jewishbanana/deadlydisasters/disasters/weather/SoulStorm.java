@@ -44,6 +44,7 @@ public class SoulStorm extends WeatherDisaster {
 	private Set<PotionEffect> effects;
 	private final Set<UUID> mobs = new HashSet<>();
 	private final Map<UUID, UUID> mobTargets = new HashMap<>();
+	private Set<Entity> currentEntities = Set.of();
 
 	public SoulStorm(@NotNull Location location, Player player, int level) {
 		super(location, player, level);
@@ -58,30 +59,21 @@ public class SoulStorm extends WeatherDisaster {
 		this.soundTickRate = 80;
 	}
 	public boolean canStart() {
-		return true;
+		return super.canStart();
 	}
 	public void start() {
 		super.start();
 		location.setY(128);
-		final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
-		final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
 		final World world = location.getWorld();
-		final AtomicBoolean processEntities = new AtomicBoolean();
 		scheduleTask(new BukkitRunnable() {
 			@Override
 			public void run() {
-				processEntities.set(false);
-				foundEntities.clear();
-				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
-					foundEntities.put(entity, entity.getLocation().add(0, entity.getHeight() / 2.0, 0));
-				final Set<Entity> currentEntities = Set.copyOf(entitiesInStorm);
-				processEntities.set(true);
 				for (Entity entity : currentEntities) {
 					if (entity instanceof Player player) {
 						if (EntityUtils.isPlayerImmune(player))
 							continue;
 						if (random.nextFloat() < mobSpawnRate) {
-							Location spawn = SpawnUtils.findSpawnLocationNoCollision(entity.getLocation(), 1, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
+							Location spawn = SpawnUtils.findMonsterSpawnLocationNoCollision(entity.getLocation(), 1, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
 							if (spawn != null) {
 								Mob mob = null;
 								switch (DependencyUtils.isUltimateContentEnabled() ? 1 : 0) {
@@ -123,24 +115,38 @@ public class SoulStorm extends WeatherDisaster {
 			}
 		}.runTaskTimer(plugin, 0, 5));
 		scheduleTask(new BukkitRunnable() {
-			private final double radiusSquared = disasterRange * disasterRange;
-			
+			final AtomicBoolean processEntities = new AtomicBoolean();
+			final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
+			final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
+
 			@Override
 			public void run() {
-				if (!processEntities.get())
+				if (processEntities.get())
 					return;
-				Map<Entity, Location> map = Map.copyOf(foundEntities);
-				Set<Entity> set = new HashSet<>();
-				map.forEach((entity, loc) -> {
-					if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared)
-							|| isEntityProtected(entity))
-						return;
-					set.add(entity);
-				});
-				entitiesInStorm.clear();
-				entitiesInStorm.addAll(set);
+				processEntities.set(true);
+				foundEntities.clear();
+				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
+					foundEntities.put(entity, entity.getLocation().add(0, entity.getHeight() / 2.0, 0));
+				currentEntities = Set.copyOf(entitiesInStorm);
+				scheduleTask(new BukkitRunnable() {
+					private final double radiusSquared = disasterRange * disasterRange;
+					
+					@Override
+					public void run() {
+						final Set<Entity> set = new HashSet<>();
+						foundEntities.forEach((entity, loc) -> {
+							if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared)
+									|| isEntityProtected(entity))
+								return;
+							set.add(entity);
+						});
+						entitiesInStorm.clear();
+						entitiesInStorm.addAll(set);
+						processEntities.set(false);
+					}
+				}.runTaskAsynchronously(plugin));
 			}
-		}.runTaskTimerAsynchronously(plugin, 1, 1));
+		}.runTaskTimer(plugin, 0, 1));
 		
 		final double distanceSquared = disasterRange * disasterRange;
 		final double trueSmoothingRange = (disasterRange + smoothingRange) * (disasterRange + smoothingRange);

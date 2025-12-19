@@ -77,6 +77,7 @@ public class Monsoon extends WeatherDisaster implements Listener {
 	private final Set<UUID> mobs = new HashSet<>();
 	private final Map<UUID, UUID> mobTargets = new HashMap<>();
 	private final Set<Block> puddles = new HashSet<>();
+	private Set<Entity> currentEntities = Set.of();
 	
 	public Monsoon(@NotNull Location location, Player player, int level) {
 		super(location, player, level);
@@ -129,20 +130,11 @@ public class Monsoon extends WeatherDisaster implements Listener {
 		super.start();
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 		location.setY(128);
-		final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
-		final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
 		final World world = location.getWorld();
 		final Set<LivingEntity> drowningEntities = new HashSet<>();
-		final AtomicBoolean processEntities = new AtomicBoolean();
 		scheduleTask(new BukkitRunnable() {
 			@Override
 			public void run() {
-				processEntities.set(false);
-				foundEntities.clear();
-				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
-					foundEntities.put(entity, entity.getLocation());
-				final Set<Entity> currentEntities = Set.copyOf(entitiesInStorm);
-				processEntities.set(true);
 				drowningEntities.clear();
 				for (Entity entity : currentEntities) {
 					Location loc = entity.getLocation();
@@ -150,7 +142,7 @@ public class Monsoon extends WeatherDisaster implements Listener {
 						if (EntityUtils.isPlayerImmune(player))
 							continue;
 						if (random.nextFloat() < mobSpawnRate) {
-							Location spawn = SpawnUtils.findSpawnLocation(loc, 2, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
+							Location spawn = SpawnUtils.findMonsterSpawnLocation(loc, 2, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
 							if (spawn != null) {
 								Mob mob = null;
 								switch (DependencyUtils.isUltimateContentEnabled() ? random.nextInt(2) : random.nextInt(1)) {
@@ -207,26 +199,40 @@ public class Monsoon extends WeatherDisaster implements Listener {
 				}
 			}.runTaskTimer(plugin, 1, 1));
 		scheduleTask(new BukkitRunnable() {
-			private final double radiusSquared = disasterRange * disasterRange;
-			
+			final AtomicBoolean processEntities = new AtomicBoolean();
+			final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
+			final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
+
 			@Override
 			public void run() {
-				if (!processEntities.get())
+				if (processEntities.get())
 					return;
-				Map<Entity, Location> map = Map.copyOf(foundEntities);
-				Set<Entity> set = new HashSet<>();
-				map.forEach((entity, loc) -> {
-					if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared))
-						return;
-					if (isEntityProtected(entity) || !isBlockInClimate(loc.getBlock()))
-						return;
-					if (world.getHighestBlockYAt(loc) <= loc.getY() + entity.getHeight())
-						set.add(entity);
-				});
-				entitiesInStorm.clear();
-				entitiesInStorm.addAll(set);
+				processEntities.set(true);
+				foundEntities.clear();
+				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
+					foundEntities.put(entity, entity.getLocation());
+				currentEntities = Set.copyOf(entitiesInStorm);
+				scheduleTask(new BukkitRunnable() {
+					private final double radiusSquared = disasterRange * disasterRange;
+					
+					@Override
+					public void run() {
+						final Set<Entity> set = new HashSet<>();
+						foundEntities.forEach((entity, loc) -> {
+							if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared))
+								return;
+							if (isEntityProtected(entity) || !isBlockInClimate(loc.getBlock()))
+								return;
+							if (world.getHighestBlockYAt(loc) <= loc.getY() + entity.getHeight())
+								set.add(entity);
+						});
+						entitiesInStorm.clear();
+						entitiesInStorm.addAll(set);
+						processEntities.set(false);
+					}
+				}.runTaskAsynchronously(plugin));
 			}
-		}.runTaskTimerAsynchronously(plugin, 1, 1));
+		}.runTaskTimer(plugin, 0, 1));
 		
 		final double distanceSquared = disasterRange * disasterRange;
 		final double trueSmoothingRange = (disasterRange + smoothingRange) * (disasterRange + smoothingRange);

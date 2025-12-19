@@ -15,6 +15,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.Blizzard;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 
 public class EntitiesListener implements Listener {
 
@@ -50,7 +51,7 @@ public class EntitiesListener implements Listener {
 	}
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onFallingBlockForm(EntityChangeBlockEvent event) {
-		if (event.getEntityType() == EntityType.FALLING_BLOCK && event.getEntity().hasMetadata("dd-fb"))
+		if (event.getEntityType() == EntityType.FALLING_BLOCK && event.getEntity().hasMetadata("dd-fb") && DependencyUtils.isRegionProtected(event.getBlock().getLocation()))
 			event.setCancelled(true);
 	}
 	public static void attachRemoveKey(Entity entity) {

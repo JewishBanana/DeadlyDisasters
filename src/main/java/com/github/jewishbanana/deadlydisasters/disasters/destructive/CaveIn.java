@@ -2,15 +2,10 @@ package com.github.jewishbanana.deadlydisasters.disasters.destructive;
 
 import java.util.ArrayDeque;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -20,17 +15,19 @@ import org.bukkit.Sound;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.FallingBlock;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
-import com.github.jewishbanana.deadlydisasters.events.DisasterStopEvent.DisasterStopReason;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
-import com.mojang.datafixers.util.Pair;
+import com.github.jewishbanana.ultimatecontent.utils.EntityUtils;
 
 public class CaveIn extends Disaster {
 	
@@ -38,12 +35,11 @@ public class CaveIn extends Disaster {
 	private double size;
 	private int centerDepth;
 	private double damage;
+	private double speed;
 	private int maxBlocks;
 	
 	private Queue<CollapsingBlock> collapsingList = new ArrayDeque<>();
-	private ArrayDeque<Block> modifiedOrder = new ArrayDeque<>();
-	private Map<Block, Integer> firstBlockIndex = new HashMap<>();
-	private Map<Integer, Block> reinsertOrdering = new TreeMap<>();
+	private Queue<FallingBlock> fallingBlocks = new ArrayDeque<>();
 	
 	public CaveIn(Location location, Player player, int level) {
 		super(location, player, level);
@@ -54,30 +50,31 @@ public class CaveIn extends Disaster {
 		super.init();
 		this.size = getConfigDouble("size");
 		this.damage = getConfigDouble("damage");
+		this.speed = getConfigDouble("speed");
 		this.maxBlocks = getConfigInt("max_falling_blocks");
 		switch (level) {
 		default:
 		case 1:
-			disasterRange = 9;
+			disasterRange = 14;
 			break;
 		case 2:
-			disasterRange = 13;
+			disasterRange = 21;
 			break;
 		case 3:
-			disasterRange = 18;
+			disasterRange = 29;
 			break;
 		case 4:
-			disasterRange = 23;
+			disasterRange = 37;
 			break;
 		case 5:
-			disasterRange = 30;
+			disasterRange = 50;
 			break;
 		case 6:
-			disasterRange = 50;
+			disasterRange = 72;
 			break;
 		}
 		disasterRange *= size;
-		centerDepth = level;
+		centerDepth = level * 2;
 	}
 	public Location findPossiblePosition(Location initial) {
 		if (initial == null)
@@ -91,12 +88,36 @@ public class CaveIn extends Disaster {
 		return null;
 	}
 	public boolean canStart() {
-		if (getLocation().getBlockY() > maxHeight)
+		if (getLocation().getWorld().getEnvironment() != Environment.NETHER && getLocation().getBlockY() > maxHeight)
+			return false;
+		if (recursionCheck(getLocation().getBlock(), 0, 150, 0, 10, new HashSet<>()) != 150)
 			return false;
 		return super.canStart();
 	}
+	public int recursionCheck(Block block, int count, int targetCount, int distance, int maxDistance, Set<Block> passed) {
+		if (count == targetCount || distance == maxDistance || passed.contains(block) || block.isPassable())
+			return count;
+		passed.add(block);
+//		final BlockData data = block.getBlockData();
+//		plugin.getServer().getScheduler().runTask(plugin, () -> block.setType(Material.GOLD_BLOCK));
+//		plugin.getServer().getScheduler().runTaskLater(plugin, () -> block.setBlockData(data), 200);
+		count++;
+		for (BlockFace face : Set.of(BlockFace.UP, BlockFace.DOWN, BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST)) {
+			Block other = block.getRelative(face);
+			if (other == null)
+				continue;
+			count = recursionCheck(other, count, targetCount, distance + 1, maxDistance, passed);
+	        if (count >= targetCount)
+	            break;
+		}
+		return count;
+	}
 	public void start() {
 		super.start();
+//		plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+//			int count = recursionCheck(getLocation().getBlock(), 0, 200, 0, 15, new HashSet<>());
+//			plugin.getLogger().info("count is "+count);
+//		});
 		Set<Block> blocks = new HashSet<>(BlockUtils.getBlocksInCircleRadius(location, disasterRange));
 		if (blocks.isEmpty()) {
 			stop();
@@ -133,9 +154,9 @@ public class CaveIn extends Disaster {
 						if (distance > soundRange)
 							return;
 						if (distance > distanceSquared)
-							playSound(player, loc.add(Utils.getVectorTowards(loc, location).multiply(7.0)), Sound.ENTITY_WITHER_BREAK_BLOCK, (0.0125 * level) * (1.0 - ((1.0 / excessSoundRange) * (loc.distance(location) - disasterRange))), 0.5);
+							playSound(player, loc.add(Utils.getVectorTowards(loc, location).multiply(7.0)), Sound.ENTITY_WITHER_BREAK_BLOCK, (0.0125 * (level * 2)) * (1.0 - ((1.0 / excessSoundRange) * (loc.distance(location) - disasterRange))), 0.5);
 						else
-							playSound(player, loc.subtract(0, 7, 0), Sound.ENTITY_WITHER_BREAK_BLOCK, (0.0125 * level), 0.5);
+							playSound(player, loc.subtract(0, 7, 0), Sound.ENTITY_WITHER_BREAK_BLOCK, (0.0125 * (level * 2)), 0.5);
 					});
 					scheduleTask(new BukkitRunnable() {
 						private double distance = 1.0;
@@ -143,29 +164,53 @@ public class CaveIn extends Disaster {
 						private Iterator<CollapsingBlock> iterator = collapsingList.iterator();
 						private final int iterationsPerTick = Math.max(collapsingList.size() / 5, 1);
 						private int tick;
+						private int damageInterval;
+						private boolean doneCollapsing;
+						private int wrapUpTicks = 100;
 						
 						@Override
 						public void run() {
+							Iterator<FallingBlock> it = fallingBlocks.iterator();
+							while (it.hasNext()) {
+								FallingBlock fb = it.next();
+								if (fb == null || !fb.isValid()) {
+									it.remove();
+									continue;
+								}
+								if (damageInterval == 10)
+									for (Entity e : fb.getNearbyEntities(.5, .5, .5))
+										if (e instanceof LivingEntity alive && !isEntityProtected(e) && !EntityUtils.isEntityImmunePlayer(e))
+											EntityUtils.damageEntity(alive, damage, "deaths.cavein", DamageCause.FALLING_BLOCK);
+							}
+							if (++damageInterval == 11)
+								damageInterval = 0;
+							if (doneCollapsing) {
+								if (fallingBlocks.isEmpty())
+									stop();
+								if (wrapUpTicks-- == 0) {
+									fallingBlocks.stream().forEach(e -> {
+										if (e != null)
+											e.remove();
+									});
+									stop();
+								}
+								return;
+							}
 							while (++tick <= iterationsPerTick && iterator.hasNext()) {
+								if (fallingBlocks.size() == maxBlocks)
+									break;
 								CollapsingBlock entry = iterator.next();
 								if (entry.distance > distance)
 									continue;
-								entry.fall();
-								if (entry.depth == 0) {
-									Integer index = firstBlockIndex.remove(entry.first);
-									if (index != null) {
-										Block last = modifiedOrder.getLast();
-										if (last.equals(entry.block) && !last.equals(entry.first)) {
-											modifiedOrder.removeLast();
-											reinsertOrdering.put(index, last);
-										}
-									}
+								FallingBlock fb = entry.fall();
+								if (fb != null)
+									fallingBlocks.add(fb);
+								if (entry.depth == 0)
 									iterator.remove();
-								}
 							}
 							if (!iterator.hasNext()) {
 								if (collapsingList.isEmpty()) {
-									stop();
+									doneCollapsing = true;
 									return;
 								}
 								iterator = collapsingList.iterator();
@@ -175,104 +220,15 @@ public class CaveIn extends Disaster {
 						}
 					}.runTaskTimer(plugin, 0, 1));
 					
-//					Set<Queue<CollapsingBlock>> collapsing = new HashSet<>();
-//					for (Block next : blocks) {
-//						Block block = getHighestExposedBlock(next, level * 2 + random.nextInt(level), temp -> !temp.isPassable() || temp.isLiquid());
-//						if (block == null)
-//							continue;
-//						double distance = Utils.getCenterOfBlock(block).distance(location);
-//						int depth = (int) (Math.floor(centerDepth * Math.pow(1.0 - (distance / radius), 2.0)) + ((random.nextDouble() * 2 - 1) * noise * (1.0 - distance)));
-//						if (depth > 0) {
-//							Queue<CollapsingBlock> queue = new ArrayDeque<>();
-//							double trueDistance = distance + random.nextDouble(level);
-//							for (int i=0; i < level * 4; i++) {
-//								if (!block.isPassable() || block.isLiquid())
-//									queue.add(new CollapsingBlock(block, trueDistance, depth));
-//								block = block.getRelative(BlockFace.UP);
-//								if (block == null)
-//									break;
-//							}
-//							collapsing.add(queue);
-//						}
-//					}
-//					scheduleTask(new BukkitRunnable() {
-//						private double distance = 1.0;
-//						private double increment = level / 20.0 * speed;
-//						private Iterator<Queue<CollapsingBlock>> iterator = collapsing.iterator();
-//						private final int iterationsPerTick = Math.max(collapsing.size() / 5, 1);
-//						private int tick;
-//						
-//						@Override
-//						public void run() {
-//							while (++tick <= iterationsPerTick && iterator.hasNext()) {
-//								Queue<CollapsingBlock> entry = iterator.next();
-//								CollapsingBlock first = entry.peek();
-//								if (first.distance > distance)
-//									continue;
-//								entry.forEach(cb -> cb.fall());
-//								if (first.depth == 0) {
-//									entry.forEach(cb -> {
-//										Integer index = firstBlockIndex.remove(cb.first);
-//										if (index != null) {
-//											Block last = modifiedOrder.getLast();
-//											if (last.equals(cb.block) && !last.equals(cb.first)) {
-//												modifiedOrder.removeLast();
-//												reinsertOrdering.put(index, last);
-//											}
-//										}
-//									});
-//									iterator.remove();
-//								}
-//							}
-//							if (!iterator.hasNext()) {
-//								if (collapsing.isEmpty()) {
-//									stop();
-//									return;
-//								}
-//								iterator = collapsing.iterator();
-//							}
-//							tick = 0;
-//							distance += increment;
-//						}
-//					}.runTaskTimer(plugin, 0, 1));
 				} catch (Exception e) {
 					Utils.sendExceptionLog(e);
 				}
 			}
 		}.runTaskAsynchronously(plugin));
 	}
-	public void clean() {
-		super.clean();
-		removeDeathWatcher(300);
-	}
-	public void regenerateBlocks(DisasterStopReason reason) {
-		Set<Block> set = getModifiedBlocks();
-		modifiedOrder.forEach(block -> set.remove(block));
-		ArrayDeque<Block> rebuilt = new ArrayDeque<>(modifiedOrder.size());
-		Iterator<Block> iterator = modifiedOrder.iterator();
-		int cursor = 0;
-		for (Map.Entry<Integer, Block> entry : reinsertOrdering.entrySet()) {
-			while (cursor <= entry.getKey() && iterator.hasNext()) {
-				rebuilt.add(iterator.next());
-				++cursor;
-			}
-			rebuilt.add(entry.getValue());
-		}
-		while (iterator.hasNext())
-			rebuilt.add(iterator.next());
-		set.addAll(rebuilt);
-		if (!collapsingList.isEmpty()) {
-			Set<Block> blocks = new LinkedHashSet<>(collapsingList.stream().filter(cb -> cb.first != null && !cb.block.equals(cb.first)).map(cb -> cb.block).collect(Collectors.toSet()));
-			blocks.addAll(set);
-			set.clear();
-			set.addAll(blocks);
-		}
-		super.regenerateBlocks(reason);
-	}
 	private class CollapsingBlock {
 		
 		private Block block;
-		private Block first;
 		private double distance;
 		private int depth;
 		
@@ -281,33 +237,26 @@ public class CaveIn extends Disaster {
 			this.distance = distance;
 			this.depth = depth;
 		}
-		public void fall() {
-			Block to = block.getRelative(BlockFace.DOWN);
-			if (to == null || to.getY() < -64) {
+		public FallingBlock fall() {
+			if (block == null) {
 				depth = 0;
-				return;
+				return null;
 			}
-			if (to.getY() > lavaDepth) {
-				if (moveBlock(block, to))
-					modifiedOrder.add(to);
-				else {
+			FallingBlock fb = null;
+			if (block.getType() != Material.AIR) {
+				fb = convertBlockIntoFallingBlock(block);
+				if (fb != null) {
+					fb.setVelocity(new Vector(0, -.3, 0));
+					fb.setDropItem(false);
+					fb.setHurtEntities(false);
+				} else {
 					depth = 0;
-					return;
-				}
-			} else {
-				if (placeBlock(block, Material.LAVA))
-					modifiedOrder.add(to);
-				else {
-					depth = 0;
-					return;
+					return null;
 				}
 			}
-			if (first == null) {
-				first = to;
-				firstBlockIndex.put(first, modifiedOrder.size() - 1);
-			}
-			block = to;
 			--depth;
+			block = block.getRelative(BlockFace.UP);
+			return fb;
 		}
 	}
 	public Block getHighestExposedBlock(Block start, int maxDistance, Predicate<Block> filter) {
@@ -331,46 +280,8 @@ public class CaveIn extends Disaster {
 			}
 		return b;
 	}
-	public Set<Block> findAttachedBlocks(Block startBlock, int maxStepsAway, Set<Block> selected) {
-	    Set<Block> visited = new HashSet<>();
-	    Queue<Pair<Block, Integer>> queue = new ArrayDeque<>();
-	    visited.add(startBlock);
-	    queue.add(Pair.of(startBlock, 0));
-	    BlockFace[] faces = new BlockFace[] { BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN };
-	    while (!queue.isEmpty()) {
-	        Pair<Block, Integer> pair = queue.poll();
-	        int distance = pair.getSecond();
-	        if (distance >= maxStepsAway)
-	        	continue;
-	        Block current = pair.getFirst();
-	        for (BlockFace face : faces) {
-	        	if (face == BlockFace.DOWN && current.getY() <= location.getY())
-	            	continue;
-	            Block adjacent = current.getRelative(face);
-	            if (adjacent != null && (!adjacent.isPassable() || adjacent.isLiquid()) && !visited.contains(adjacent) && !selected.contains(adjacent)) {
-	                visited.add(adjacent);
-	                queue.add(Pair.of(adjacent, distance + 1));
-	            }
-	        }
-	    }
-	    return visited;
-	}
-	public Function<PlayerDeathEvent, Boolean> getDeathCheck() {
-		return event -> {
-			if (event.getEntity().getLastDamageCause() == null)
-				return false;
-			DamageCause cause = event.getEntity().getLastDamageCause().getCause();
-			if (cause != DamageCause.FALL && cause != DamageCause.LAVA)
-				return false;
-			Location loc = event.getEntity().getLocation();
-			if (loc.getY() > location.getY() - 1
-					|| !Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, disasterRange * disasterRange))
-				return false;
-			return true;
-		};
-	}
 	protected String getConfigPath() {
-		return "disasters.destructive.sinkhole";
+		return "disasters.destructive.cavein";
 	}
 	public String getDisplayName() {
 		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
@@ -379,6 +290,6 @@ public class CaveIn extends Disaster {
 		return level;
 	}
 	public Set<Environment> getBannedEnvironments() {
-		return Set.of(Environment.NETHER, Environment.THE_END);
+		return Set.of(Environment.THE_END);
 	}
 }

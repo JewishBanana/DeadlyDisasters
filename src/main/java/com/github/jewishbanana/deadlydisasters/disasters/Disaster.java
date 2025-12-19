@@ -160,6 +160,8 @@ public abstract class Disaster {
 	}
 	public void clean() {
 		tasks.forEach(task -> task.cancel());
+		if (this instanceof MobDisaster cast)
+			cast.cleanEntities();
 	}
 	public boolean removeBlock(Block block, boolean ignoreImmuneOnly, boolean withPhysics) {
 		if ((regionsProtected && isBlockProtected(block)) 
@@ -172,8 +174,8 @@ public abstract class Disaster {
 	public boolean removeBlock(Block block) {
 		return removeBlock(block, false, true);
 	}
-	public boolean placeBlock(Block block, BlockData data, boolean withPhysics) {
-		if ((regionsProtected && isBlockProtected(block)) 
+	public boolean placeBlock(Block block, BlockData data, boolean ignoreImmuneOnly, boolean withPhysics) {
+		if ((regionsProtected && (ignoreImmuneOnly ? BlockUtils.isBlockImmune(block) : BlockUtils.testBlockResistance(block))) 
 				|| BlockUtils.testBlockResistance(block))
 			return false;
 		if (BlockRegenHandler.placeBlock(block, data, this, withPhysics) != null)
@@ -181,12 +183,12 @@ public abstract class Disaster {
 		return true;
 	}
 	public boolean placeBlock(Block block, Material material) {
-		return placeBlock(block, material.createBlockData(), true);
+		return placeBlock(block, material.createBlockData(), false, true);
 	}
 	public boolean replaceBlockWithProperties(Block block, Material material, boolean withPhysics) {
 		BlockData data = material.createBlockData();
 		block.getBlockData().copyTo(data);
-		return placeBlock(block, data, withPhysics);
+		return placeBlock(block, data, false, withPhysics);
 	}
 	public boolean replaceBlockWithProperties(Block block, Material material) {
 		return replaceBlockWithProperties(block, material, true);
@@ -372,6 +374,9 @@ public abstract class Disaster {
 	}
 	protected List<String> getConfigStringList(String path) {
 		return worldLink.getConfigStringList(getConfigPath()+'.'+path);
+	}
+	protected List<Map<?, ?>> getConfigMapList(String path) {
+		return worldLink.getConfigMapList(getConfigPath()+'.'+path);
 	}
 	protected ConfigurationSection getConfigSection(String path) {
 		return worldLink.getConfigSection(getConfigPath()+'.'+path);

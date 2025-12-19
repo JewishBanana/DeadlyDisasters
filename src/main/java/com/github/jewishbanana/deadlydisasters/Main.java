@@ -15,11 +15,19 @@ import org.bukkit.plugin.java.JavaPlugin;
 import com.github.jewishbanana.deadlydisasters.commands.DisastersCommand;
 import com.github.jewishbanana.deadlydisasters.disasters.DisasterRegistry;
 import com.github.jewishbanana.deadlydisasters.disasters.DisasterSelector;
+import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
+import com.github.jewishbanana.deadlydisasters.disasters.destructive.CaveIn;
 import com.github.jewishbanana.deadlydisasters.disasters.destructive.Earthquake;
+import com.github.jewishbanana.deadlydisasters.disasters.destructive.Landslide;
+import com.github.jewishbanana.deadlydisasters.disasters.destructive.LavaGeyser;
 import com.github.jewishbanana.deadlydisasters.disasters.destructive.Sinkhole;
 import com.github.jewishbanana.deadlydisasters.disasters.destructive.Supernova;
+import com.github.jewishbanana.deadlydisasters.disasters.destructive.Tornado;
+import com.github.jewishbanana.deadlydisasters.disasters.destructive.WaterGeyser;
+import com.github.jewishbanana.deadlydisasters.disasters.mob.Purge;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.AcidStorm;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.Blizzard;
+import com.github.jewishbanana.deadlydisasters.disasters.weather.EndStorm;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.ExtremeWinds;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.MeteorShower;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.Monsoon;
@@ -83,7 +91,12 @@ public class Main extends JavaPlugin {
 		// Destructive
 		DisasterRegistry.registerDisaster("sinkhole", Sinkhole.class);
 		DisasterRegistry.registerDisaster("earthquake", Earthquake.class);
+		DisasterRegistry.registerDisaster("tornado", Tornado.class);
+		DisasterRegistry.registerDisaster("cavein", CaveIn.class);
+		DisasterRegistry.registerDisaster("water_geyser", WaterGeyser.class);
+		DisasterRegistry.registerDisaster("lava_geyser", LavaGeyser.class);
 		DisasterRegistry.registerDisaster("supernova", Supernova.class);
+		DisasterRegistry.registerDisaster("landslide", Landslide.class);
 		
 		// Weather
 		DisasterRegistry.registerDisaster("acid_storm", AcidStorm.class);
@@ -93,6 +106,10 @@ public class Main extends JavaPlugin {
 		DisasterRegistry.registerDisaster("soul_storm", SoulStorm.class);
 		DisasterRegistry.registerDisaster("monsoon", Monsoon.class);
 		DisasterRegistry.registerDisaster("meteorshower", MeteorShower.class);
+		DisasterRegistry.registerDisaster("end_storm", EndStorm.class);
+		
+		// Mob
+		DisasterRegistry.registerDisaster("purge", Purge.class);
 	}
 	public void init() {
 		DataUtils.reload();
@@ -112,6 +129,7 @@ public class Main extends JavaPlugin {
 	}
 	public void onDisable() {
 		isDisablingPlugin = true;
+		MobDisaster.cleanAllEntities();
 		BlockRegenHandler.saveAll(this);
 		selector.saveData();
 	}
