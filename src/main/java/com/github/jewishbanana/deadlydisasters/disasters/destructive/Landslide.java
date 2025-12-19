@@ -63,6 +63,23 @@ public class Landslide extends Disaster implements Listener {
 	private final Map<UUID, Pair<Location, BlockData>> fallingBlocksLocations = new HashMap<>();
 	private final Map<UUID, Block> initialSpot = new HashMap<>();
 	private final Map<UUID, ItemStack[]> invBlocks = new HashMap<>();
+	/**
+	 * Ensure regeneration tracking stays in sync when a falling block entity is replaced
+	 * (for example, when we bounce or respawn it). This prevents the regen system from
+	 * thinking the original UUID has finished and restoring the source location while
+	 * the block is still displaced elsewhere.
+	 */
+	private void transferFallingBlockTracking(UUID oldId, FallingBlock newEntity) {
+		BlockRegenHandler.replaceFallingBlockWithNew(oldId, newEntity.getUniqueId());
+		fallingBlocksLocations.remove(oldId);
+		fallingBlocksLocations.put(newEntity.getUniqueId(), Pair.of(newEntity.getLocation(), newEntity.getBlockData()));
+		Block origin = initialSpot.remove(oldId);
+		if (origin != null)
+			initialSpot.put(newEntity.getUniqueId(), origin);
+		ItemStack[] contents = invBlocks.remove(oldId);
+		if (contents != null)
+			invBlocks.put(newEntity.getUniqueId(), contents);
+	}
 	
 	public Landslide(@NotNull Location location, Player player, int level) {
 		super(location, player, level);
@@ -237,16 +254,9 @@ public class Landslide extends Disaster implements Listener {
 						else
 							playSound(fb.getLocation(), random.nextInt(2) == 0 ? Sound.BLOCK_SNOW_BREAK : Sound.BLOCK_SAND_BREAK, SoundCategory.AMBIENT, 1, .5);
 						int bounces = entry.getValue();
-						if (bounces > 0) {
+						transferFallingBlockTracking(uuid, fb);
+						if (bounces > 0)
 							fallingBlocks.put(fb.getUniqueId(), bounces - 1);
-							fallingBlocksLocations.put(fb.getUniqueId(), Pair.of(fb.getLocation(), fb.getBlockData()));
-							initialSpot.put(fb.getUniqueId(), initialSpot.remove(uuid));
-							if (invBlocks.containsKey(uuid))
-								invBlocks.put(fb.getUniqueId(), invBlocks.remove(uuid));
-						} else {
-							BlockRegenHandler.replaceFallingBlockWithNew(uuid, fb.getUniqueId());
-						}
-						fallingBlocksLocations.remove(uuid);
 						blocksIterator.remove();
 						continue;
 					} else {
@@ -350,16 +360,9 @@ public class Landslide extends Disaster implements Listener {
 		EntityUtils.markFallingBlock(fb);
 		fb.setVelocity(direction.clone().add(new Vector(random.nextFloat(-.125f, .125f), 0, random.nextFloat(-.125f, .125f))).multiply(random.nextFloat(.4f, .65f)).setY(0.3));
 		int bounces = fallingBlocks.remove(uuid);
-		if (bounces > 0) {
+		transferFallingBlockTracking(uuid, fb);
+		if (bounces > 0)
 			fallingBlocks.put(fb.getUniqueId(), bounces - 1);
-			fallingBlocksLocations.put(fb.getUniqueId(), Pair.of(fb.getLocation(), fb.getBlockData()));
-			initialSpot.put(fb.getUniqueId(), initialSpot.remove(uuid));
-			if (invBlocks.containsKey(uuid))
-				invBlocks.put(fb.getUniqueId(), invBlocks.remove(uuid));
-		} else {
-			BlockRegenHandler.replaceFallingBlockWithNew(uuid, fb.getUniqueId());
-		}
-		fallingBlocksLocations.remove(current.getUniqueId());
 		current.remove();
 		if (!isAvalanche)
 			playSound(fb.getLocation(), random.nextInt(2) == 0 ? Sound.BLOCK_GRAVEL_BREAK : Sound.BLOCK_GRASS_BREAK, SoundCategory.AMBIENT, 1, .5);
