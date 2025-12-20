@@ -57,11 +57,6 @@ public class BlockRegenHandler implements Listener {
 	private static final Map<Block, Material> placedBlocks;
 	private static final Map<Block, Disaster> damageTracker;
 	private static final Map<Block, Block> blockToBlock;
-	/**
-	 * Maps the original block location to where a displaced falling block landed so we can
-	 * skip regeneration at the source if the block already exists elsewhere.
-	 */
-	private static final Map<Block, Block> displacedOrigins;
 	private static final Map<Block, Set<BlockState>> physicBlocks;
 	private static final Map<UUID, Pair<Block, Disaster>> fallingBlocks;
 	static {
@@ -69,7 +64,6 @@ public class BlockRegenHandler implements Listener {
 		placedBlocks = new HashMap<>();
 		damageTracker = new HashMap<>();
 		blockToBlock = new HashMap<>();
-		displacedOrigins = new HashMap<>();
 		physicBlocks = new HashMap<>();
 		fallingBlocks = new HashMap<>();
 	}
@@ -79,11 +73,6 @@ public class BlockRegenHandler implements Listener {
 	}
 	private static BlockState removeBlock(Block block, BlockState state, Disaster disaster, boolean withPhysics) {
 		Block other = blockToBlock.remove(block);
-		if (other != null)
-			displacedOrigins.remove(other);
-		Block landing = displacedOrigins.remove(block);
-		if (landing != null)
-			blockToBlock.remove(landing);
 		if (state instanceof InventoryHolder holder) {
 			if (disaster.getWorldLink().dropContainerItems) {
 				Location loc = BlockUtils.getCenterOfBlock(block);
@@ -162,12 +151,6 @@ public class BlockRegenHandler implements Listener {
 		fallingBlocks.put(newEntity, pair);
 	}
 	public static void restoreBlock(Block block, boolean withPhysics) {
-		// If this block is an origin with a displaced landing, try to return it first to honor
-		// the "teleport back unless blocked" contract before normal regeneration logic.
-		Block displacedLanding = displacedOrigins.get(block);
-		if (displacedLanding != null && displacedLanding.getType() != Material.AIR && !displacedLanding.isLiquid())
-			if (tryReturnDisplaced(displacedLanding, block, withPhysics))
-				return;
 		BlockState state = damagedBlocks.remove(block);
 		Material placed = placedBlocks.remove(block);
 		damageTracker.remove(block);
@@ -175,8 +158,34 @@ public class BlockRegenHandler implements Listener {
 		if (state == null)
 			return;
 		Block from = blockToBlock.remove(block);
-		if (from != null && tryReturnDisplaced(block, from, withPhysics))
-			return;
+		if (from != null) {
+			if (block.getType() == Material.AIR
+					|| (block.isLiquid() && !isLiquidSourceBlock(block))) {
+				damagedBlocks.remove(from);
+				state.update(true);
+				DependencyUtils.logCoreProtectPlacement(state);
+				updatePhysicBlocks(affectedBlocks, withPhysics);
+				return;
+			}
+			if (from.getType() != Material.AIR && !from.isLiquid()) {
+				damagedBlocks.remove(from);
+				BlockState current = block.getState();
+				state.update(true, false);
+				Location center = BlockUtils.getCenterOfBlock(block);
+				for (ItemStack item : block.getDrops())
+					center.getWorld().dropItemNaturally(center, item);
+				current.update(true, false);
+				if (state instanceof InventoryHolder holder)
+					for (ItemStack temp : holder.getInventory().getContents())
+						if (temp != null)
+							center.getWorld().dropItemNaturally(center, temp);
+				updatePhysicBlocks(affectedBlocks, withPhysics);
+				return;
+			}
+			restoreBlock(from, withPhysics);
+			if (from.getState() instanceof InventoryHolder holder && block.getState() instanceof InventoryHolder current)
+				holder.getInventory().setContents(current.getInventory().getContents());
+		}
 		WorldWrapper link = WorldWrapper.getWorldWrapper(block.getWorld());
 		if (link.blackListedBlocks == null || !link.blackListedBlocks.contains(state.getType())) {
 			if (from != null || block.getType() == placed || block.getType() == Material.AIR || (block.isLiquid() && !isLiquidSourceBlock(block))) {
@@ -211,47 +220,6 @@ public class BlockRegenHandler implements Listener {
 				Utils.sendExceptionLog(e);
 			}
 		});
-	}
-	/**
-	 * Attempt to move a displaced landing block back to its origin. If blocked, drop the block
-	 * (and any inventory contents) at the origin instead. This ensures displaced blocks never
-	 * duplicate while still restoring as much state as possible.
-	 */
-	private static boolean tryReturnDisplaced(Block landing, Block origin, boolean withPhysics) {
-		if (landing == null || origin == null)
-			return false;
-		BlockState landingState = landing.getState();
-		boolean canPlaceAtOrigin = origin.getType() == Material.AIR || (origin.isLiquid() && !isLiquidSourceBlock(origin));
-		if (canPlaceAtOrigin) {
-			landing.setType(Material.AIR, withPhysics);
-			origin.setBlockData(landingState.getBlockData(), withPhysics);
-			if (landingState instanceof InventoryHolder fromHolder) {
-				BlockState targetState = origin.getState();
-				if (targetState instanceof InventoryHolder toHolder)
-					toHolder.getInventory().setContents(fromHolder.getInventory().getContents());
-			}
-		} else {
-			Location center = BlockUtils.getCenterOfBlock(origin);
-			for (ItemStack item : landing.getDrops())
-				center.getWorld().dropItemNaturally(center, item);
-			if (landingState instanceof InventoryHolder holder)
-				for (ItemStack temp : holder.getInventory().getContents())
-					if (temp != null)
-						center.getWorld().dropItemNaturally(center, temp);
-			landing.setType(Material.AIR, withPhysics);
-		}
-		// clear tracking in both directions so regeneration won't attempt to process again
-		displacedOrigins.remove(origin);
-		blockToBlock.remove(landing);
-		damagedBlocks.remove(origin);
-		placedBlocks.remove(origin);
-		damageTracker.remove(origin);
-		physicBlocks.remove(origin);
-		damagedBlocks.remove(landing);
-		placedBlocks.remove(landing);
-		damageTracker.remove(landing);
-		physicBlocks.remove(landing);
-		return true;
 	}
 	private static final Map<Material, Set<Material>> plantFixes;
 	private static final BlockFace[] adjacentFaces;
@@ -366,31 +334,18 @@ public class BlockRegenHandler implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
     	Block other = blockToBlock.remove(event.getBlock());
-    	if (other != null) {
+    	if (other != null)
     		damagedBlocks.remove(other);
-    		displacedOrigins.remove(other);
-    	}
-    	Block displacedLanding = displacedOrigins.remove(event.getBlock());
-    	if (displacedLanding != null)
-    		blockToBlock.remove(displacedLanding);
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
     	placedBlocks.remove(event.getBlock());
-    	Block displacedLanding = displacedOrigins.remove(event.getBlock());
-    	if (displacedLanding != null)
-    		blockToBlock.remove(displacedLanding);
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
     	Block other = blockToBlock.remove(event.getBlock());
-    	if (other != null) {
+    	if (other != null)
     		damagedBlocks.remove(other);
-    		displacedOrigins.remove(other);
-    	}
-    	Block displacedLanding = displacedOrigins.remove(event.getBlock());
-    	if (displacedLanding != null)
-    		blockToBlock.remove(displacedLanding);
     }
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onFallingBlockForm(EntityChangeBlockEvent event) {
@@ -421,15 +376,14 @@ public class BlockRegenHandler implements Listener {
     	pair.getSecond().getModifiedBlocks().add(block);
     	new BukkitRunnable() {
 			@Override
-		public void run() {
-			placeBlock(block, event.getBlockData(), pair.getSecond(), true);
-			blockToBlock.put(block, pair.getFirst());
-			displacedOrigins.put(pair.getFirst(), block);
-			BlockState fromState = damagedBlocks.get(pair.getFirst());
-			if (fromState != null && fromState instanceof InventoryHolder fromHolder) {
-				BlockState toState = block.getState();
-				if (toState instanceof InventoryHolder toHolder)
-					toHolder.getInventory().setContents(fromHolder.getInventory().getContents());
+			public void run() {
+				placeBlock(block, event.getBlockData(), pair.getSecond(), true);
+				blockToBlock.put(block, pair.getFirst());
+				BlockState fromState = damagedBlocks.get(pair.getFirst());
+				if (fromState != null && fromState instanceof InventoryHolder fromHolder) {
+					BlockState toState = block.getState();
+					if (toState instanceof InventoryHolder toHolder)
+						toHolder.getInventory().setContents(fromHolder.getInventory().getContents());
 				}
 			}
 		}.runTask(Main.getInstance());
@@ -438,13 +392,8 @@ public class BlockRegenHandler implements Listener {
     public void onBlockExplode(BlockExplodeEvent event) {
     	event.blockList().forEach(block -> {
     		Block other = blockToBlock.remove(block);
-        	if (other != null) {
+        	if (other != null)
         		damagedBlocks.remove(other);
-        		displacedOrigins.remove(other);
-        	}
-        	Block displacedLanding = displacedOrigins.remove(block);
-        	if (displacedLanding != null)
-        		blockToBlock.remove(displacedLanding);
     	});
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -526,6 +475,6 @@ public class BlockRegenHandler implements Listener {
 			    damageTracker,
 			    blockToBlock,
 			    physicBlocks
-			).thenRun(() -> blockToBlock.forEach((landing, origin) -> displacedOrigins.put(origin, landing)));
+			);
     }
 }
