@@ -253,6 +253,22 @@ public class BlockRegenHandler implements Listener {
 		physicBlocks.remove(landing);
 		return true;
 	}
+	private static void clearDisplacedTracking(Block origin, Block landing) {
+		if (origin != null) {
+			displacedOrigins.remove(origin);
+			damagedBlocks.remove(origin);
+			placedBlocks.remove(origin);
+			damageTracker.remove(origin);
+			physicBlocks.remove(origin);
+		}
+		if (landing != null) {
+			blockToBlock.remove(landing);
+			damagedBlocks.remove(landing);
+			placedBlocks.remove(landing);
+			damageTracker.remove(landing);
+			physicBlocks.remove(landing);
+		}
+	}
 	private static final Map<Material, Set<Material>> plantFixes;
 	private static final BlockFace[] adjacentFaces;
 	static {
@@ -366,31 +382,27 @@ public class BlockRegenHandler implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
     	Block other = blockToBlock.remove(event.getBlock());
-    	if (other != null) {
-    		damagedBlocks.remove(other);
-    		displacedOrigins.remove(other);
-    	}
+    	if (other != null)
+    		clearDisplacedTracking(other, event.getBlock());
     	Block displacedLanding = displacedOrigins.remove(event.getBlock());
     	if (displacedLanding != null)
-    		blockToBlock.remove(displacedLanding);
+    		clearDisplacedTracking(event.getBlock(), displacedLanding);
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
     	placedBlocks.remove(event.getBlock());
     	Block displacedLanding = displacedOrigins.remove(event.getBlock());
     	if (displacedLanding != null)
-    		blockToBlock.remove(displacedLanding);
+    		clearDisplacedTracking(event.getBlock(), displacedLanding);
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
     	Block other = blockToBlock.remove(event.getBlock());
-    	if (other != null) {
-    		damagedBlocks.remove(other);
-    		displacedOrigins.remove(other);
-    	}
+    	if (other != null)
+    		clearDisplacedTracking(other, event.getBlock());
     	Block displacedLanding = displacedOrigins.remove(event.getBlock());
     	if (displacedLanding != null)
-    		blockToBlock.remove(displacedLanding);
+    		clearDisplacedTracking(event.getBlock(), displacedLanding);
     }
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onFallingBlockForm(EntityChangeBlockEvent event) {
@@ -438,13 +450,11 @@ public class BlockRegenHandler implements Listener {
     public void onBlockExplode(BlockExplodeEvent event) {
     	event.blockList().forEach(block -> {
     		Block other = blockToBlock.remove(block);
-        	if (other != null) {
-        		damagedBlocks.remove(other);
-        		displacedOrigins.remove(other);
-        	}
+        	if (other != null)
+        		clearDisplacedTracking(other, block);
         	Block displacedLanding = displacedOrigins.remove(block);
         	if (displacedLanding != null)
-        		blockToBlock.remove(displacedLanding);
+        		clearDisplacedTracking(block, displacedLanding);
     	});
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
