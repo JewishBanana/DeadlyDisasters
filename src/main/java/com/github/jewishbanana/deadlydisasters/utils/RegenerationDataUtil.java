@@ -23,11 +23,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -66,6 +64,7 @@ public final class RegenerationDataUtil {
 	private static int DAMAGED_BATCH = 10000;
 	private static int PLACED_BATCH = 10000;
 	private static int MOVE_BATCH = 10000;
+	private static int ORIGIN_BATCH = 10000;
 	private static int PHYS_BATCH = 10000;
 	private static final int DISASTER_BATCH = 50;
 	
@@ -74,6 +73,7 @@ public final class RegenerationDataUtil {
 		DAMAGED_BATCH = throttle;
 		PLACED_BATCH = throttle;
 		MOVE_BATCH = throttle;
+		ORIGIN_BATCH = throttle;
 		PHYS_BATCH = throttle;
 	}
 
@@ -83,7 +83,8 @@ public final class RegenerationDataUtil {
 			Map<Block, Material> placedBlocks,
 			Map<Block, Disaster> damageTracker,
 			Map<Block, Block> blockToBlock,
-			Map<Block, Set<BlockState>> physicBlocks,
+			Map<Block, Block> originBlocks,
+			Map<Block, List<BlockState>> physicBlocks,
 			List<Disaster> disasters
 			) {
 		Objects.requireNonNull(plugin, "plugin");
@@ -104,6 +105,7 @@ public final class RegenerationDataUtil {
 				st.executeUpdate("DELETE FROM damaged_blocks");
 				st.executeUpdate("DELETE FROM placed_blocks");
 				st.executeUpdate("DELETE FROM block_to_block");
+				st.executeUpdate("DELETE FROM origin_blocks");
 				st.executeUpdate("DELETE FROM physic_blocks");
 				st.executeUpdate("DELETE FROM disaster_ordered_blocks");
 				st.executeUpdate("DELETE FROM disasters");
@@ -199,11 +201,26 @@ public final class RegenerationDataUtil {
 				}
 				ps.executeBatch();
 			}
+			
+			// 6) origin blocks
+			try (PreparedStatement ps = conn.prepareStatement(
+					"INSERT INTO origin_blocks(tw,tx,ty,tz,fw,fx,fy,fz) VALUES(?,?,?,?,?,?,?,?)")) {
+				for (Map.Entry<Block, Block> e : originBlocks.entrySet()) {
+					Block to = e.getKey();
+					Block from = e.getValue();
+					ps.setString(1, to.getWorld().getUID().toString());
+					ps.setInt(2, to.getX()); ps.setInt(3, to.getY()); ps.setInt(4, to.getZ());
+					ps.setString(5, from.getWorld().getUID().toString());
+					ps.setInt(6, from.getX()); ps.setInt(7, from.getY()); ps.setInt(8, from.getZ());
+					ps.addBatch();
+				}
+				ps.executeBatch();
+			}
 
-			// 6) physic_blocks
+			// 7) physic_blocks
 			try (PreparedStatement ps = conn.prepareStatement(
 					"INSERT INTO physic_blocks(owner_w,owner_x,owner_y,owner_z, own_w, own_x, own_y, own_z, idx, blockdata, extras) VALUES(?,?,?,?,?,?,?,?,?,?,?)")) {
-				for (Map.Entry<Block, Set<BlockState>> e : physicBlocks.entrySet()) {
+				for (Map.Entry<Block, List<BlockState>> e : physicBlocks.entrySet()) {
 					Block owner = e.getKey();
 					int idx = 0;
 					for (BlockState s : e.getValue()) {
@@ -229,7 +246,7 @@ public final class RegenerationDataUtil {
 				ps.executeBatch();
 			}
 
-			// 7) damage_tracker
+			// 8) damage_tracker
 			try (PreparedStatement ps = conn.prepareStatement(
 					"INSERT INTO damage_tracker(world_uuid,x,y,z,disaster_id) VALUES(?,?,?,?,?)")) {
 				for (Map.Entry<Block, Disaster> e : damageTracker.entrySet()) {
@@ -265,7 +282,8 @@ public final class RegenerationDataUtil {
 			Map<Block, Material> placedBlocksTarget,
 			Map<Block, Disaster> damageTrackerTarget,
 			Map<Block, Block> blockToBlockTarget,
-			Map<Block, Set<BlockState>> physicBlocksTarget
+			Map<Block, Block> originBlocksTarget,
+			Map<Block, List<BlockState>> physicBlocksTarget
 			) {
 		Objects.requireNonNull(plugin, "plugin");
 		CompletableFuture<Void> future = new CompletableFuture<>();
@@ -283,6 +301,7 @@ public final class RegenerationDataUtil {
 			HashMap<TempDamaged, Void> rawDamaged = new HashMap<>();
 			HashMap<TempPlaced, Void> rawPlaced = new HashMap<>();
 			List<TempMove> rawMoves = new ArrayList<>();
+			List<TempOrigin> rawOrigin = new ArrayList<>();
 			HashMap<TempPhysOwner, List<TempPhys>> rawPhys = new HashMap<>();
 			HashMap<Integer, TempDisaster> rawDisasters = new HashMap<>();
 			List<TempOrdered> rawOrdered = new ArrayList<>();
@@ -320,6 +339,17 @@ public final class RegenerationDataUtil {
 						UUID fw = UUID.fromString(rs.getString(5));
 						int fx = rs.getInt(6), fy = rs.getInt(7), fz = rs.getInt(8);
 						rawMoves.add(new TempMove(tw,tx,ty,tz,fw,fx,fy,fz));
+					}
+				}
+				
+				try (PreparedStatement ps = conn.prepareStatement("SELECT tw,tx,ty,tz,fw,fx,fy,fz FROM origin_blocks");
+						ResultSet rs = ps.executeQuery()) {
+					while (rs.next()) {
+						UUID tw = UUID.fromString(rs.getString(1));
+						int tx = rs.getInt(2), ty = rs.getInt(3), tz = rs.getInt(4);
+						UUID fw = UUID.fromString(rs.getString(5));
+						int fx = rs.getInt(6), fy = rs.getInt(7), fz = rs.getInt(8);
+						rawOrigin.add(new TempOrigin(tw,tx,ty,tz,fw,fx,fy,fz));
 					}
 				}
 
@@ -379,6 +409,7 @@ public final class RegenerationDataUtil {
 				private final Iterator<TempDamaged> itDam = rawDamaged.keySet().iterator();
 				private final Iterator<TempPlaced> itPlaced = rawPlaced.keySet().iterator();
 				private final Iterator<TempMove> itMove = rawMoves.iterator();
+				private final Iterator<TempOrigin> itOrigin = rawOrigin.iterator();
 				private final Iterator<Map.Entry<TempPhysOwner, List<TempPhys>>> itPhys = rawPhys.entrySet().iterator();
 				private final Iterator<Map.Entry<Integer, TempDisaster>> itDis = rawDisasters.entrySet().iterator();
 				private final Iterator<TempOrdered> itOrd = rawOrdered.iterator();
@@ -389,7 +420,8 @@ public final class RegenerationDataUtil {
 				private final HashMap<Block, Material> tmpPlaced = new HashMap<>();
 				private final HashMap<Block, Disaster> tmpDamageTracker = new HashMap<>();
 				private final HashMap<Block, Block> tmpBlockToBlock = new HashMap<>();
-				private final HashMap<Block, Set<BlockState>> tmpPhysic = new HashMap<>();
+				private final HashMap<Block, Block> tmpBlockOrigin = new HashMap<>();
+				private final HashMap<Block, List<BlockState>> tmpPhysic = new HashMap<>();
 				private final HashMap<Integer, Disaster> idToDisaster = new HashMap<>();
 				private final ArrayList<Disaster> recreatedDisasters = new ArrayList<>();
 
@@ -442,8 +474,23 @@ public final class RegenerationDataUtil {
 							if (!itMove.hasNext()) stage = 3;
 							return;
 						}
-
+						
 						if (stage == 3) {
+							int i = 0;
+							while (i++ < ORIGIN_BATCH && itOrigin.hasNext()) {
+								TempOrigin mv = itOrigin.next();
+								World tw = worldByUUID(mv.toWorld);
+								World fw = worldByUUID(mv.fromWorld);
+								if (tw == null || fw == null) continue;
+								Block to = tw.getBlockAt(mv.tx, mv.ty, mv.tz);
+								Block from = fw.getBlockAt(mv.fx, mv.fy, mv.fz);
+								tmpBlockOrigin.put(to, from);
+							}
+							if (!itOrigin.hasNext()) stage = 4;
+							return;
+						}
+
+						if (stage == 4) {
 							int i = 0;
 							while (i++ < PHYS_BATCH && itPhys.hasNext()) {
 								Map.Entry<TempPhysOwner, List<TempPhys>> en = itPhys.next();
@@ -451,18 +498,18 @@ public final class RegenerationDataUtil {
 								World w = worldByUUID(owner.world);
 								if (w == null) continue;
 								Block own = w.getBlockAt(owner.x, owner.y, owner.z);
-								Set<BlockState> set = tmpPhysic.computeIfAbsent(own, k -> new LinkedHashSet<>());
+								List<BlockState> set = tmpPhysic.computeIfAbsent(own, k -> new ArrayList<>());
 								for (TempPhys tp : en.getValue()) {
 									Block current = worldByUUID(tp.world).getBlockAt(tp.x, tp.y, tp.z);
 									BlockState proxy = TileExtrasCodec.proxyStateFor(current.getLocation(), tp.blockData, tp.extras);
 									set.add(proxy);
 								}
 							}
-							if (!itPhys.hasNext()) stage = 4;
+							if (!itPhys.hasNext()) stage = 5;
 							return;
 						}
 
-						if (stage == 4) {
+						if (stage == 5) {
 							// recreate disasters in small batches
 							int i = 0;
 							while (i++ < DISASTER_BATCH && itDis.hasNext()) {
@@ -501,24 +548,25 @@ public final class RegenerationDataUtil {
 									Disaster d = idToDisaster.get(tr.disasterId);
 									if (d != null) tmpDamageTracker.put(b, d);
 								}
-								stage = 5;
+								stage = 6;
 							}
 							return;
 						}
 
-						if (stage == 5) {
+						if (stage == 6) {
 							// final atomic handover on main thread
 							try {
 								damagedBlocksTarget.putAll(tmpDamaged);
 								placedBlocksTarget.putAll(tmpPlaced);
 								blockToBlockTarget.putAll(tmpBlockToBlock);
+								originBlocksTarget.putAll(tmpBlockOrigin);
 								physicBlocksTarget.putAll(tmpPhysic);
 								damageTrackerTarget.putAll(tmpDamageTracker);
 
 								// kick off regeneration for each recreated disaster
 								for (Disaster d : recreatedDisasters) {
 									try {
-										Disaster.regeneratingDisasters.put(d, d.new RegeneratingTask(d, new LinkedHashSet<>(d.getModifiedBlocks())));
+										Disaster.regeneratingDisasters.put(d, d.new RegeneratingTask(d, new ArrayList<>(d.getModifiedBlocks()), 0));
 										d.getModifiedBlocks().clear();
 									} catch (Throwable t) {
 										Utils.sendConsoleMessage("&cERROR failed to restart regeneration of disaster &d'"+d.getDisplayName()+"'&c!\n&eLog: "+t.getMessage());
@@ -1042,6 +1090,11 @@ public final class RegenerationDataUtil {
 							"fw TEXT NOT NULL, fx INT NOT NULL, fy INT NOT NULL, fz INT NOT NULL," +
 					"PRIMARY KEY(tw,tx,ty,tz))");
 			st.executeUpdate(
+					"CREATE TABLE IF NOT EXISTS origin_blocks(" +
+							"tw TEXT NOT NULL, tx INT NOT NULL, ty INT NOT NULL, tz INT NOT NULL," +
+							"fw TEXT NOT NULL, fx INT NOT NULL, fy INT NOT NULL, fz INT NOT NULL," +
+					"PRIMARY KEY(tw,tx,ty,tz))");
+			st.executeUpdate(
 					"CREATE TABLE IF NOT EXISTS physic_blocks(" +
 							"owner_w TEXT NOT NULL, owner_x INT NOT NULL, owner_y INT NOT NULL, owner_z INT NOT NULL," +
 							"own_w TEXT NOT NULL, own_x INT NOT NULL, own_y INT NOT NULL, own_z INT NOT NULL," +
@@ -1083,6 +1136,15 @@ public final class RegenerationDataUtil {
 		final UUID toWorld; final int tx, ty, tz;
 		final UUID fromWorld; final int fx, fy, fz;
 		TempMove(UUID toWorld, int tx, int ty, int tz, UUID fromWorld, int fx, int fy, int fz) {
+			this.toWorld = toWorld; this.tx = tx; this.ty = ty; this.tz = tz;
+			this.fromWorld = fromWorld; this.fx = fx; this.fy = fy; this.fz = fz;
+		}
+	}
+	
+	private static final class TempOrigin {
+		final UUID toWorld; final int tx, ty, tz;
+		final UUID fromWorld; final int fx, fy, fz;
+		TempOrigin(UUID toWorld, int tx, int ty, int tz, UUID fromWorld, int fx, int fy, int fz) {
 			this.toWorld = toWorld; this.tx = tx; this.ty = ty; this.tz = tz;
 			this.fromWorld = fromWorld; this.fx = fx; this.fy = fy; this.fz = fz;
 		}

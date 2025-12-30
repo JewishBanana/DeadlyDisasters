@@ -34,7 +34,7 @@ import com.github.jewishbanana.deadlydisasters.disasters.weather.Monsoon;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.Sandstorm;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.SoulStorm;
 import com.github.jewishbanana.deadlydisasters.listeners.BlockRegenHandler;
-import com.github.jewishbanana.deadlydisasters.listeners.DeathListener;
+import com.github.jewishbanana.deadlydisasters.listeners.DeathMessageHandler;
 import com.github.jewishbanana.deadlydisasters.listeners.DisasterFeaturesListener;
 import com.github.jewishbanana.deadlydisasters.listeners.EntitiesListener;
 import com.github.jewishbanana.deadlydisasters.listeners.LootGenerateListener;
@@ -53,8 +53,12 @@ public class Main extends JavaPlugin {
 	 * TODO:
 	 * - Acid rain stop crop growth, melons and pumpkins, sugar cane, etc.
 	 * - Force regen does not account for fire spread after starting
-	 * - Yetis spawning in water
 	 * - Regen bug, if block is broken and player places new block on spot, if that next block gets broken it does not regen as first block occupies map. Create second map to store excess blocks and drop them according after regen.
+	 * - Regen bug, if sand is top layer of sinkhole and sand falls midway, it remains at the bottom layer and does not regen to top.
+	 * 
+	 * Before Update:
+	 * - Verify disaster categories in WorldWrapper.java
+	 * - Verify config ignored sections in DataUtils.java
 	 */
 	
 	private static final String pluginSpigotPage = "https://www.spigotmc.org/resources/deadlydisasters-pro.100918/";
@@ -105,7 +109,7 @@ public class Main extends JavaPlugin {
 		DisasterRegistry.registerDisaster("extreme_winds", ExtremeWinds.class);
 		DisasterRegistry.registerDisaster("soul_storm", SoulStorm.class);
 		DisasterRegistry.registerDisaster("monsoon", Monsoon.class);
-		DisasterRegistry.registerDisaster("meteorshower", MeteorShower.class);
+		DisasterRegistry.registerDisaster("meteor_shower", MeteorShower.class);
 		DisasterRegistry.registerDisaster("end_storm", EndStorm.class);
 		
 		// Mob
@@ -123,7 +127,7 @@ public class Main extends JavaPlugin {
 		new BlockRegenHandler(this);
 		new EntitiesListener(this);
 		new PlayerListener(this);
-		new DeathListener(this);
+		new DeathMessageHandler(this);
 		new DisasterFeaturesListener(this);
 		selector = new DisasterSelector(this);
 	}

@@ -5,11 +5,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -39,8 +37,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
 import com.github.jewishbanana.deadlydisasters.disasters.WeatherDisaster;
-import com.github.jewishbanana.deadlydisasters.listeners.EntitiesListener;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
@@ -49,7 +47,7 @@ import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
-public class Monsoon extends WeatherDisaster implements Listener {
+public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 	
 	private final static Set<Material> leakBlockTypes;
 	static {
@@ -74,8 +72,6 @@ public class Monsoon extends WeatherDisaster implements Listener {
 	private float soundVolume;
 	private Set<PotionEffect> effects;
 	private final Map<Material, Material[]> blockChanges = new HashMap<>();
-	private final Set<UUID> mobs = new HashSet<>();
-	private final Map<UUID, UUID> mobTargets = new HashMap<>();
 	private final Set<Block> puddles = new HashSet<>();
 	private Set<Entity> currentEntities = Set.of();
 	
@@ -157,24 +153,16 @@ public class Monsoon extends WeatherDisaster implements Listener {
 										mob = world.spawn(spawn, Drowned.class);
 									break;
 								}
-								mob.setTarget(player);
-								mobs.add(mob.getUniqueId());
-								mobTargets.put(mob.getUniqueId(), player.getUniqueId());
-								EntitiesListener.attachRemoveKey(mob);
+								addEntityToDisasterList(mob, player);
 							}
 						}
 					}
 					if (entity instanceof LivingEntity alive) {
-						if (entity instanceof Drowned mob) {
-							UUID target = mobTargets.get(mob.getUniqueId());
-							if (target != null && mob.getTarget() == null)
-								mob.setTarget(Bukkit.getPlayer(target));
-							continue;
-						}
 						alive.addPotionEffects(effects);
 						drowningEntities.add(alive);
 					}
 				}
+				updateEntityTargets();
 				time -= 5;
 				if (time <= 0)
 					stop();
@@ -347,11 +335,6 @@ public class Monsoon extends WeatherDisaster implements Listener {
 	}
 	public void clean() {
 		super.clean();
-		mobs.forEach(uuid -> {
-			Entity entity = Bukkit.getEntity(uuid);
-			if (entity != null)
-				entity.remove();
-		});
 		if (!Main.isDisablingPlugin)
 			new BukkitRunnable() {
 				private double regenTicks;
@@ -385,9 +368,6 @@ public class Monsoon extends WeatherDisaster implements Listener {
 	}
 	protected String getConfigPath() {
 		return "disasters.weather.monsoon";
-	}
-	public double getRegenTickRate() {
-		return 0.5;
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of(Environment.NETHER, Environment.THE_END);

@@ -1,10 +1,8 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -27,23 +25,21 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
+import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
 import com.github.jewishbanana.deadlydisasters.disasters.WeatherDisaster;
-import com.github.jewishbanana.deadlydisasters.listeners.EntitiesListener;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
-public class SoulStorm extends WeatherDisaster {
+public class SoulStorm extends WeatherDisaster implements MobDisaster {
 	
 	private float mobSpawnRate;
 	
 	private float particleRate;
 	
 	private Set<PotionEffect> effects;
-	private final Set<UUID> mobs = new HashSet<>();
-	private final Map<UUID, UUID> mobTargets = new HashMap<>();
 	private Set<Entity> currentEntities = Set.of();
 
 	public SoulStorm(@NotNull Location location, Player player, int level) {
@@ -88,27 +84,16 @@ public class SoulStorm extends WeatherDisaster {
 										mob = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(spawn, com.github.jewishbanana.ultimatecontent.entities.netherentities.LostSoul.class).getCastedEntity();
 									break;
 								}
-								mob.setTarget(player);
-								mobs.add(mob.getUniqueId());
-								mobTargets.put(mob.getUniqueId(), player.getUniqueId());
-								EntitiesListener.attachRemoveKey(mob);
+								addEntityToDisasterList(mob, player);
 							}
 						}
 					}
-					if (entity instanceof LivingEntity alive) {
-						if (entity instanceof Vex) {
-							UUID target = mobTargets.get(entity.getUniqueId());
-							if (target != null) {
-								Mob mob = (Mob) entity;
-								if (mob.getTarget() == null)
-									mob.setTarget(Bukkit.getPlayer(target));
-							}
-							continue;
-						}
+					if (entity instanceof LivingEntity alive)
 						alive.addPotionEffects(effects);
-					} else if (entity instanceof Item && random.nextInt(10) == 0)
+					else if (entity instanceof Item && random.nextInt(10) == 0)
 						entity.setVelocity(entity.getVelocity().add(new Vector(random.nextFloat(-1, 1), random.nextFloat(), random.nextFloat(-1, 1)).multiply(scale / 2.0 * currentStrength)));
 				}
+				updateEntityTargets();
 				time -= 5;
 				if (time <= 0)
 					stop();
@@ -206,11 +191,6 @@ public class SoulStorm extends WeatherDisaster {
 			player.stopSound(Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP);
 			player.stopSound(Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD);
 		});
-		mobs.forEach(uuid -> {
-			Entity entity = Bukkit.getEntity(uuid);
-			if (entity != null)
-				entity.remove();
-		});
 	}
 	public void addPlayerToWeather(Player player) {
 		super.addPlayerToWeather(player);
@@ -228,9 +208,6 @@ public class SoulStorm extends WeatherDisaster {
 	}
 	protected String getConfigPath() {
 		return "disasters.weather.soul_storm";
-	}
-	public double getRegenTickRate() {
-		return 0.01;
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of(Environment.NORMAL, Environment.THE_END);

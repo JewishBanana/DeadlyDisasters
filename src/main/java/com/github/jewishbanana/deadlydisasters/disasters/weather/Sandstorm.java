@@ -1,10 +1,8 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -37,8 +35,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
+import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
 import com.github.jewishbanana.deadlydisasters.disasters.WeatherDisaster;
-import com.github.jewishbanana.deadlydisasters.listeners.EntitiesListener;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
@@ -46,7 +44,7 @@ import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
-public class Sandstorm extends WeatherDisaster {
+public class Sandstorm extends WeatherDisaster implements MobDisaster {
 	
 	private static final Set<Material> DESERT_SURFACE;
 	private static final Set<Material> BADLANDS_SURFACE;
@@ -69,8 +67,6 @@ public class Sandstorm extends WeatherDisaster {
 	private float particleRate;
 	private boolean isBadlands;
 	private Set<PotionEffect> effects;
-	private final Set<UUID> mobs = new HashSet<>();
-	private final Map<UUID, UUID> mobTargets = new HashMap<>();
 	private Set<Entity> currentEntities = Set.of();
 
 	public Sandstorm(@NotNull Location location, Player player, int level) {
@@ -138,29 +134,18 @@ public class Sandstorm extends WeatherDisaster {
 									mob = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(spawn, com.github.jewishbanana.ultimatecontent.entities.desertentities.AncientMummy.class).getCastedEntity();
 									break;
 								}
-								mob.setTarget(player);
-								mobs.add(mob.getUniqueId());
-								mobTargets.put(mob.getUniqueId(), player.getUniqueId());
-								EntitiesListener.attachRemoveKey(mob);
+								addEntityToDisasterList(mob, player);
 							}
 						}
 					}
 					if (entity instanceof LivingEntity alive) {
-						if (entity instanceof Husk || entity instanceof Skeleton) {
-							UUID target = mobTargets.get(entity.getUniqueId());
-							if (target != null) {
-								Mob mob = (Mob) entity;
-								if (mob.getTarget() == null)
-									mob.setTarget(Bukkit.getPlayer(target));
-							}
-							continue;
-						}
 						alive.addPotionEffects(effects);
 						if (random.nextFloat() < damageRate)
 							EntityUtils.damageEntity(alive, damage * currentStrength, "deaths.sandstorm", DamageCause.WITHER);
 					} else if (entity instanceof Item && random.nextInt(10) == 0)
 						entity.setVelocity(entity.getVelocity().add(new Vector(random.nextFloat(-1, 1), random.nextFloat(), random.nextFloat(-1, 1)).multiply(scale / 2.0 * currentStrength)));
 				}
+				updateEntityTargets();
 				time -= 5;
 				if (time <= 0)
 					stop();
@@ -358,11 +343,6 @@ public class Sandstorm extends WeatherDisaster {
 				return;
 			player.stopSound(Sound.AMBIENT_BASALT_DELTAS_ADDITIONS);
 			player.stopSound(Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP);
-		});
-		mobs.forEach(uuid -> {
-			Entity entity = Bukkit.getEntity(uuid);
-			if (entity != null)
-				entity.remove();
 		});
 	}
 	public boolean isBlockInClimate(Block block) {

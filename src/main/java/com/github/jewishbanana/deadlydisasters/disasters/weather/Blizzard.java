@@ -1,15 +1,12 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -27,9 +24,6 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.PolarBear;
-import org.bukkit.entity.Rabbit;
-import org.bukkit.entity.Rabbit.Type;
 import org.bukkit.entity.Skeleton;
 import org.bukkit.entity.Stray;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -40,15 +34,15 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
+import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
 import com.github.jewishbanana.deadlydisasters.disasters.WeatherDisaster;
-import com.github.jewishbanana.deadlydisasters.listeners.EntitiesListener;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
-public class Blizzard extends WeatherDisaster {
+public class Blizzard extends WeatherDisaster implements MobDisaster {
 	
 	private static final float MAX_TEMPERATURE;
 	public static final NamespacedKey frozenEntityKey;
@@ -70,9 +64,9 @@ public class Blizzard extends WeatherDisaster {
 					if (block == null || block.getType() != Material.ICE) {
 						byte value = entity.getPersistentDataContainer().getOrDefault(frozenEntityKey, PersistentDataType.BYTE, (byte) 0b1001);
 						entity.setAI((value & 1) == 1);
-						entity.setInvulnerable((value & 1 << 1) == 1);
-						entity.setSilent((value & 1 << 2) == 1);
-						entity.setRemoveWhenFarAway((value & 1 << 3) == 1);
+						entity.setInvulnerable(((value >> 1) & 1) == 1);
+						entity.setSilent(((value >> 2) & 1) == 1);
+						entity.setRemoveWhenFarAway(((value >> 3) & 1) == 1);
 						entity.getPersistentDataContainer().remove(frozenEntityKey);
 						iterator.remove();
 					}
@@ -95,8 +89,6 @@ public class Blizzard extends WeatherDisaster {
 	private float particleRate;
 	private float soundVolume;
 	private Set<PotionEffect> effects;
-	private final Set<UUID> mobs = new HashSet<>();
-	private final Map<UUID, UUID> mobTargets = new HashMap<>();
 	private Set<Entity> currentEntities = Set.of();
 
 	public Blizzard(@NotNull Location location, Player player, int level) {
@@ -169,26 +161,13 @@ public class Blizzard extends WeatherDisaster {
 										});
 									break;
 								}
-								mob.setTarget(player);
-								mobs.add(mob.getUniqueId());
-								mobTargets.put(mob.getUniqueId(), player.getUniqueId());
-								EntitiesListener.attachRemoveKey(mob);
+								addEntityToDisasterList(mob, player);
 							}
 						}
 					}
 					if (entity instanceof LivingEntity alive) {
-						if (entity instanceof Stray 
-								|| entity instanceof PolarBear 
-								|| (entity instanceof Rabbit rabbit && (rabbit.getRabbitType() == Type.WHITE || rabbit.getRabbitType() == Type.THE_KILLER_BUNNY))
-								|| (isUCEnabled && entity instanceof IronGolem && com.github.jewishbanana.uiframework.entities.UIEntityManager.getEntity(entity) instanceof com.github.jewishbanana.ultimatecontent.entities.snowentities.Yeti)) {
-							UUID target = mobTargets.get(entity.getUniqueId());
-							if (target != null) {
-								Mob mob = (Mob) entity;
-								if (mob.getTarget() == null)
-									mob.setTarget(Bukkit.getPlayer(target));
-							}
+						if (isUCEnabled && entity instanceof IronGolem && com.github.jewishbanana.uiframework.entities.UIEntityManager.getEntity(entity) instanceof com.github.jewishbanana.ultimatecontent.entities.snowentities.Yeti)
 							continue;
-						}
 						alive.addPotionEffects(effects);
 						freezingEntities.add(alive);
 						if (random.nextFloat() < damageRate) {
@@ -215,6 +194,7 @@ public class Blizzard extends WeatherDisaster {
 					} else if (entity instanceof Item && random.nextInt(10) == 0)
 						entity.setVelocity(entity.getVelocity().add(new Vector(random.nextFloat(-1, 1), random.nextFloat(), random.nextFloat(-1, 1)).multiply(scale / 2.0 * currentStrength)));
 				}
+				updateEntityTargets();
 				time -= 5;
 				if (time <= 0)
 					stop();
@@ -384,18 +364,12 @@ public class Blizzard extends WeatherDisaster {
 				}.runTaskTimerAsynchronously(plugin, 0, 5));
 			});
 	}
-	public void clean() {
-		super.clean();
-		mobs.forEach(uuid -> {
-			Entity entity = Bukkit.getEntity(uuid);
-			if (entity != null)
-				entity.remove();
-		});
-	}
 	private boolean isBlockInBiome(Block block) {
 		return DependencyUtils.isRealisticSeasonsEnabled() ? DependencyUtils.isTemperatureUnderOrAtBlizzardThreshold(block.getLocation()) : block.getTemperature() <= MAX_TEMPERATURE;
 	}
 	private void damageEntity(LivingEntity entity, double damage) {
+		if (entity.isInvulnerable())
+			return;
 		if (freezeEntities && !entity.isDead() && entity.getHealth() <= damage) {
 			if (entity instanceof Player p) {
 				Skeleton skeleton = entity.getWorld().spawn(entity.getLocation(), Skeleton.class, temp -> {
@@ -403,7 +377,7 @@ public class Blizzard extends WeatherDisaster {
 					temp.setCustomNameVisible(false);
 					plugin.getServer().getScheduler().runTaskLater(plugin, () -> temp.getEquipment().setItemInMainHand(new ItemStack(Material.AIR)), 1);
 				});
-				EntityUtils.damageEntity(entity, damage, "deaths.blizzard", DamageCause.FREEZE);
+				EntityUtils.pureDamageEntity(entity, damage, "deaths.blizzard", DamageCause.FREEZE);
 				entity = skeleton;
 			}
 			byte data = 0;
@@ -429,14 +403,10 @@ public class Blizzard extends WeatherDisaster {
 			}
 			return;
 		}
-		if (!entity.isInvulnerable())
-			EntityUtils.pureDamageEntity(entity, damage, "deaths.blizzard", DamageCause.FREEZE);
+		EntityUtils.pureDamageEntity(entity, damage, "deaths.blizzard", DamageCause.FREEZE);
 	}
 	protected String getConfigPath() {
 		return "disasters.weather.blizzard";
-	}
-	public double getRegenTickRate() {
-		return 0.1;
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of(Environment.NETHER, Environment.THE_END);

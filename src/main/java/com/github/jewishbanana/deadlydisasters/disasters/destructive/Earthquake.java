@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -232,8 +233,11 @@ public class Earthquake extends Disaster {
 		removeDeathWatcher(300);
 	}
 	public void regenerateBlocks(DisasterStopReason reason) {
-		Set<Block> set = getModifiedBlocks();
-		modifiedOrder.forEach(block -> set.remove(block));
+		Set<Block> transfer = new LinkedHashSet<>(getModifiedBlocks());
+		modifiedOrder.forEach(block -> transfer.remove(block));
+		List<Block> set = getModifiedBlocks();
+		set.clear();
+		set.addAll(transfer);
 		ArrayDeque<Block> rebuilt = new ArrayDeque<>(modifiedOrder.size());
 		Iterator<Block> iterator = modifiedOrder.iterator();
 		int cursor = 0;
@@ -352,9 +356,6 @@ public class Earthquake extends Disaster {
 	}
 	public String getDisplayName() {
 		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
-	}
-	public double getRegenTickRate() {
-		return level;
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of(Environment.NETHER, Environment.THE_END);

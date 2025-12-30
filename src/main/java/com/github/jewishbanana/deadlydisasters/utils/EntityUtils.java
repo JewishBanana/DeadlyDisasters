@@ -29,10 +29,10 @@ import com.github.jewishbanana.deadlydisasters.Main;
 public class EntityUtils {
 	
 	private static final Main plugin;
-	private static final FixedMetadataValue fallingBlockMeta;
+	private static final FixedMetadataValue pluginMetadata;
 	static {
 		plugin = Main.getInstance();
-		fallingBlockMeta = new FixedMetadataValue(plugin, "protected");
+		pluginMetadata = plugin.getFixedMetadata();
 	}
 	
 	@SuppressWarnings("removal")
@@ -59,7 +59,7 @@ public class EntityUtils {
 				entity.removeMetadata(meta, plugin);
 			return true;
 		}
-		entity.setHealth(entity.getHealth()-damage);
+		entity.setHealth(Math.min(Math.max(entity.getHealth()-damage, 0), entity.getHealth()));
 		playDamageEffect(entity);
 		if (event instanceof EntityDamageByEntityEvent damageEntityEvent && entity instanceof Mob mob && damageEntityEvent.getDamager() instanceof LivingEntity livingDamager)
 			mob.setTarget(livingDamager);
@@ -134,7 +134,7 @@ public class EntityUtils {
 			entity.playEffect(EntityEffect.HURT);
 	}
 	public static void markFallingBlock(FallingBlock block) {
-		block.setMetadata("dd-fb", fallingBlockMeta);
+		block.setMetadata("dd-fb", pluginMetadata);
 	}
 	public static boolean rayTraceEntityConeForSolid(Entity entity, Location initial) {
 		double height = entity.getHeight(), width = entity.getWidth();

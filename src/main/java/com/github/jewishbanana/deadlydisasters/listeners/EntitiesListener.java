@@ -25,7 +25,15 @@ public class EntitiesListener implements Listener {
 	}
 	
 	public EntitiesListener(Main plugin) {
-		plugin.getServer().getWorlds().forEach(world -> world.getEntities().stream().filter(e -> e.getPersistentDataContainer().has(removeKey, PersistentDataType.BYTE)).forEach(e -> e.remove()));
+		plugin.getServer().getWorlds().forEach(world -> world.getEntities().stream().forEach(entity -> {
+			PersistentDataContainer container = entity.getPersistentDataContainer();
+			if (container.has(removeKey, PersistentDataType.BYTE)) {
+				entity.remove();
+				return;
+			}
+			if (container.has(Blizzard.frozenEntityKey, PersistentDataType.BYTE))
+				Blizzard.frozenEntities.add((LivingEntity) entity);
+		}));
 		
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 	}

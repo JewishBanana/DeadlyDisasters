@@ -93,7 +93,7 @@ public class Tornado extends Disaster {
 		this.blockPickupRate = 0.15 * getConfigDouble("block_pickup_rate") * level;
 		this.blockPickupRange = disasterRange * 1.5 * getConfigDouble("block_pickup_range_multiplier");
 		this.width = level * 5 + 5;
-		this.particleRate = 0.1f;
+		this.particleRate = (float) (0.1 * getConfigDouble("particle_multiplier"));
 	}
 	public boolean canStart() {
 		if (getLocation().getBlockY() < minHeight)
@@ -180,7 +180,7 @@ public class Tornado extends Disaster {
 					}
 				}.runTaskAsynchronously(plugin));
 			}
-		}.runTaskTimer(plugin, 0, 10));
+		}.runTaskTimer(plugin, 0, 1));
 		
 		scheduleTask(new BukkitRunnable() {
 			private double height;
@@ -335,9 +335,6 @@ public class Tornado extends Disaster {
 	}
 	public String getDisplayName() {
 		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
-	}
-	public double getRegenTickRate() {
-		return level;
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of(Environment.NETHER, Environment.THE_END);

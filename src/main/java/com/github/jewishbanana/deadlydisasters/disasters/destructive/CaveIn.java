@@ -58,19 +58,19 @@ public class CaveIn extends Disaster {
 			disasterRange = 14;
 			break;
 		case 2:
-			disasterRange = 21;
+			disasterRange = 25;
 			break;
 		case 3:
-			disasterRange = 29;
+			disasterRange = 34;
 			break;
 		case 4:
-			disasterRange = 37;
+			disasterRange = 45;
 			break;
 		case 5:
-			disasterRange = 50;
+			disasterRange = 60;
 			break;
 		case 6:
-			disasterRange = 72;
+			disasterRange = 90;
 			break;
 		}
 		disasterRange *= size;
@@ -124,7 +124,8 @@ public class CaveIn extends Disaster {
 			return;
 		}
 		scheduleTask(new BukkitRunnable() {
-			private final double noise = 0.3;
+			private final double rangeSq = disasterRange * disasterRange;
+			private final double noise = 0.6;
 			
 			@Override
 			public void run() {
@@ -134,10 +135,18 @@ public class CaveIn extends Disaster {
 						Block block = getHighestExposedBlock(next, level * 3 + random.nextInt(level), temp -> !temp.isPassable());
 						if (block == null)
 							continue;
-						double distance = BlockUtils.getCenterOfBlock(block).distance(location);
-						int depth = (int) (Math.floor(centerDepth * Math.pow(1.0 - (distance / disasterRange), 2.0)) + ((random.nextDouble() * 2 - 1) * noise * (1.0 - distance)));
+						Location bc = block.getLocation();
+						double extraNoise = random.nextDouble(level);
+						double dx = bc.getX() + 0.5 + extraNoise - location.getX();
+						double dz = bc.getZ() + 0.5 + extraNoise - location.getZ();
+						double distSq = dx * dx + dz * dz;
+						double t = Math.min(distSq / rangeSq, 1.0);
+						double falloff = Math.pow(1.0 - t, 2.0);
+						double edge = 1.0 - falloff;
+						double jitter = -random.nextDouble() * noise * edge;
+						int depth = (int) Math.max(0, Math.round(centerDepth * falloff + jitter));
 						if (depth > 0)
-							collapsing.add(new CollapsingBlock(block, distance + random.nextDouble(level), (int) (depth + Math.max(block.getY() - location.getY(), 0))));
+							collapsing.add(new CollapsingBlock(block, distSq, depth));
 					}
 					collapsingList = collapsing.stream()
 						    .sorted(Comparator
@@ -160,6 +169,7 @@ public class CaveIn extends Disaster {
 					});
 					scheduleTask(new BukkitRunnable() {
 						private double distance = 1.0;
+						private double distanceSquared = 1.0;
 						private double increment = level / 20.0 * speed;
 						private Iterator<CollapsingBlock> iterator = collapsingList.iterator();
 						private final int iterationsPerTick = Math.max(collapsingList.size() / 5, 1);
@@ -200,7 +210,7 @@ public class CaveIn extends Disaster {
 								if (fallingBlocks.size() == maxBlocks)
 									break;
 								CollapsingBlock entry = iterator.next();
-								if (entry.distance > distance)
+								if (entry.distance > distanceSquared)
 									continue;
 								FallingBlock fb = entry.fall();
 								if (fb != null)
@@ -217,6 +227,7 @@ public class CaveIn extends Disaster {
 							}
 							tick = 0;
 							distance += increment;
+							distanceSquared = distance * distance;
 						}
 					}.runTaskTimer(plugin, 0, 1));
 					
@@ -285,9 +296,6 @@ public class CaveIn extends Disaster {
 	}
 	public String getDisplayName() {
 		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
-	}
-	public double getRegenTickRate() {
-		return level;
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of(Environment.THE_END);

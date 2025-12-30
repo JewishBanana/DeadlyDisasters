@@ -188,7 +188,6 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 								world.spawn(spawn, Slime.class, slime -> {
 									slime.setSize(random.nextInt(3));
 									slime.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.3);
-									slime.setTarget(player);
 									addEntityToDisasterList(slime, player);
 								});
 						}
@@ -419,9 +418,6 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 	}
 	protected String getConfigPath() {
 		return "disasters.weather.acid_storm";
-	}
-	public double getRegenTickRate() {
-		return 0.5;
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of(Environment.NETHER, Environment.THE_END);

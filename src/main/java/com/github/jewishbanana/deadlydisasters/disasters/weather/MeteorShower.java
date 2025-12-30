@@ -73,18 +73,18 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 	public void init() {
 		super.init();
 		this.setNight = getConfigBoolean("set_to_night");
-		this.meteorSpawnRate = (float) (0.006 * getConfigDouble("meteor_spawn_multiplier") * (scale / 2.0));
+		this.meteorSpawnRate = (float) (0.017 * getConfigDouble("meteor_spawn_multiplier") * (scale / 2.0));
 		this.meteorSizeMultiplier = (float) (1.0 * getConfigDouble("meteor_size_multiplier") * (scale / 2.0));
-		this.meteorSpeedMultiplier = 0.5f;//(float) (1.0 * getConfigDouble("meteor_speed_multiplier"));
-		this.maxMeteors = 1;//getConfigInt("maximum_meteors");
+		this.meteorSpeedMultiplier = (float) (1.0 * getConfigDouble("meteor_speed_multiplier"));
+		this.maxMeteors = getConfigInt("maximum_meteors");
 		this.smokeTime = (int) (getConfigDouble("smoke_time") * 20.0);
 		this.regenerateMeteors = getConfigBoolean("regenerate_meteors");
 		
 		final float minMeteorSize = 2 * meteorSizeMultiplier;
 		final float maxMeteorSize = 6 * meteorSizeMultiplier;
 		this.meteorFactory.add(new MeteorFactory(this, NormalMeteor.class, minMeteorSize, maxMeteorSize));
-//		this.meteorFactory.add(new MeteorFactory(this, ExplodingMeteor.class, minMeteorSize, maxMeteorSize));
-//		this.meteorFactory.add(new MeteorFactory(this, SplittingMeteor.class, minMeteorSize, maxMeteorSize));
+		this.meteorFactory.add(new MeteorFactory(this, ExplodingMeteor.class, minMeteorSize, maxMeteorSize));
+		this.meteorFactory.add(new MeteorFactory(this, SplittingMeteor.class, minMeteorSize, maxMeteorSize));
 		
 		this.particleRate = (float) (1 * particleMultiplier);
 		
@@ -109,7 +109,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 						if (entity instanceof Player player) {
 							if (EntityUtils.isPlayerImmune(player))
 								continue;
-						} else if (random.nextInt(4) != 0)
+						} else if (random.nextInt(100) != 0)
 							continue;
 						if (random.nextFloat() > meteorSpawnRate)
 							continue;
@@ -138,7 +138,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 					return;
 				processEntities.set(true);
 				foundEntities.clear();
-				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid() && e instanceof Player)) //e instanceof LivingEntity))
+				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid() && e instanceof LivingEntity))
 					foundEntities.put(entity, entity.getLocation());
 				currentEntities = Set.copyOf(entitiesInStorm);
 				scheduleTask(new BukkitRunnable() {
@@ -179,7 +179,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 	}
 	public void clean() {
 		super.clean();
-		activeMeteors.forEach(meteor -> meteor.clean());
+		activeMeteors.forEach(meteor -> meteor.markForDead = true);
 		HandlerList.unregisterAll(this);
 		weatherPlayers.forEach(uuid -> {
 			Player player = Bukkit.getPlayer(uuid);
@@ -200,10 +200,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 		return false;
 	}
 	protected String getConfigPath() {
-		return "disasters.weather.meteorshower";
-	}
-	public double getRegenTickRate() {
-		return 0.5;
+		return "disasters.weather.meteor_shower";
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of(Environment.NETHER, Environment.THE_END);
@@ -343,7 +340,6 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 				entry.setValue(current.clone());
 				for (int i=0; i < actualSpeed+1; i++) {
 					current.add(normalizedSpeed);
-					current.getWorld().spawnParticle(Particle.FLAME, current, 1, 0, 0, 0, 0.0001);
 					Block b = current.getBlock();
 					removeAdjacentFaces(b);
 				}
@@ -367,7 +363,6 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 				markForDead = true;
 				stopMeteor();
 			}
-			plugin.getLogger().info("depth is "+depth+" size is "+size);
 		}
 		public void removeAdjacentFaces(Block block) {
 			if (!block.isPassable() || block.isLiquid()) {
@@ -483,8 +478,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 			createSmokeField(first, (int) (size * 5), size + 1);
 		}
 		public Material[] getMaterials() {
-//			return new Material[] { Material.DEEPSLATE, Material.DEEPSLATE, Material.STONE };
-			return new Material[] { Material.GOLD_BLOCK };
+			return new Material[] { Material.DEEPSLATE, Material.DEEPSLATE, Material.STONE };
 		}
 	}
 	public class ExplodingMeteor extends Meteor {
@@ -501,7 +495,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 			for (Block b : BlockUtils.getBlocksInSphereRadius(first, explosionRadius)) {
 				if (BlockUtils.getCenterOfBlock(b).distanceSquared(first) < perimeterCheck) {
 					removeBlock(b);
-					if (random.nextInt(30) == 0)
+					if (random.nextInt(300) == 0)
 						b.getWorld().spawnParticle(VersionUtils.getHugeExplosion(), BlockUtils.getCenterOfBlock(b), 1, .5, .5, .5, 1, null, true);
 				} else {
 					if (random.nextInt(7) == 0 && !b.isPassable())
@@ -532,7 +526,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 		
 		public SplittingMeteor(Location loc, Vector direction, float size) {
 			super(loc, direction, size);
-			this.depth = (int) (size * 250);
+			this.depth = (int) (size * 150);
 		}
 		public void stopMeteor() {
 			Location first = centerBlock.getLocation();
@@ -546,7 +540,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 					continue;
 				}
 				temp.setGravity(true);
-				temp.setVelocity(Utils.getVectorTowards(first, temp.getLocation()).multiply(0.75));
+				temp.setVelocity(Utils.getVectorTowards(first, temp.getLocation()).add(new Vector(random.nextFloat(-.05f, .05f), random.nextFloat(-.05f, .05f), random.nextFloat(-.05f, .05f))).multiply(0.75));
 				flyingBlocks.add(temp);
 			}
 			blocks.clear();

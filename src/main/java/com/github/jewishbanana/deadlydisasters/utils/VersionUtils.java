@@ -14,41 +14,43 @@ import org.bukkit.potion.PotionEffectType;
 @SuppressWarnings("deprecation")
 public class VersionUtils {
 	
-	private static Enchantment sharpness;
-	private static Enchantment unbreaking;
+	private static final Integer[] serverVersion;
 	
-	public static boolean displaysAllowed;
-	public static boolean usingNewDamageEvent;
-	public static boolean is17OrHigher;
+	private static final Enchantment sharpness;
+	private static final Enchantment unbreaking;
 	
-	private static Particle block_dust;
-	private static Particle block_crack;
-	private static Particle redstone_dust;
-	private static Particle item_crack;
-	private static Particle enchant;
-	private static Particle normal_smoke;
-	private static Particle large_smoke;
-	private static Particle drip_water;
-	private static Particle water_bubble;
-	private static Particle water_splash;
-	private static Particle explosion_huge;
-	private static Particle explosion_large;
-	private static Particle snow_shovel;
+	public static final boolean displaysAllowed;
+	public static final boolean usingNewDamageEvent;
+	public static final boolean is17OrHigher;
 	
-	private static PotionEffectType jump_boost;
-	private static PotionEffectType slowness;
-	private static PotionEffectType resistance;
-	private static PotionEffectType confusion;
-	private static PotionEffectType slow_dig;
+	private static final Particle block_dust;
+	private static final Particle block_crack;
+	private static final Particle redstone_dust;
+	private static final Particle item_crack;
+	private static final Particle enchant;
+	private static final Particle normal_smoke;
+	private static final Particle large_smoke;
+	private static final Particle drip_water;
+	private static final Particle water_bubble;
+	private static final Particle water_splash;
+	private static final Particle explosion_huge;
+	private static final Particle explosion_large;
+	private static final Particle snow_shovel;
 	
-	private static ItemFlag hide_effects;
+	private static final PotionEffectType jump_boost;
+	private static final PotionEffectType slowness;
+	private static final PotionEffectType resistance;
+	private static final PotionEffectType confusion;
+	private static final PotionEffectType slow_dig;
 	
-	private static Material short_grass;
+	private static final ItemFlag hide_effects;
+	
+	private static final Material short_grass;
 	
 	static {
-		Integer[] version = Arrays.stream(Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf('-')).split("\\.")).map(e -> Integer.parseInt(e)).toArray(Integer[]::new);
+		serverVersion = Arrays.stream(Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf('-')).split("\\.")).map(e -> Integer.parseInt(e)).toArray(Integer[]::new);
 		
-		if (version[1] > 17) {
+		if (isMCVersionOrAbove("1.18")) {
 			sharpness = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("sharpness"));
 			unbreaking = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("unbreaking"));
 		} else {
@@ -56,7 +58,7 @@ public class VersionUtils {
 			unbreaking = Enchantment.getByKey(NamespacedKey.minecraft("unbreaking"));
 		}
 		
-		if (version[1] > 20 || (version[1] == 20 && version[2] >= 3)) {
+		if (isMCVersionOrAbove("1.20.3")) {
 			jump_boost = Registry.EFFECT.get(NamespacedKey.minecraft("jump_boost"));
 			slowness = Registry.EFFECT.get(NamespacedKey.minecraft("slowness"));
 			resistance = Registry.EFFECT.get(NamespacedKey.minecraft("resistance"));
@@ -70,15 +72,16 @@ public class VersionUtils {
 			slow_dig = PotionEffectType.getByName("slow_digging");
 		}
 		
-		if (version[1] > 20 || (version[1] == 20 && version[2] >= 4))
+		if (isMCVersionOrAbove("1.20.4")) {
 			usingNewDamageEvent = true;
-		if (version[1] >= 20 || (version[1] == 19 && version[2] >= 4))
-			displaysAllowed = true;
-		if (version[1] > 20 || (version[1] == 20 && version[2] >= 4))
 			short_grass = Material.SHORT_GRASS;
-		else
+		} else {
+			usingNewDamageEvent = false;
 			short_grass = Material.valueOf("GRASS");
-		if (version[1] > 20 || (version[1] == 20 && version[2] >= 5)) {
+		}
+		displaysAllowed = isMCVersionOrAbove("1.19.4");
+		
+		if (isMCVersionOrAbove("1.20.5")) {
 			block_dust = Particle.DUST_PILLAR;
 			block_crack = Particle.BLOCK;
 			redstone_dust = Particle.DUST;
@@ -110,7 +113,25 @@ public class VersionUtils {
 			hide_effects = ItemFlag.valueOf("HIDE_POTION_EFFECTS");
 		}
 		
-		is17OrHigher = version[1] >= 17;
+		is17OrHigher = isMCVersionOrAbove("1.17");
+	}
+	public static boolean isMCVersionOrAbove(String version) {
+		try {
+			String[] test = version.split("\\.");
+			for (int i = 0; i < test.length; i++) {
+	            if (i >= serverVersion.length)
+	                return false;
+	            int currentSegment = serverVersion[i];
+	            int testSegment = Integer.parseInt(test[i]);
+	            if (currentSegment > testSegment)
+	                return true;
+	            else if (currentSegment < testSegment)
+	                return false;
+	        }
+	        return true;
+		} catch (NumberFormatException ex) {
+			throw new NumberFormatException("The version string you supplied '"+version+"' is not a valid version string! Format must be as follows: '1.2.3' or '1.2' or '1'!");
+		}
 	}
 	
 	public static Enchantment getSharpness() {

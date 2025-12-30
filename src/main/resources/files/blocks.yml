@@ -34,8 +34,8 @@ immune_types:
 stones:
     stone: 0
     smooth_stone: 0.3
-    cobblestone: 0.15
-    mossy_cobblestone: 0.15
+    cobblestone: 0.03
+    mossy_cobblestone: 0.03
     granite: 0
     polished_granite: 0.3
     diorite: 0
@@ -80,12 +80,12 @@ stones:
 dirts:
     grass_block: 0
     dirt: 0
-    coarse_dirt: 0.05
+    coarse_dirt: 0
     podzol: 0
     mycelium: 0
-    rooted_dirt: 0.1
-    crimson_nylium: 0.1
-    warped_nylium: 0.1
+    rooted_dirt: 0.025
+    crimson_nylium: 0.05
+    warped_nylium: 0.05
     sand: 0
     red_sand: 0
     gravel: 0

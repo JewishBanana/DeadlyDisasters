@@ -139,9 +139,6 @@ public class WaterGeyser extends Disaster {
 	public String getDisplayName() {
 		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
 	}
-	public double getRegenTickRate() {
-		return level;
-	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of(Environment.NETHER, Environment.THE_END);
 	}

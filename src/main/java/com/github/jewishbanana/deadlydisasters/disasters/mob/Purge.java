@@ -1,6 +1,7 @@
 package com.github.jewishbanana.deadlydisasters.disasters.mob;
 
 import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -32,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
+import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent.DisasterStartReason;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
@@ -41,8 +43,12 @@ import com.github.jewishbanana.deadlydisasters.utils.Utils;
 public class Purge extends Disaster implements MobDisaster {
 	
 	private static final Set<UUID> targetedPlayers;
+	private static final String storedPlayersKey;
+	public static final String purgeMobMetadata;
 	static {
 		targetedPlayers = new HashSet<>();
+		storedPlayersKey = "purge.stored_players";
+		purgeMobMetadata = "dd:pm";
 	}
 	
 	private double entitySpawnDistance;
@@ -105,6 +111,14 @@ public class Purge extends Disaster implements MobDisaster {
 			public void run() {
 				final Player player = Bukkit.getPlayer(targetUUID);
 				if (player == null || !player.isOnline() || EntityUtils.isPlayerImmune(player) || !player.getWorld().equals(location.getWorld())) {
+					if (player == null || !player.isOnline()) {
+						Map<String, Integer> map = DataUtils.computeSection(DataUtils.getDataFile(), storedPlayersKey, new HashMap<String, Integer>());
+						Integer value = map.get(targetUUID.toString());
+						if (value == null || value < getLevel()) {
+							map.put(targetUUID.toString(), getLevel());
+							DataUtils.writeToDataFile(file -> file.set(storedPlayersKey, map));
+						}
+					}
 					stop();
 					return;
 				}
@@ -157,6 +171,7 @@ public class Purge extends Disaster implements MobDisaster {
 							continue;
 						}
 						addEntityToDisasterList(entity, player);
+						entity.setMetadata(purgeMobMetadata, plugin.getFixedMetadata());
 						if (entity instanceof Mob mob)
 							mob.setTarget(player);
 						break;
@@ -198,6 +213,20 @@ public class Purge extends Disaster implements MobDisaster {
 	}
 	public String getBroadcastMessageConfigPath() {
 		return "messages.disaster_broadcasts.purge.started.level_"+level;
+	}
+	public static void checkForPlayerInMap(Player player) {
+		if (player == null)
+			return;
+		Map<String, Integer> map = DataUtils.computeSection(DataUtils.getDataFile(), storedPlayersKey, new HashMap<String, Integer>());
+		Integer value = map.remove(player.getUniqueId().toString());
+		if (value == null)
+			return;
+		DataUtils.writeToDataFile(file -> file.set(storedPlayersKey, map));
+		Purge purge = new Purge(player.getLocation(), player, value);
+		if (!purge.canStart(DisasterStartReason.CUSTOM))
+			return;
+		purge.init();
+		purge.start();
 	}
 	
 	private class EntityContainer {

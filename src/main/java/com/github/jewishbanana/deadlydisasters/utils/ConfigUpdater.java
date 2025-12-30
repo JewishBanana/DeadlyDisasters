@@ -70,7 +70,6 @@ public class ConfigUpdater {
        for (String fullKey : defaultConfig.getKeys(true)) {
             String indents = ConfigUpdater.getIndents(fullKey, SEPARATOR);
 
-
            if (!ignoredSectionsValues.isEmpty()) {
                if (writeIgnoredSectionValueIfExists(ignoredSectionsValues, writer, fullKey))
                    continue;
@@ -170,8 +169,17 @@ public class ConfigUpdater {
             String[] split = section.split("[" + SEPARATOR + "]");
             String key = split[split.length - 1];
             Map<Object, Object> map = getSection(section, root);
-            if (map == null)
+//            if (map == null)
+//            	return;
+            if (map == null) {
+                ignoredSectionValues.put(section, "");
             	return;
+            }
+            Object mapKey = getKeyAsObject(key, map);
+            if (!map.containsKey(mapKey)) {
+                ignoredSectionValues.put(section, "");
+                return;
+            }
 
             StringBuilder keyBuilder = new StringBuilder();
             for (int i = 0; i < split.length; i++) {
@@ -196,7 +204,7 @@ public class ConfigUpdater {
         Object value = root.get(getKeyAsObject(key, root));
 
         if (keys.length == 1) {
-            if (value instanceof Map)
+            if (value instanceof Map || value != null)
                 return root;
 	   /*     if (value == null) {
                 Map<Object, Object>  map= new HashMap<>();
@@ -204,7 +212,8 @@ public class ConfigUpdater {
                 System.out.println("key " + key);
                 return  map;
             }*/
-            throw new IllegalArgumentException("Ignored sections must be a ConfigurationSection not a value!");
+//            throw new IllegalArgumentException("Invalid ignored section: " + fullKey);
+            return null;
         }
         if (!(value instanceof Map))
         	return null;

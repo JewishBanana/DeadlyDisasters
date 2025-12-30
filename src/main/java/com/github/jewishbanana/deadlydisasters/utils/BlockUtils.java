@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -95,7 +96,8 @@ public class BlockUtils {
 					materials.add(Material.valueOf(material));
 				} catch (IllegalArgumentException e) {}
 			});
-			allCategories.put(k, Set.copyOf(materials));
+			if (!materials.isEmpty())
+				allCategories.put(k, EnumSet.copyOf(materials));
 		});
 		customCategories = Map.copyOf(allCategories);
 	}
@@ -173,10 +175,10 @@ public class BlockUtils {
 		String reformat = type.toUpperCase();
 		Tag<Material> tag = getMaterialTagByName(reformat);
 		if (tag != null)
-			return Set.copyOf(tag.getValues());
+			return tag.getValues();
 		Set<Material> custom = customCategories.get(reformat);
 		if (custom != null)
-			return Set.copyOf(custom);
+			return custom;
 		try {
 			return Set.of(Material.valueOf(reformat));
 		} catch (IllegalArgumentException e) {}

@@ -13,9 +13,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.WorldWrapper;
+import com.github.jewishbanana.deadlydisasters.disasters.mob.Purge;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
@@ -34,16 +36,20 @@ public class PlayerListener implements Listener	{
 	}
 	@EventHandler
 	public void onJoin(PlayerJoinEvent event) {
-		plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> {
-			Player player = event.getPlayer();
-			sendWorldForecast(player);
-			if (notifyAdminOfUpdate && player.isOp() && !updateNotified.contains(player.getUniqueId())) {
-				player.sendMessage(Utils.convertString(Utils.prefix+DataUtils.getLanguageString("messages.internal.update_notify_player")));
-				updateNotified.add(player.getUniqueId());
+		Player player = event.getPlayer();
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				sendWorldForecast(player);
+				if (notifyAdminOfUpdate && player.isOp() && !updateNotified.contains(player.getUniqueId())) {
+					player.sendMessage(Utils.convertString(Utils.prefix+DataUtils.getLanguageString("messages.internal.update_notify_player")));
+					updateNotified.add(player.getUniqueId());
+				}
+				if (warnForKick.remove(player.getUniqueId()))
+					player.sendMessage(Utils.convertString(Utils.prefix+DataUtils.getLanguageString("messages.internal.flight_kick")));
 			}
-			if (warnForKick.remove(player.getUniqueId()))
-				player.sendMessage(Utils.convertString(Utils.prefix+DataUtils.getLanguageString("messages.internal.flight_kick")));
-		}, 10);
+		}.runTaskLater(plugin, 10);
+		Purge.checkForPlayerInMap(player);
 	}
 	@EventHandler
 	public void onKick(PlayerKickEvent event) {
@@ -54,7 +60,12 @@ public class PlayerListener implements Listener	{
 	public void onTeleport(PlayerTeleportEvent event) {
 		if (event.getFrom().getWorld().equals(event.getTo().getWorld()))
 			return;
-		plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> sendWorldForecast(event.getPlayer()), 10);
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				sendWorldForecast(event.getPlayer());
+			}
+		}.runTaskLater(plugin, 10);
 	}
 	private void sendWorldForecast(Player player) {
 		if (player == null || !player.isOnline())

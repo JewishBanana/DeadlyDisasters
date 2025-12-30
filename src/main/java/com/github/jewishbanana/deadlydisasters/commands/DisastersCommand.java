@@ -3,6 +3,7 @@ package com.github.jewishbanana.deadlydisasters.commands;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -12,9 +13,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
@@ -118,6 +121,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 		
 		plugin.getCommand("disasters").setExecutor(this);
 	}
+	@SuppressWarnings("deprecation")
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if (args.length == 0) {
@@ -130,21 +134,48 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			return true;
 		}
 		switch (firstArg) {
-		case "help":
-			// help command
-			break;
-		case "start":
+		case "help" -> {
+			if (args.length < 2) {
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters help <command>"));
+				return true;
+			}
+			switch (args[1].toLowerCase()) {
+			case "start" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.start")));
+			case "stop" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.stop")));
+			case "forceregenerate" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.forceRegenerate")));
+			case "config" -> {
+				if (args.length < 3) {
+					sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.config.config")));
+					return true;
+				}
+				switch (args[2].toLowerCase()) {
+				case "reload" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.config.reload")));
+				case "set" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.config.set")));
+				case "enable" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.config.enable")));
+				case "disable" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.config.disable")));
+				case "setting" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.config.setting")));
+				case "list" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.config.list")));
+				default -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.unrecognized")+" '"+args[2]+"'!"));
+				}
+			}
+			case "blacklist" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.blacklist")));
+			case "timers" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.timers")));
+			default -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.unrecognized")+" '"+args[1]+"'!"));
+			}
+			return true;
+		}
+		case "start" -> {
 			if (args.length < 2) {
 				sender.sendMessage(Utils.convertString("&cUsage: /disasters start <disaster> [level] [player|x y z] [world]"));
 				return true;
 			}
-			DisasterRegistry registry = DisasterRegistry.getRegistry(args[1]);
-			if (registry == null) {
+			DisasterRegistry register = DisasterRegistry.getRegistry(args[1]);
+			if (register == null) {
 				sender.sendMessage(Utils.convertString("&cThere is no such disaster with the name '"+args[1]+"'!"));
 				return true;
 			}
-			Location startLocation = null;
-			Player startPlayer = null;
+			Location loc = null;
+			Player player = null;
 			int level = 1;
 			if (args.length > 2) {
 				try {
@@ -158,16 +189,16 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 						sender.sendMessage(Utils.convertString("&cUsage: /disasters start <disaster> <level> <player|x y z> [world]"));
 						return true;
 					}
-					startLocation = executor.getLocation();
-					startPlayer = executor;
+					loc = executor.getLocation();
+					player = executor;
 				} else if (args.length == 4) {
 					Player temp = getOnlinePlayer(args[3]);
 					if (temp == null) {
 						sender.sendMessage(Utils.convertString("&cCould not find player '"+args[3]+"'!"));
 						return true;
 					}
-					startLocation = temp.getLocation();
-					startPlayer = temp;
+					loc = temp.getLocation();
+					player = temp;
 				} else {
 					World world = null;
 					if (args.length > 6) {
@@ -183,7 +214,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 						return true;
 					}
 					try {
-						startLocation = new Location(world, Double.parseDouble(args[3]), Double.parseDouble(args[4]), Double.parseDouble(args[5]));
+						loc = new Location(world, Double.parseDouble(args[3]), Double.parseDouble(args[4]), Double.parseDouble(args[5]));
 					} catch (NumberFormatException e) {
 						sender.sendMessage(Utils.convertString("&cInvalid coordinates entered!"));
 						return true;
@@ -194,52 +225,53 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					sender.sendMessage(Utils.convertString("&cUsage: /disasters start <disaster> <level> <player|x y z> [world]"));
 					return true;
 				}
-				startLocation = executor.getLocation();
-				startPlayer = executor;
+				loc = executor.getLocation();
+				player = executor;
 			}
-			WorldWrapper startLink = WorldWrapper.getWorldWrapper(startLocation.getWorld());
-			if (startLink.disabledDisasters.contains(registry)) {
+			WorldWrapper wrapper = WorldWrapper.getWorldWrapper(loc.getWorld());
+			if (wrapper.disabledDisasters.contains(register)) {
 				sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.disabled_disaster")));
 				return true;
 			}
-			Disaster disaster = registry.createDisaster(startLocation, startPlayer, level);
-			Location adjustment = disaster.findPossiblePosition(startLocation);
+			Disaster disaster = register.createDisaster(loc, player, level);
+			Location adjustment = disaster.findPossiblePosition(loc);
 			if (adjustment != null)
 				disaster.setLocation(adjustment);
 			DisasterStartEvent event = new DisasterStartEvent(disaster, DisasterStartReason.COMMAND);
 			Bukkit.getPluginManager().callEvent(event);
 			if (event.isCancelled()) {
-				sender.sendMessage(Utils.convertString("&cThe disaster was halted from starting by a third party plugin!"));
+				sender.sendMessage(Utils.convertString("&cThe disaster was halted from starting by a third-party plugin!"));
 				return true;
 			}
 			disaster.broadcastDisaster();
 			disaster.start();
 			return true;
-		case "stop":
-			Class<?> stopDisasterClass = null;
+		}
+		case "stop" -> {
+			Class<?> disasterClass = null;
 			if (args.length > 1) {
-				DisasterRegistry stopRegister = DisasterRegistry.getRegistry(args[1]);
-				if (stopRegister == null) {
+				DisasterRegistry register = DisasterRegistry.getRegistry(args[1]);
+				if (register == null) {
 					sender.sendMessage(Utils.convertString("&cThere is no such disaster with the name '"+args[1]+"'!"));
 					return true;
 				}
-				stopDisasterClass = stopRegister.getRegisteredClass();
+				disasterClass = register.getRegisteredClass();
 			}
-			World stopWorld = null;
+			World world = null;
 			if (args.length > 2) {
-				stopWorld = Bukkit.getWorld(args[2]);
-				if (stopWorld == null) {
+				world = Bukkit.getWorld(args[2]);
+				if (world == null) {
 					sender.sendMessage(Utils.convertString("&cCould not find world '"+args[2]+"'!"));
 					return true;
 				}
 			}
-			Iterator<Disaster> ongoingIterator = Disaster.onGoingDisasters.iterator();
+			Iterator<Disaster> iterator = Disaster.onGoingDisasters.iterator();
 			int stopped = 0;
-			while (ongoingIterator.hasNext()) {
-				Disaster temp = ongoingIterator.next();
-				if (stopDisasterClass != null && !temp.getClass().equals(stopDisasterClass))
+			while (iterator.hasNext()) {
+				Disaster temp = iterator.next();
+				if (disasterClass != null && !temp.getClass().equals(disasterClass))
 					continue;
-				if (stopWorld != null && !temp.getLocation().getWorld().equals(stopWorld))
+				if (world != null && !temp.getLocation().getWorld().equals(world))
 					continue;
 				if (!temp.stop(DisasterStopReason.COMMAND))
 					sender.sendMessage(Utils.convertString(Utils.prefix+"&cFailed to stop disaster "+temp.getDisplayName()+" &cat &e"+temp.getLocation().getBlockX()+' '+temp.getLocation().getBlockY()+' '+temp.getLocation().getBlockZ()+" &d("+temp.getLocation().getWorld().getName()+")&c. A third-party plugin prevented this disaster from being stopped!"));
@@ -248,11 +280,12 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			}
 			sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully stopped &a"+stopped+" &bdisaster(s)!"));
 			return true;
-		case "forceregenerate":
-			World regenWorld = null;
+		}
+		case "forceregenerate" -> {
+			World[] worlds = null;
 			if (args.length > 1) {
-				regenWorld = Bukkit.getWorld(args[1]);
-				if (regenWorld == null) {
+				worlds = getWorldSelection(args[1], sender);
+				if (worlds == null) {
 					sender.sendMessage(Utils.convertString("&cCould not find world '"+args[1]+"'!"));
 					return true;
 				}
@@ -273,7 +306,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			while (regenIterator.hasNext()) {
 				Entry<Disaster, RegeneratingTask> entry = regenIterator.next();
 				Disaster temp = entry.getKey();
-				if (regenWorld != null && !temp.getLocation().getWorld().equals(regenWorld))
+				if (worlds != null && !Stream.of(worlds).anyMatch(w -> w.equals(temp.getLocation().getWorld())))
 					continue;
 				if (disasterClass != null && !temp.getClass().equals(disasterClass))
 					continue;
@@ -282,7 +315,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				blocks.addAll(temp.getModifiedBlocks());
 				regenIterator.remove();
 			}
-			final World worldInfo = regenWorld;
+			final World[] finalWorlds = worlds;
 			new BukkitRunnable() {
 				private final Iterator<Block> iterator = blocks.iterator();
 				private int exceptions;
@@ -304,7 +337,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 						final long average = blocks.size() / Math.max(gameTicks, 1);
 						String completionMessage = Utils.convertString(Utils.prefix+"&aRegenerated all &d"+blocks.size()+" &adamaged blocks!"
 								+ "\n&3- &7&oTime: " + String.format("%02d", (int) (Math.round(elapsedTime / 1000 / 60)))+":"+String.format("%02d", (int) (Math.round(elapsedTime / 1000 % 60)))+":"+String.format("%02d", (int) (Math.round(elapsedTime / 10 % 100)))
-								+ "\n&3- World: " + (worldInfo == null ? "&a&lALL" : "&b" + worldInfo.getName())
+								+ "\n&3- World: " + (finalWorlds == null || finalWorlds.length > 1 ? "&a&lALL" : "&b" + finalWorlds[0].getName())
 								+ (args.length > 2 ? "\n&3- Disaster Type: &e" + args[2] : "")
 								+ (exceptions > 0 ? "\n&3- &cExceptions: " + exceptions + " &7(These are blocks that failed to regenerate. Check server console for errors!)" : "")
 								+ "\n&3- Stability: " + (gameTicks <= 1 || average >= forceRegenBlocksPerTick * 0.7 ? "&a" + average + '/' + forceRegenBlocksPerTick + " per tick (Good)" :
@@ -317,18 +350,20 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				}
 			}.runTaskTimer(Main.getInstance(), 0, 1);
 			return true;
-		case "config":
+		}
+		case "config" -> {
 			if (args.length == 1) {
 				sender.sendMessage(Utils.convertString("&cUsage: /disasters config <reload|set|enable|disable|setting|list>"));
 				return true;
 			}
 			switch (args[1].toLowerCase()) {
-			case "reload":
+			case "reload" -> {
 				plugin.reloadConfig();
 				plugin.reload();
 				sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully reloaded all configs!"));
 				return true;
-			case "set":
+			}
+			case "set" -> {
 				if (args.length < 4) {
 					sender.sendMessage(Utils.convertString("&cUsage: /disasters config set <world> <config>"));
 					return true;
@@ -338,8 +373,12 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					sender.sendMessage(Utils.convertString("&cThere is no such disaster world config file '"+args[3]+"!"));
 					return true;
 				}
-				switch (args[2]) {
-				case "ALL_WORLDS":
+				World[] worlds = getWorldSelection(args[2], sender);
+				if (worlds == null) {
+					sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[2]+"'!"));
+					return true;
+				}
+				if (worlds.length > 1) {
 					DataUtils.writeToDataFile(config -> {
 						Bukkit.getWorlds().forEach(world -> {
 							try {
@@ -352,44 +391,20 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					WorldWrapper.init();
 					sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully set the disaster config file for all worlds to &d'"+args[3]+"'&b!"));
 					return true;
-				case "THIS_WORLD":
-					if (!(sender instanceof Player player)) {
-						sender.sendMessage(Utils.convertString("&cYou cannot reference 'THIS_WORLD' from here!"));
-						return true;
-					}
-					World world = player.getWorld();
-					if (world == null) {
-						sender.sendMessage(Utils.convertString("&cWorld does not exist? Report this to the discord."));
-						return true;
-					}
+				} else {
 					try {
 						DataUtils.writeToDataFile(config -> {
-							config.set("worlds."+world.getUID().toString()+".config", args[3]);
+							config.set("worlds."+worlds[0].getUID().toString()+".config", args[3]);
 						});
-						WorldWrapper.initWorld(world);
-						sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully set the disaster config file for world &a'"+world.getName()+"' &bto &d'"+args[3]+"'&b!"));
-					} catch (Exception e) {
-						Utils.sendExceptionLog(e);
-					}
-					return true;
-				default:
-					World bukkitWorld = Bukkit.getWorld(args[2]);
-					if (bukkitWorld == null) {
-						sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[2]+"'!"));
-						return true;
-					}
-					try {
-						DataUtils.writeToDataFile(config -> {
-							config.set("worlds."+bukkitWorld.getUID().toString()+".config", args[3]);
-						});
-						WorldWrapper.initWorld(bukkitWorld);
-						sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully set the disaster config file for world &a'"+bukkitWorld.getName()+"' &bto &d'"+args[3]+"'&b!"));
+						WorldWrapper.initWorld(worlds[0]);
+						sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully set the disaster config file for world &a'"+worlds[0].getName()+"' &bto &d'"+args[3]+"'&b!"));
 					} catch (Exception e) {
 						Utils.sendExceptionLog(e);
 					}
 					return true;
 				}
-			case "enable":
+			}
+			case "enable" -> {
 				if (args.length < 3) {
 					sender.sendMessage(Utils.convertString("&cUsage: /disasters config enable <disaster> [world]"));
 					return true;
@@ -401,56 +416,49 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 						return true;
 					}
 				}
-				World enableWorld = null;
+				World[] worlds = null;
 				if (args.length < 4) {
 					if (sender instanceof Player player)
-						enableWorld = player.getWorld();
+						worlds = new World[] { player.getWorld() };
 					else {
 						sender.sendMessage(Utils.convertString("&cUsage: /disasters config enable <disaster> <world>"));
 						return true;
 					}
-				} else
-					switch (args[3].toUpperCase()) {
-					case "ALL_WORLDS":
-						Bukkit.getWorlds().forEach(world -> {
-							WorldWrapper enableLink = WorldWrapper.getWorldWrapper(world);
-							List<String> toEnableList = DataUtils.getConfigStringList(enableLink.getConfig(), enableLink.getConfigName(), "world.disabled_disasters");
-							if (!toEnableList.contains(args[2]))
-								return;
-							toEnableList.remove(args[2]);
-							enableLink.getConfig().set("world.disabled_disasters", toEnableList);
-							enableLink.saveAndReload();
-						});
-						sender.sendMessage(Utils.convertString(Utils.prefix+"&bThe disaster/category &6'"+args[2]+"' &bhas been &a&lenabled &bfor all worlds!"));
+				}
+				if (worlds == null) {
+					worlds = getWorldSelection(args[3], sender);
+					if (worlds == null) {
+						sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[3]+"'!"));
 						return true;
-					case "THIS_WORLD":
-						if (!(sender instanceof Player player)) {
-							sender.sendMessage(Utils.convertString("&cYou cannot reference 'THIS_WORLD' from here!"));
-							return true;
-						}
-						enableWorld = player.getWorld();
-						break;
-					default:
-						World temp = Bukkit.getWorld(args[3]);
-						if (temp == null) {
-							sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[3]+"'!"));
-							return true;
-						}
-						enableWorld = temp;
-						break;
 					}
-				WorldWrapper enableLink = WorldWrapper.getWorldWrapper(enableWorld);
-				List<String> toEnableList = DataUtils.getConfigStringList(enableLink.getConfig(), enableLink.getConfigName(), "world.disabled_disasters");
-				if (!toEnableList.contains(args[2])) {
-					sender.sendMessage(Utils.convertString(Utils.prefix+"&eThe disaster/category &6'"+args[2]+"' &eis already &a&lenabled &ein world config &6'"+enableLink.getConfigName()+"' &efor world &d'"+enableWorld.getName()+"'&e!"));
+				}
+				if (worlds.length > 1) {
+					Bukkit.getWorlds().forEach(world -> {
+						WorldWrapper wrapper = WorldWrapper.getWorldWrapper(world);
+						List<String> list = DataUtils.getConfigStringList(wrapper.getConfig(), wrapper.getConfigName(), "world.disabled_disasters");
+						if (!list.contains(args[2]))
+							return;
+						list.remove(args[2]);
+						wrapper.getConfig().set("world.disabled_disasters", list);
+						wrapper.saveAndReload();
+					});
+					sender.sendMessage(Utils.convertString(Utils.prefix+"&bThe disaster/category &6'"+args[2]+"' &bhas been &a&lenabled &bfor all worlds!"));
+					return true;
+				} else {
+					WorldWrapper wrapper = WorldWrapper.getWorldWrapper(worlds[0]);
+					List<String> list = DataUtils.getConfigStringList(wrapper.getConfig(), wrapper.getConfigName(), "world.disabled_disasters");
+					if (!list.contains(args[2])) {
+						sender.sendMessage(Utils.convertString(Utils.prefix+"&eThe disaster/category &6'"+args[2]+"' &eis already &a&lenabled &ein world config &6'"+wrapper.getConfigName()+"' &efor world &d'"+worlds[0].getName()+"'&e!"));
+						return true;
+					}
+					list.remove(args[2]);
+					wrapper.getConfig().set("world.disabled_disasters", list);
+					wrapper.saveAndReload();
+					sender.sendMessage(Utils.convertString(Utils.prefix+"&bThe disaster/category &6'"+args[2]+"' &bhas been &a&lenabled &bin world config &a'"+wrapper.getConfigName()+"' &bfor world &d'"+worlds[0].getName()+"'&b!"));
 					return true;
 				}
-				toEnableList.remove(args[2]);
-				enableLink.getConfig().set("world.disabled_disasters", toEnableList);
-				enableLink.saveAndReload();
-				sender.sendMessage(Utils.convertString(Utils.prefix+"&bThe disaster/category &6'"+args[2]+"' &bhas been &a&lenabled &bin world config &a'"+enableLink.getConfigName()+"' &bfor world &d'"+enableWorld.getName()+"'&b!"));
-				return true;
-			case "disable":
+			}
+			case "disable" -> {
 				if (args.length < 3) {
 					sender.sendMessage(Utils.convertString("&cUsage: /disasters config disable <disaster> [world]"));
 					return true;
@@ -462,56 +470,49 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 						return true;
 					}
 				}
-				World disableWorld = null;
+				World[] worlds = null;
 				if (args.length < 4) {
 					if (sender instanceof Player player)
-						disableWorld = player.getWorld();
+						worlds = new World[] { player.getWorld() };
 					else {
 						sender.sendMessage(Utils.convertString("&cUsage: /disasters config disable <disaster> <world>"));
 						return true;
 					}
-				} else
-					switch (args[3].toUpperCase()) {
-					case "ALL_WORLDS":
-						Bukkit.getWorlds().forEach(world -> {
-							WorldWrapper disableLink = WorldWrapper.getWorldWrapper(world);
-							List<String> toDisableList = DataUtils.getConfigStringList(disableLink.getConfig(), disableLink.getConfigName(), "world.disabled_disasters");
-							if (toDisableList.contains(args[2]))
-								return;
-							toDisableList.add(args[2]);
-							disableLink.getConfig().set("world.disabled_disasters", toDisableList);
-							disableLink.saveAndReload();
-						});
-						sender.sendMessage(Utils.convertString(Utils.prefix+"&bThe disaster/category &6'"+args[2]+"' &bhas been &c&ldisabled &bfor all worlds!"));
+				}
+				if (worlds == null) {
+					worlds = getWorldSelection(args[3], sender);
+					if (worlds == null) {
+						sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[3]+"'!"));
 						return true;
-					case "THIS_WORLD":
-						if (!(sender instanceof Player player)) {
-							sender.sendMessage(Utils.convertString("&cYou cannot reference 'THIS_WORLD' from here!"));
-							return true;
-						}
-						disableWorld = player.getWorld();
-						break;
-					default:
-						World temp = Bukkit.getWorld(args[3]);
-						if (temp == null) {
-							sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[3]+"'!"));
-							return true;
-						}
-						disableWorld = temp;
-						break;
 					}
-				WorldWrapper disableLink = WorldWrapper.getWorldWrapper(disableWorld);
-				List<String> toDisableList = DataUtils.getConfigStringList(disableLink.getConfig(), disableLink.getConfigName(), "world.disabled_disasters");
-				if (toDisableList.contains(args[2])) {
-					sender.sendMessage(Utils.convertString(Utils.prefix+"&eThe disaster/category &6'"+args[2]+"' &eis already &c&ldisabled &ein world config &6'"+disableLink.getConfigName()+"' &efor world &d'"+disableWorld.getName()+"'&e!"));
+				}
+				if (worlds.length > 1) {
+					Bukkit.getWorlds().forEach(world -> {
+						WorldWrapper wrapper = WorldWrapper.getWorldWrapper(world);
+						List<String> list = DataUtils.getConfigStringList(wrapper.getConfig(), wrapper.getConfigName(), "world.disabled_disasters");
+						if (list.contains(args[2]))
+							return;
+						list.add(args[2]);
+						wrapper.getConfig().set("world.disabled_disasters", list);
+						wrapper.saveAndReload();
+					});
+					sender.sendMessage(Utils.convertString(Utils.prefix+"&bThe disaster/category &6'"+args[2]+"' &bhas been &c&ldisabled &bfor all worlds!"));
+					return true;
+				} else {
+					WorldWrapper wrapper = WorldWrapper.getWorldWrapper(worlds[0]);
+					List<String> list = DataUtils.getConfigStringList(wrapper.getConfig(), wrapper.getConfigName(), "world.disabled_disasters");
+					if (list.contains(args[2])) {
+						sender.sendMessage(Utils.convertString(Utils.prefix+"&eThe disaster/category &6'"+args[2]+"' &eis already &c&ldisabled &ein world config &6'"+wrapper.getConfigName()+"' &efor world &d'"+worlds[0].getName()+"'&e!"));
+						return true;
+					}
+					list.add(args[2]);
+					wrapper.getConfig().set("world.disabled_disasters", list);
+					wrapper.saveAndReload();
+					sender.sendMessage(Utils.convertString(Utils.prefix+"&bThe disaster/category &6'"+args[2]+"' &bhas been &c&ldisabled &bin world config &a'"+wrapper.getConfigName()+"' &bfor world &d'"+worlds[0].getName()+"'&b!"));
 					return true;
 				}
-				toDisableList.add(args[2]);
-				disableLink.getConfig().set("world.disabled_disasters", toDisableList);
-				disableLink.saveAndReload();
-				sender.sendMessage(Utils.convertString(Utils.prefix+"&bThe disaster/category &6'"+args[2]+"' &bhas been &c&ldisabled &bin world config &a'"+disableLink.getConfigName()+"' &bfor world &d'"+disableWorld.getName()+"'&b!"));
-				return true;
-			case "setting":
+			}
+			case "setting" -> {
 				if (args.length < 4) {
 					sender.sendMessage(Utils.convertString("&cUsage: /disasters config setting <option> <value> [world]"));
 					return true;
@@ -521,171 +522,183 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					sender.sendMessage(Utils.convertString("&cThe setting '"+args[2]+"' does not exist!"));
 					return true;
 				}
-				World configWorld = null;
+				World[] worlds = null;
 				if (args.length < 5) {
 					if (sender instanceof Player player)
-						configWorld = player.getWorld();
+						worlds = new World[] { player.getWorld() };
 					else {
 						sender.sendMessage(Utils.convertString("&cUsage: /disasters config setting <option> <value> <world>"));
 						return true;
 					}
-				} else
-					switch (args[4].toUpperCase()) {
-					case "ALL_WORLDS":
-						for (World world : Bukkit.getWorlds()) {
-							WorldWrapper configLink = WorldWrapper.getWorldWrapper(world);
-							if (!option.function.apply(new ConfigSettingContainer(args[3], sender, configLink)))
-								return true;
-							configLink.getConfig().set(option.configSection + args[2].toLowerCase(), args[3]);
-							configLink.saveAndReload();
-						}
-						sender.sendMessage(Utils.convertString(Utils.prefix+"&aSuccessfully set the setting &6'"+args[2].toLowerCase()+"' &ato the value &b'"+args[3]+"' &afor all worlds configs!"));
+				} else {
+					worlds = getWorldSelection(args[4], sender);
+					if (worlds == null) {
+						sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[4]+"'!"));
 						return true;
-					case "THIS_WORLD":
-						if (!(sender instanceof Player player)) {
-							sender.sendMessage(Utils.convertString("&cYou cannot reference 'THIS_WORLD' from here!"));
-							return true;
-						}
-						configWorld = player.getWorld();
-						break;
-					default:
-						World temp = Bukkit.getWorld(args[4]);
-						if (temp == null) {
-							sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[4]+"'!"));
-							return true;
-						}
-						configWorld = temp;
-						break;
 					}
-				WorldWrapper configLink = WorldWrapper.getWorldWrapper(configWorld);
-				if (!option.function.apply(new ConfigSettingContainer(args[3], sender, configLink)))
+				}
+				if (worlds.length > 1) {
+					for (World world : Bukkit.getWorlds()) {
+						WorldWrapper wrapper = WorldWrapper.getWorldWrapper(world);
+						if (!option.function.apply(new ConfigSettingContainer(args[3], sender, wrapper)))
+							return true;
+						wrapper.getConfig().set(option.configSection + args[2].toLowerCase(), args[3]);
+						wrapper.saveAndReload();
+					}
+					sender.sendMessage(Utils.convertString(Utils.prefix+"&aSuccessfully set the setting &6'"+args[2].toLowerCase()+"' &ato the value &b'"+args[3]+"' &afor all worlds configs!"));
 					return true;
-				configLink.getConfig().set(option.configSection + args[2].toLowerCase(), args[3]);
-				configLink.saveAndReload();
-				sender.sendMessage(Utils.convertString(Utils.prefix+"&aSuccessfully set the setting &6'"+args[2].toLowerCase()+"' &ato the value &b'"+args[3]+"' &afor the world config &d'"+configLink.getConfigName()+"'&a!"));
-				return true;
-			case "list":
+				} else {
+					WorldWrapper wrapper = WorldWrapper.getWorldWrapper(worlds[0]);
+					if (!option.function.apply(new ConfigSettingContainer(args[3], sender, wrapper)))
+						return true;
+					wrapper.getConfig().set(option.configSection + args[2].toLowerCase(), args[3]);
+					wrapper.saveAndReload();
+					sender.sendMessage(Utils.convertString(Utils.prefix+"&aSuccessfully set the setting &6'"+args[2].toLowerCase()+"' &ato the value &b'"+args[3]+"' &afor the world config &d'"+wrapper.getConfigName()+"'&a!"));
+					return true;
+				}
+			}
+			case "list" -> {
 				StringBuilder builder = new StringBuilder(Utils.prefix+"&bAll worlds and their current selected disaster world configs:");
 				Bukkit.getWorlds().forEach(world -> {
 					builder.append("\n&3- &a"+world.getName()+" &d("+DataUtils.getDataFileString("worlds."+world.getUID().toString()+".config", "&cERROR")+"&d)");
 				});
 				sender.sendMessage(Utils.convertString(builder.toString()));
 				return true;
-			default:
-				break;
+			}
+			default -> {}
 			}
 			sender.sendMessage(Utils.convertString("&cUsage: /disasters config <reload|set|enable|disable|setting|list>"));
 			return true;
-		case "blacklist":
+		}
+		case "blacklist" -> {
 			if (args.length < 3) {
 				sender.sendMessage(Utils.convertString("&cUsage: /disasters blacklist <add|remove> <player> [world]"));
 				return true;
 			}
-			Player blacklistPlayer = getOnlinePlayer(args[2]);
-			if (blacklistPlayer == null) {
-				sender.sendMessage(Utils.convertString("&cCould not find player '"+args[2]+"'!"));
-				return true;
-			}
-			World blacklistWorld = null;
-			if (args.length > 3)
-				switch (args[3].toUpperCase()) {
-				case "ALL_WORLDS":
-					break;
-				case "THIS_WORLD":
-					if (!(sender instanceof Player player)) {
-						sender.sendMessage(Utils.convertString("&cYou cannot reference 'THIS_WORLD' from here!"));
-						return true;
-					}
-					blacklistWorld = player.getWorld();
-					break;
-				default:
-					World temp = Bukkit.getWorld(args[3]);
-					if (temp == null) {
-						sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[3]+"'!"));
-						return true;
-					}
-					blacklistWorld = temp;
-					break;
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					OfflinePlayer player = getOnlinePlayer(args[2]);
+					if (player == null)
+						player = Bukkit.getOfflinePlayer(args[2]);
+					UUID uuid = player.getUniqueId();
+					new BukkitRunnable() {
+						@Override
+						public void run() {
+							if (uuid == null) {
+								sender.sendMessage(Utils.convertString("&cCould not find player '"+args[2]+"'!"));
+								return;
+							}
+							World[] worlds = null;
+							if (args.length < 4) {
+								if (sender instanceof Player p)
+									worlds = new World[] { p.getWorld() };
+								else {
+									sender.sendMessage(Utils.convertString("&cUsage: /disasters blacklist <add|remove> <player> <world>"));
+									return;
+								}
+							} else {
+								worlds = getWorldSelection(args[3], sender);
+								if (worlds == null) {
+									sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[3]+"'!"));
+									return;
+								}
+							}
+							switch (args[1].toLowerCase()) {
+							case "add" -> {
+								if (worlds.length > 1) {
+									DataUtils.writeToDataFile(file -> {
+										Bukkit.getWorlds().forEach(world -> {
+											WorldWrapper wrapper = WorldWrapper.getWorldWrapper(world);
+											List<String> list = DataUtils.getDataFileStringList("worlds."+world.getUID().toString()+".player_blacklist");
+											list.add(uuid.toString());
+											file.set("worlds."+world.getUID().toString()+".player_blacklist", list);
+											if (wrapper.blacklistedPlayers == null)
+												wrapper.blacklistedPlayers = new HashSet<>();
+											wrapper.blacklistedPlayers.add(uuid);
+										});
+									});
+									sender.sendMessage(Utils.convertString(Utils.prefix+"&bBlacklisted player &d'"+args[2]+"' &bfor all worlds! &7(Disasters will NOT naturally occur on this player)."));
+									return;
+								}
+								WorldWrapper wrapper = WorldWrapper.getWorldWrapper(worlds[0]);
+								List<String> list = DataUtils.getDataFileStringList("worlds."+worlds[0].getUID().toString()+".player_blacklist");
+								if (list.contains(uuid.toString())) {
+									sender.sendMessage(Utils.convertString(Utils.prefix+"&eThe player &d'"+args[2]+"' &eis already blacklisted on world &a'"+worlds[0].getName()+"'&e!"));
+									return;
+								}
+								list.add(uuid.toString());
+								UUID worldID = worlds[0].getUID();
+								DataUtils.writeToDataFile(file -> file.set("worlds."+worldID.toString()+".player_blacklist", list));
+								if (wrapper.blacklistedPlayers == null)
+									wrapper.blacklistedPlayers = new HashSet<>();
+								wrapper.blacklistedPlayers.add(uuid);
+								sender.sendMessage(Utils.convertString(Utils.prefix+"&bBlacklisted player &d'"+args[2]+"' &bfor world &a'"+worlds[0].getName()+"'&b! &7(Disasters will NOT naturally occur on this player)."));
+								return;
+							}
+							case "remove" -> {
+								if (worlds.length > 1) {
+									DataUtils.writeToDataFile(file -> {
+										Bukkit.getWorlds().forEach(world -> {
+											WorldWrapper wrapper = WorldWrapper.getWorldWrapper(world);
+											List<String> list = DataUtils.getDataFileStringList("worlds."+world.getUID().toString()+".player_blacklist");
+											if (list.remove(uuid.toString()))
+												file.set("worlds."+world.getUID().toString()+".player_blacklist", list);
+											if (wrapper != null) {
+												wrapper.blacklistedPlayers.remove(uuid);
+												if (wrapper.blacklistedPlayers.isEmpty())
+													wrapper.blacklistedPlayers = null;
+											}
+										});
+									});
+									sender.sendMessage(Utils.convertString(Utils.prefix+"&bRemoved player &d'"+args[2]+"' &bfrom the blacklist for all worlds! &7(Disasters WILL naturally occur on this player)."));
+									return;
+								}
+								WorldWrapper wrapper = WorldWrapper.getWorldWrapper(worlds[0]);
+								List<String> list = DataUtils.getDataFileStringList("worlds."+worlds[0].getUID().toString()+".player_blacklist");
+								if (!list.contains(uuid.toString())) {
+									sender.sendMessage(Utils.convertString(Utils.prefix+"&eThe player &d'"+args[2]+"' &eis not blacklisted on world &a'"+worlds[0].getName()+"'&e!"));
+									return;
+								}
+								list.remove(uuid.toString());
+								UUID worldID = worlds[0].getUID();
+								DataUtils.writeToDataFile(file -> file.set("worlds."+worldID.toString()+".player_blacklist", list));
+								if (wrapper != null) {
+									wrapper.blacklistedPlayers.remove(uuid);
+									if (wrapper.blacklistedPlayers.isEmpty())
+										wrapper.blacklistedPlayers = null;
+								}
+								sender.sendMessage(Utils.convertString(Utils.prefix+"&bRemoved player &d'"+args[2]+"' &bfrom the blacklist for world &a'"+worlds[0].getName()+"'&b! &7(Disasters WILL naturally occur on this player)."));
+								return;
+							}
+							default -> {
+								sender.sendMessage(Utils.convertString("&cUsage: /disasters config <reload|set|enable|disable|setting|list>"));
+								return;
+							}
+							}
+						}
+					}.runTask(plugin);
 				}
-			else if (sender instanceof Player player)
-				blacklistWorld = player.getWorld();
-			else {
-				sender.sendMessage(Utils.convertString("&cUsage: /disasters blacklist <add|remove> <player> <world>"));
-				return true;
-			}
-			switch (args[1].toLowerCase()) {
-			case "add":
-				if (blacklistWorld == null) {
-					DataUtils.writeToDataFile(file -> {
-						Bukkit.getWorlds().forEach(world -> {
-							WorldWrapper addLink = WorldWrapper.getWorldWrapper(world);
-							List<String> addList = DataUtils.getDataFileStringList("worlds."+world.getUID().toString()+".player_blacklist");
-							addList.add(blacklistPlayer.getUniqueId().toString());
-							file.set("worlds."+world.getUID().toString()+".player_blacklist", addList);
-							addLink.blacklistedPlayers.add(blacklistPlayer.getUniqueId());
-						});
-					});
-					sender.sendMessage(Utils.convertString(Utils.prefix+"&bBlacklisted player &d'"+args[2]+"' &bfor all worlds! &7(Disasters will NOT naturally occur on this player)."));
-					return true;
-				}
-				WorldWrapper addLink = WorldWrapper.getWorldWrapper(blacklistWorld);
-				List<String> list = DataUtils.getDataFileStringList("worlds."+blacklistWorld.getUID().toString()+".player_blacklist");
-				if (list.contains(blacklistPlayer.getUniqueId().toString())) {
-					sender.sendMessage(Utils.convertString(Utils.prefix+"&eThe player &d'"+args[2]+"' &eis already blacklisted on world &a'"+blacklistWorld.getName()+"'&e!"));
-					return true;
-				}
-				list.add(blacklistPlayer.getUniqueId().toString());
-				UUID addWorldID = blacklistWorld.getUID();
-				DataUtils.writeToDataFile(file -> file.set("worlds."+addWorldID.toString()+".player_blacklist", list));
-				addLink.blacklistedPlayers.add(blacklistPlayer.getUniqueId());
-				sender.sendMessage(Utils.convertString(Utils.prefix+"&bBlacklisted player &d'"+args[2]+"' &bfor world &a'"+blacklistWorld.getName()+"'&b! &7(Disasters will NOT naturally occur on this player)."));
-				return true;
-			case "remove":
-				if (blacklistWorld == null) {
-					DataUtils.writeToDataFile(file -> {
-						Bukkit.getWorlds().forEach(world -> {
-							WorldWrapper removeLink = WorldWrapper.getWorldWrapper(world);
-							List<String> removeList = DataUtils.getDataFileStringList("worlds."+world.getUID().toString()+".player_blacklist");
-							if (removeList.remove(blacklistPlayer.getUniqueId().toString()))
-								file.set("worlds."+world.getUID().toString()+".player_blacklist", removeList);
-							removeLink.blacklistedPlayers.remove(blacklistPlayer.getUniqueId());
-						});
-					});
-					sender.sendMessage(Utils.convertString(Utils.prefix+"&bRemoved player &d'"+args[2]+"' &bfrom the blacklist for all worlds! &7(Disasters WILL naturally occur on this player)."));
-					return true;
-				}
-				WorldWrapper removeLink = WorldWrapper.getWorldWrapper(blacklistWorld);
-				List<String> removeList = DataUtils.getDataFileStringList("worlds."+blacklistWorld.getUID().toString()+".player_blacklist");
-				if (!removeList.contains(blacklistPlayer.getUniqueId().toString())) {
-					sender.sendMessage(Utils.convertString(Utils.prefix+"&eThe player &d'"+args[2]+"' &eis not blacklisted on world &a'"+blacklistWorld.getName()+"'&e!"));
-					return true;
-				}
-				removeList.remove(blacklistPlayer.getUniqueId().toString());
-				UUID removeWorldID = blacklistWorld.getUID();
-				DataUtils.writeToDataFile(file -> file.set("worlds."+removeWorldID.toString()+".player_blacklist", removeList));
-				removeLink.blacklistedPlayers.remove(blacklistPlayer.getUniqueId());
-				sender.sendMessage(Utils.convertString(Utils.prefix+"&bRemoved player &d'"+args[2]+"' &bfrom the blacklist for world &a'"+blacklistWorld.getName()+"'&b! &7(Disasters WILL naturally occur on this player)."));
-				return true;
-			default:
-				sender.sendMessage(Utils.convertString("&cUsage: /disasters config <reload|set|enable|disable|setting|list>"));
-				return true;
-			}
-		case "timers":
+			}.runTaskAsynchronously(plugin);
+			return true;
+		}
+		case "timers" -> {
 			if (args.length < 2) {
 				sender.sendMessage(Utils.convertString("&cUsage: /disasters timers <listworlds|listplayer> [player]"));
 				return true;
 			}
 			switch (args[1].toLowerCase()) {
-			case "listworlds":
-				StringBuilder worldBuilder = new StringBuilder(Utils.prefix+"&aAll worlds and their global timers listed:");
+			case "listworlds" -> {
+				StringBuilder builder = new StringBuilder(Utils.prefix+"&aAll worlds and their global timers listed:");
 				Bukkit.getWorlds().forEach(world -> {
-					WorldWrapper link = WorldWrapper.getWorldWrapper(world);
-					Integer timer = link.targetingMode == 2 ? plugin.selector.worldTimers.get(world.getUID()) : null;
-					worldBuilder.append("\n&3- &d"+world.getName()+" &7- &f&l" + (timer == null ? "&c&lN/A" : timer));
+					WorldWrapper wrapper = WorldWrapper.getWorldWrapper(world);
+					Integer timer = wrapper.targetingMode == 2 ? plugin.selector.worldTimers.get(world.getUID()) : null;
+					builder.append("\n&3- &d"+world.getName()+" &7- &f&l" + (timer == null ? "&c&lN/A" : timer));
 				});
-				sender.sendMessage(Utils.convertString(worldBuilder.toString()));
+				sender.sendMessage(Utils.convertString(builder.toString()));
 				return true;
-			case "listplayer":
+			}
+			case "listplayer" -> {
 				if (args.length < 3) {
 					sender.sendMessage(Utils.convertString("&cUsage: /disasters timers listplayer <player>"));
 					return true;
@@ -695,20 +708,22 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					sender.sendMessage(Utils.convertString("&cCould not find player '"+args[2]+"'!"));
 					return true;
 				}
-				StringBuilder playerBuilder = new StringBuilder(Utils.prefix+"&aAll world timers for &6"+target.getDisplayName()+" &alisted:");
+				StringBuilder builder = new StringBuilder(Utils.prefix+"&aAll world timers for &6"+target.getDisplayName()+" &alisted:");
 				Bukkit.getWorlds().forEach(world -> {
 					Map<UUID, Integer> worldMap = plugin.selector.playerTimers.get(world.getUID());
 					Integer timer = worldMap != null ? worldMap.get(target.getUniqueId()) : null;
-					playerBuilder.append("\n&3- &d"+world.getName()+" &7- " + (target.getWorld().equals(world) ? "&a&l" : "&f&l") + (timer == null ? "&c&lN/A" : timer + " &7(seconds till disaster)"));
+					builder.append("\n&3- &d"+world.getName()+" &7- " + (target.getWorld().equals(world) ? "&a&l" : "&f&l") + (timer == null ? "&c&lN/A" : timer + " &7(seconds till disaster)"));
 				});
-				sender.sendMessage(Utils.convertString(playerBuilder.toString()));
+				sender.sendMessage(Utils.convertString(builder.toString()));
 				return true;
-			default:
+			}
+			default -> {
 				sender.sendMessage(Utils.convertString("&cUsage: /disasters timers <listworlds|listplayer> [player]"));
 				return true;
 			}
-		default:
-			break;
+			}
+		}
+		default -> {}
 		}
 		if (sender instanceof Player && !sender.hasPermission("deadlydisasters.*")) {
 			sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.permission_error")));
@@ -723,15 +738,31 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				return temp;
 		return null;
 	}
+	private World[] getWorldSelection(String name, CommandSender sender) {
+		switch (name.toLowerCase()) {
+		case "all_worlds" -> {
+			return Bukkit.getServer().getWorlds().toArray(new World[0]);
+		}
+		case "this_world" -> {
+			if (!(sender instanceof Player player))
+				return null;
+			return new World[] { player.getWorld() };
+		}
+		default -> {
+			for (World world : Bukkit.getServer().getWorlds())
+				if (world.getName().equalsIgnoreCase(name)) {
+					return new World[] { world };
+				}
+			return null;
+		}
+		}
+	}
 	@Override
 	public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
 		List<String> list = new ArrayList<>();
 		String keyword;
 		switch (args.length) {
-		default:
-		case 0:
-			return list;
-		case 1:
+		case 1 -> {
 			keyword = args[0].toLowerCase();
 			if (sender.hasPermission("deadlydisasters.help"))
 				list.add("help");
@@ -747,12 +778,11 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				list.add("blacklist");
 			if (sender.hasPermission("deadlydisasters.timers"))
 				list.add("timers");
-			list.removeIf(e -> !e.contains(keyword));
-			break;
-		case 2:
+			list.removeIf(e -> !e.toLowerCase().contains(keyword));
+		}
+		case 2 -> {
 			keyword = args[1].toLowerCase();
 			if (args[0].equalsIgnoreCase("help") && sender.hasPermission("deadlydisasters.help")) {
-				list.add("help");
 				if (sender.hasPermission("deadlydisasters.start"))
 					list.add("start");
 				if (sender.hasPermission("deadlydisasters.stop"))
@@ -761,6 +791,10 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					list.add("forceRegenerate");
 				if (sender.hasPermission("deadlydisasters.config"))
 					list.add("config");
+				if (sender.hasPermission("deadlydisasters.blacklist"))
+					list.add("blacklist");
+				if (sender.hasPermission("deadlydisasters.timers"))
+					list.add("timers");
 			} else if ((args[0].equalsIgnoreCase("start") && sender.hasPermission("deadlydisasters.start"))
 					|| (args[0].equalsIgnoreCase("stop") && sender.hasPermission("deadlydisasters.stop")))
 				list.addAll(DisasterRegistry.getRegisteredNames());
@@ -772,11 +806,14 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				list.addAll(Arrays.asList("add", "remove"));
 			else if (args[0].equalsIgnoreCase("timers") && sender.hasPermission("deadlydisasters.timers"))
 				list.addAll(Arrays.asList("listworlds", "listplayer"));
-			list.removeIf(e -> !e.contains(keyword));
-			break;
-		case 3:
+			list.removeIf(e -> !e.toLowerCase().contains(keyword));
+		}
+		case 3 -> {
 			keyword = args[2].toLowerCase();
-			if (args[0].equalsIgnoreCase("start") && sender.hasPermission("deadlydisasters.start"))
+			if (args[0].equalsIgnoreCase("help") && sender.hasPermission("deadlydisasters.help")) {
+				if (args[1].equalsIgnoreCase("config") && sender.hasPermission("deadlydisasters.config"))
+					list.addAll(Arrays.asList("reload", "set", "enable", "disable", "setting", "list"));
+			} else if (args[0].equalsIgnoreCase("start") && sender.hasPermission("deadlydisasters.start"))
 				list.addAll(Arrays.asList("1", "2", "3", "4", "5", "6"));
 			else if (args[0].equalsIgnoreCase("stop") && sender.hasPermission("deadlydisasters.stop"))
 				list.addAll(Bukkit.getServer().getWorlds().stream().map(world -> world.getName()).collect(Collectors.toList()));
@@ -799,9 +836,9 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			else if (args[0].equalsIgnoreCase("timers") && sender.hasPermission("deadlydisasters.timers")
 					&& args[1].equalsIgnoreCase("listplayer"))
 				list.addAll(Bukkit.getServer().getOnlinePlayers().stream().map(player -> player.getName()).collect(Collectors.toList()));
-			list.removeIf(e -> !e.contains(keyword));
-			break;
-		case 4:
+			list.removeIf(e -> !e.toLowerCase().contains(keyword));
+		}
+		case 4 -> {
 			keyword = args[3].toLowerCase();
 			if (args[0].equalsIgnoreCase("start") && sender.hasPermission("deadlydisasters.start"))
 				list.addAll(Bukkit.getServer().getOnlinePlayers().stream().map(player -> player.getName()).collect(Collectors.toList()));
@@ -831,9 +868,9 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				if (sender instanceof Player)
 					list.add("THIS_WORLD");
 			}
-			list.removeIf(e -> !e.contains(keyword));
-			break;
-		case 5:
+			list.removeIf(e -> !e.toLowerCase().contains(keyword));
+		}
+		case 5 -> {
 			keyword = args[4].toLowerCase();
 			if (args[0].equalsIgnoreCase("config") && sender.hasPermission("deadlydisasters.config")
 					&& args[1].equalsIgnoreCase("setting")) {
@@ -842,13 +879,14 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				if (sender instanceof Player)
 					list.add("THIS_WORLD");
 			}
-			break;
-		case 7:
+		}
+		case 7 -> {
 			keyword = args[6].toLowerCase();
 			if (args[0].equalsIgnoreCase("start") && sender.hasPermission("deadlydisasters.start"))
 				list.addAll(Bukkit.getServer().getWorlds().stream().map(world -> world.getName()).collect(Collectors.toList()));
-			list.removeIf(e -> !e.contains(keyword));
-			break;
+			list.removeIf(e -> !e.toLowerCase().contains(keyword));
+		}
+		default -> {}
 		}
 		return list;
 	}

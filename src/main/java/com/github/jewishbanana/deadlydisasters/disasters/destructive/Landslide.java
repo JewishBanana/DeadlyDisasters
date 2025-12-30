@@ -337,9 +337,6 @@ public class Landslide extends Disaster implements Listener {
 	public String getDisplayName() {
 		return Utils.convertString(DataUtils.getLanguageString(isAvalanche ? "disasters.destructive.avalanche" : getConfigPath()));
 	}
-	public double getRegenTickRate() {
-		return level;
-	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of(Environment.NETHER, Environment.THE_END);
 	}

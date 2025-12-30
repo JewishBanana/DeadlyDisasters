@@ -3,10 +3,10 @@ package com.github.jewishbanana.deadlydisasters.disasters;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -43,7 +43,7 @@ import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent.Disaste
 import com.github.jewishbanana.deadlydisasters.events.DisasterStopEvent;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStopEvent.DisasterStopReason;
 import com.github.jewishbanana.deadlydisasters.listeners.BlockRegenHandler;
-import com.github.jewishbanana.deadlydisasters.listeners.DeathListener;
+import com.github.jewishbanana.deadlydisasters.listeners.DeathMessageHandler;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
@@ -66,7 +66,7 @@ public abstract class Disaster {
 	
 	private Queue<BukkitTask> tasks = new ArrayDeque<>();
 	private WorldWrapper worldLink;
-	private Set<Block> modifiedBlocks = new LinkedHashSet<>();
+	private List<Block> modifiedBlocks = new ArrayList<>();
 	private float volume = 1f;
 	private boolean regionsProtected;
 	private boolean affectEntitiesInRegions;
@@ -100,7 +100,7 @@ public abstract class Disaster {
 					Utils.sendConsoleMessage("&cERROR no such entity type named &e'"+type+"' &cin the &d'"+worldLink.getConfigName()+"' &cworld config file at &b'"+getConfigPath()+".blacklisted_mob_types' &clist! This value will be omitted and the entity type will be affected by the disaster.");
 				}
 			});
-			blacklistedEntityTypes = Set.copyOf(types);
+			blacklistedEntityTypes = types.isEmpty() ? EnumSet.noneOf(EntityType.class) : EnumSet.copyOf(types);
 		}
 		this.regionsProtected = worldLink.getConfigBoolean("protection_settings.region_plugins.protect_region_from_damage");
 		this.affectEntitiesInRegions = worldLink.getConfigBoolean("protection_settings.region_plugins.allow_disaster_effects_in_regions");
@@ -141,7 +141,7 @@ public abstract class Disaster {
 	}
 	public void start() {
 		onGoingDisasters.add(this);
-		Bukkit.broadcastMessage("disaster started");
+//		Bukkit.broadcastMessage("disaster started");
 	}
 	public boolean stop(DisasterStopReason reason) {
 		DisasterStopEvent event = new DisasterStopEvent(this, reason);
@@ -151,8 +151,8 @@ public abstract class Disaster {
 		clean();
 		onGoingDisasters.remove(this);
 		if (reason != DisasterStopReason.SERVER_CLOSING)
-			plugin.getServer().getScheduler().runTaskLater(plugin, () -> regenerateBlocks(reason), (int) (worldLink.getConfigDouble("regeneration.regeneration_delay") * 20));
-		Bukkit.broadcastMessage("disaster ended");
+			regenerateBlocks(reason);
+//		Bukkit.broadcastMessage("disaster ended");
 		return true;
 	}
 	public boolean stop() {
@@ -234,16 +234,17 @@ public abstract class Disaster {
 			modifiedBlocks.clear();
 			return;
 		}
-		Set<Block> copiedSet = new LinkedHashSet<>(modifiedBlocks);
+		List<Block> copiedSet = new ArrayList<>(modifiedBlocks);
 		if (reverseRegenerationOrder()) {
 			List<Block> list = new ArrayList<>(copiedSet);
 			Collections.reverse(list);
-			copiedSet = new LinkedHashSet<>(list);
+			copiedSet = new ArrayList<>(list);
 		}
 		if (reason != DisasterStopReason.SERVER_CLOSING) {
+//			BlockRegenHandler.printMaps();
 			final double regenRate = getRegenTickRate() * (getConfigPath() == null ? 1.0 : getConfigOverrideDouble("regen_rate"));
 			if (regenRate > 0)
-				regeneratingDisasters.put(this, this.new RegeneratingTask(this, copiedSet, regenRate));
+				regeneratingDisasters.put(this, this.new RegeneratingTask(this, copiedSet, regenRate, (int) (worldLink.getConfigDouble("regeneration.regeneration_delay") * 20)));
 			modifiedBlocks.clear();
 		} else
 			modifiedBlocks = copiedSet;
@@ -254,9 +255,9 @@ public abstract class Disaster {
 	public class RegeneratingTask {
 		
 		public BukkitTask task;
-		public Set<Block> blocks;
+		public List<Block> blocks;
 		
-		public RegeneratingTask(Disaster disaster, Set<Block> blocks, double regenRate) {
+		public RegeneratingTask(Disaster disaster, List<Block> blocks, double regenRate, int startDelay) {
 			this.blocks = blocks;
 			this.task = new BukkitRunnable() {
 				private double regenTicks;
@@ -268,9 +269,12 @@ public abstract class Disaster {
 					while (regenTicks >= 1 && iterator.hasNext()) {
 						regenTicks -= 1;
 						try {
-							Block block = iterator.next();
-							iterator.remove();
-							BlockRegenHandler.restoreBlock(block, true);
+							do {
+								Block block = iterator.next();
+								iterator.remove();
+								if (BlockRegenHandler.restoreBlock(block, true))
+									break;
+							} while (iterator.hasNext());
 						} catch (Exception e) {
 							Utils.sendExceptionLog(e);
 						}
@@ -279,6 +283,7 @@ public abstract class Disaster {
 						if (modifiedBlocks.isEmpty()) {
 							this.cancel();
 							regeneratingDisasters.remove(disaster);
+//							BlockRegenHandler.printMaps();
 							return;
 						}
 						blocks.addAll(modifiedBlocks);
@@ -286,10 +291,10 @@ public abstract class Disaster {
 						iterator = blocks.iterator();
 					}
 				}
-			}.runTaskTimer(plugin, 0, 1);
+			}.runTaskTimer(plugin, startDelay, 1);
 		}
-		public RegeneratingTask(Disaster disaster, Set<Block> blocks) {
-			this(disaster, blocks, getRegenTickRate() * (getConfigPath() == null ? 1.0 : getConfigOverrideDouble("regen_rate")));
+		public RegeneratingTask(Disaster disaster, List<Block> blocks, int startDelay) {
+			this(disaster, blocks, getRegenTickRate() * (getConfigPath() == null ? 1.0 : getConfigOverrideDouble("regen_rate")), startDelay);
 		}
 	}
 	public void playSound(Location loc, Sound sound, SoundCategory category, double vol, double pitch) {
@@ -307,10 +312,10 @@ public abstract class Disaster {
 	public void addDeathWatcher(String languagePath) {
 		if (getDeathCheck() == null)
 			return;
-		DeathListener.createWatcher(this, languagePath, getDeathCheck());
+		DeathMessageHandler.createWatcher(this, languagePath, getDeathCheck());
 	}
 	public void removeDeathWatcher(int delayTicks) {
-		DeathListener.removeDeathWatcher(this, delayTicks);
+		DeathMessageHandler.removeDeathWatcher(this, delayTicks);
 	}
 	public void getChunksInvolvedSafelyAndThen(Runnable function, boolean generateChunks) {
 		final double radiusSquared = disasterRange * disasterRange;
@@ -427,7 +432,7 @@ public abstract class Disaster {
 		return null;
 	}
 	public double getRegenTickRate() {
-		return 3.0;
+		return level * 0.05;
 	}
 	public boolean reverseRegenerationOrder() {
 		return true;
@@ -445,7 +450,7 @@ public abstract class Disaster {
 		}
 		return null;
 	}
-	public Set<Block> getModifiedBlocks() {
+	public List<Block> getModifiedBlocks() {
 		return modifiedBlocks;
 	}
 	public double getFrequency() {

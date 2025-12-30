@@ -1,6 +1,7 @@
 package com.github.jewishbanana.deadlydisasters;
 
 import java.io.File;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,15 +39,27 @@ public class WorldWrapper {
 		disasterCategory.put("ALL", Set.copyOf(DisasterRegistry.getRegisteredDisasters()));
 		disasterCategory.put("DESTRUCTIVE_DISASTERS", Set.of(
 			    DisasterRegistry.getRegistry("sinkhole"),
-			    DisasterRegistry.getRegistry("supernova")
+			    DisasterRegistry.getRegistry("earthquake"),
+			    DisasterRegistry.getRegistry("tornado"),
+			    DisasterRegistry.getRegistry("cavein"),
+			    DisasterRegistry.getRegistry("water_geyser"),
+			    DisasterRegistry.getRegistry("lava_geyser"),
+			    DisasterRegistry.getRegistry("supernova"),
+			    DisasterRegistry.getRegistry("landslide")
 			));
 		disasterCategory.put("WEATHER_DISASTERS", Set.of(
-				DisasterRegistry.getRegistry("acid_storm")
+				DisasterRegistry.getRegistry("acid_storm"),
+				DisasterRegistry.getRegistry("sandstorm"),
+				DisasterRegistry.getRegistry("blizzard"),
+				DisasterRegistry.getRegistry("extreme_winds"),
+				DisasterRegistry.getRegistry("soul_storm"),
+				DisasterRegistry.getRegistry("monsoon"),
+				DisasterRegistry.getRegistry("meteor_shower"),
+				DisasterRegistry.getRegistry("end_storm")
 				));
-//		disasterCategory.put("MOB_DISASTERS", Set.of(
-//				DisasterRegistry.getRegistry("black_plague"),
-//				DisasterRegistry.getRegistry("purge")
-//				));
+		disasterCategory.put("MOB_DISASTERS", Set.of(
+				DisasterRegistry.getRegistry("purge")
+				));
 		disasterCategories = Map.copyOf(disasterCategory);
 	}
 	
@@ -115,6 +128,7 @@ public class WorldWrapper {
 					file.getParentFile().mkdirs();
 					file.createNewFile();
 					FileUtils.copyInputStreamToFile(plugin.getResource("files/worldConfigs/default.yml"), file);
+					link.configFile = file;
 					link.config = YamlConfiguration.loadConfiguration(file);
 				}
 				link.configName = "default";
@@ -125,7 +139,7 @@ public class WorldWrapper {
 		}
 	}
 	public static void reload(WorldWrapper wrapper) {
-		if (!wrapper.configFile.exists())
+		if (wrapper.configFile == null || !wrapper.configFile.exists())
 			initWorld(wrapper.world);
 		wrapper.config = YamlConfiguration.loadConfiguration(wrapper.configFile);
 		
@@ -208,7 +222,7 @@ public class WorldWrapper {
 					Utils.sendConsoleMessage("&cERROR while trying to parse a players UUID from the player blacklist for world &a'"+wrapper.world.getName()+"'&c for UUID: &e'"+uuid+"'&c! This value will be omitted and the player will be effected by disasters.");
 				}
 			});
-			wrapper.blacklistedPlayers = uuids.isEmpty() ? null : Set.copyOf(uuids);
+			wrapper.blacklistedPlayers = uuids.isEmpty() ? null : new HashSet<>(uuids);
 		}
 
 		wrapper.dropContainerItems = DataUtils.getConfigBoolean(wrapper.config, wrapper.configName, "regeneration.drop_container_items", false);
@@ -222,7 +236,7 @@ public class WorldWrapper {
 			}
 			materials.addAll(set);
 		});
-		wrapper.blackListedBlocks = materials.isEmpty() ? null : Set.copyOf(materials);
+		wrapper.blackListedBlocks = materials.isEmpty() ? null : EnumSet.copyOf(materials);
 
 		String soundString = DataUtils.getConfigString(wrapper.config, wrapper.configName, "world.start_sound.sound", null);
 		if (soundString != null && !soundString.equalsIgnoreCase("NONE"))

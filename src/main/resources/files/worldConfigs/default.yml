@@ -155,7 +155,7 @@ regeneration:
     # If blocks should regenerate after disasters end or not. WARNING, disasters that happen while regeneration is disabled cannot be regenerated in the future!
     enabled: true
     # The delay in seconds after a disaster ends that blocks begin to regenerate.
-    regeneration_delay: 5.0
+    regeneration_delay: 120.0
     # If container blocks such as chests and barrels should drop the contents of their inventory on the ground during the disaster rather than regenerating them with the container later.
     drop_container_items: false
     # The blacklist is for block types that you want to NOT regenerate after disasters end. See the 'blocks.yml' config about preventing disasters from breaking certain blocks.
@@ -253,12 +253,14 @@ disasters:
             block_pickup_range_multiplier: 1.0
             # The maximum amount of entities that can be within a tornado (mobs, blocks, etc.). Alive entities will always take priority.
             max_entities:
-                level 1: 200
-                level 2: 300
-                level 3: 500
-                level 4: 800
-                level 5: 1000
-                level 6: 2000
+                level_1: 200
+                level_2: 300
+                level_3: 500
+                level_4: 800
+                level_5: 1000
+                level_6: 2000
+            # Multiplier for how many particles are spawned in tornados.
+            particle_multiplier: 1.0
             # The minimum height on the Y block axis that this disaster can start at.
             minimum_height: 60
         #######################################################################################################################################################################
@@ -274,7 +276,7 @@ disasters:
             # The speed multiplier affects how fast the cave-in expands from the center to its outer edges.
             speed: 1.0
             # The maximum amount of falling cave-in blocks that can exist at a time. For very large cave-ins smaller numbers could make cave-ins take a very long time to finish.
-            max_falling_blocks: 800
+            max_falling_blocks: 1000
             # The maximum height on the Y block axis that this disaster can start at. NOTE this is maximum, not minimum height!
             maximum_height: 50
         #######################################################################################################################################################################
@@ -387,6 +389,8 @@ disasters:
             particle_multiplier: 1.0
             # The particle render distance is the distance in blocks from players that weather effect particles are displayed. Lower if you are getting poor TPS during weather disasters.
             particle_render_distance: 15.0
+            # Override the global disaster start delay to have weather disasters by default start a little later.
+            start_delay: 8.0
         #######################################################################################################################################################################
         #
         # Acid Storm
@@ -515,6 +519,10 @@ disasters:
             minimum_entity_Y_level: 50
             # The minimum height on the Y block axis that this disaster can start at.
             min_height: 55
+            blacklisted_mob_types:
+            - rabbit
+            - stray
+            - polar_bear
         #######################################################################################################################################################################
         #
         # Extreme Winds
@@ -533,19 +541,19 @@ disasters:
             min_height: 55
         #######################################################################################################################################################################
         #
-        # Meteorshower
+        # Meteor Shower
         #
         #######################################################################################################################################################################
-        meteorshower:
-            # If players should have their in-game time set to night during the meteorshower.
+        meteor_shower:
+            # If players should have their in-game time set to night during the meteor shower.
             set_to_night: true
             # Controls how often meteors spawn near players.
             meteor_spawn_multiplier: 1.0
-            # Size multiplier for meteors spawned in the meteorshower.
+            # Size multiplier for meteors spawned in the meteor shower.
             meteor_size_multiplier: 1.0
             # Multiplier for the speed meteors fall from the sky.
             meteor_speed_multiplier: 1.0
-            # The maximum amount of meteors that can exist at a time during the meteorshower (This impacts performance).
+            # The maximum amount of meteors that can exist at a time during the meteor shower (This impacts performance).
             maximum_meteors: 20
             # How long in seconds smoke will emit from fallen meteors and explosions.
             smoke_time: 15.0
@@ -608,6 +616,8 @@ disasters:
                     level: 2
             # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
             frequency: 0.6
+            blacklisted_mob_types:
+            - vex
         #######################################################################################################################################################################
         #
         # End Storm

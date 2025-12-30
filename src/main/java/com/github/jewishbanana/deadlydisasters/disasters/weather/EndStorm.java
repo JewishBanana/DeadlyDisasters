@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -34,8 +33,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
+import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
 import com.github.jewishbanana.deadlydisasters.disasters.WeatherDisaster;
-import com.github.jewishbanana.deadlydisasters.listeners.EntitiesListener;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
@@ -44,7 +43,7 @@ import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils.AreaClearing;
 import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
-public class EndStorm extends WeatherDisaster {
+public class EndStorm extends WeatherDisaster implements MobDisaster {
 	
 	private float teleportRate;
 	private float teleportRange;
@@ -56,8 +55,6 @@ public class EndStorm extends WeatherDisaster {
 	private float particleRate;
 	private float soundVolume;
 	private Set<PotionEffect> effects;
-	private final Set<UUID> mobs = new HashSet<>();
-	private final Map<UUID, UUID> mobTargets = new HashMap<>();
 	private Set<Entity> currentEntities = Set.of();
 	private final Map<Location, Integer> activeRifts = new ConcurrentHashMap<>();
 	private final Set<Location> rifts = ConcurrentHashMap.newKeySet();
@@ -146,15 +143,6 @@ public class EndStorm extends WeatherDisaster {
 						}
 					}
 				}
-				for (Entry<UUID, UUID> entry : mobTargets.entrySet()) {
-					Mob entity = (Mob) Bukkit.getEntity(entry.getKey());
-					if (entity == null || entity.isDead() || entity.getTarget() != null)
-						continue;
-					Entity target = Bukkit.getEntity(entry.getValue());
-					if (target == null || target.isDead() || !target.getWorld().equals(entity.getWorld()))
-						continue;
-					entity.setTarget((LivingEntity) target);
-				}
 				final Iterator<Entry<Location, Integer>> iterator = activeRifts.entrySet().iterator();
 				while (iterator.hasNext()) {
 					Entry<Location, Integer> entry = iterator.next();
@@ -218,9 +206,7 @@ public class EndStorm extends WeatherDisaster {
 						}
 						if (mob != null) {
 							mob.setTarget(player);
-							mobs.add(mob.getUniqueId());
-							mobTargets.put(mob.getUniqueId(), player.getUniqueId());
-							EntitiesListener.attachRemoveKey(mob);
+							addEntityToDisasterList(mob);
 						}
 					}
 				}
@@ -361,11 +347,6 @@ public class EndStorm extends WeatherDisaster {
 			if (player == null || !player.isOnline())
 				return;
 			player.stopSound(Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP);
-		});
-		mobs.forEach(uuid -> {
-			Entity entity = Bukkit.getEntity(uuid);
-			if (entity != null)
-				entity.remove();
 		});
 	}
 	public boolean isEntityProtected(Entity entity) {

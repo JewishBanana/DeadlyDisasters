@@ -240,9 +240,6 @@ public class ExtremeWinds extends WeatherDisaster {
 	protected String getConfigPath() {
 		return "disasters.weather.extreme_winds";
 	}
-	public double getRegenTickRate() {
-		return 0.1;
-	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of(Environment.NETHER, Environment.THE_END);
 	}

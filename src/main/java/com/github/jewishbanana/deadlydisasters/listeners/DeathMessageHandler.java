@@ -6,20 +6,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
+import com.github.jewishbanana.deadlydisasters.disasters.mob.Purge;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
-public class DeathListener implements Listener {
+public class DeathMessageHandler implements Listener {
 
 	private static final Main plugin;
 	private static final Set<DeathWatcher> watchers;
@@ -30,7 +33,7 @@ public class DeathListener implements Listener {
 	
 	private Map<String, String> deathMessages = new HashMap<>();
 	
-	public DeathListener(Main plugin) {
+	public DeathMessageHandler(Main plugin) {
 		try {
 			for (String s : DataUtils.getLanguageConfig().getConfigurationSection("deaths").getKeys(false))
 				deathMessages.put("deaths."+s, Utils.convertString(DataUtils.getLanguageString("deaths."+s)));
@@ -74,6 +77,14 @@ public class DeathListener implements Listener {
 			player.removeMetadata(entry.getKey(), plugin);
 			return;
 		}
+	}
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void onPlayerDamaged(EntityDamageByEntityEvent event) {
+		if (!(event.getEntity() instanceof Player player) || event.getFinalDamage() < player.getHealth())
+			return;
+		Entity damager = event.getDamager();
+		if (damager != null && damager.hasMetadata(Purge.purgeMobMetadata))
+			player.setMetadata("deaths.purge", plugin.getFixedMetadata());
 	}
 	public static void createWatcher(Disaster disaster, String languagePath, Function<PlayerDeathEvent, Boolean> function) {
 		watchers.add(new DeathWatcher(disaster, languagePath, function));

@@ -33,15 +33,23 @@ public class DataUtils {
 				// Acid Storm
 				"disasters.weather.acid_storm.entity_effects",
 				"disasters.weather.acid_storm.block_changes",
+				"disasters.weather.acid_storm.blacklisted_mob_types",
 				// Sandstorm
 				"disasters.weather.sandstorm.entity_effects",
+				"disasters.weather.sandstorm.blacklisted_mob_types",
 				// Blizzard
 				"disasters.weather.blizzard.entity_effects",
-				// Soul Storm
-				"disasters.weather.soul_storm.entity_effects",
+				"disasters.weather.blizzard.blacklisted_mob_types",
 				// Monsoon
 				"disasters.weather.monsoon.entity_effects",
-				"disasters.weather.monsoon.block_changes"
+				"disasters.weather.monsoon.block_changes",
+				"disasters.weather.monsoon.blacklisted_mob_types",
+				// Soul Storm
+				"disasters.weather.soul_storm.entity_effects",
+				"disasters.weather.soul_storm.blacklisted_mob_types",
+				// End Storm
+				"disasters.weather.end_storm.entity_effects",
+				"disasters.weather.end_storm.blacklisted_mob_types"
 				);
 		try {
 			File folder = new File(plugin.getDataFolder().getAbsolutePath(), "worldConfigs");
@@ -334,6 +342,23 @@ public class DataUtils {
 			dataYaml.save(dataFile);
 		} catch (Exception e) {
 			Utils.sendExceptionLog(e);
+		}
+	}
+	@SuppressWarnings("unchecked")
+	public static <T> T computeSection(FileConfiguration config, String section, T toCompute) {
+		try {
+			Object value = config.get(section);
+			if (value == null)
+				return toCompute;
+			if (toCompute instanceof Map && value instanceof org.bukkit.configuration.ConfigurationSection cs) {
+	            return (T) cs.getValues(false);
+	        }
+	        if (!toCompute.getClass().isInstance(value)) {
+	            return toCompute;
+	        }
+	        return (T) value;
+		} catch (Exception e) {
+			return toCompute;
 		}
 	}
 	public static FileConfiguration getDataFile() {
