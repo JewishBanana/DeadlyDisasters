@@ -1,5 +1,6 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -241,7 +242,7 @@ public class ExtremeWinds extends WeatherDisaster {
 		return "disasters.weather.extreme_winds";
 	}
 	public Set<Environment> getBannedEnvironments() {
-		return Set.of(Environment.NETHER, Environment.THE_END);
+		return EnumSet.of(Environment.NETHER, Environment.THE_END);
 	}
 	public String getBroadcastMessageConfigPath() {
 		return "messages.disaster_broadcasts.extreme_winds.level_"+level;

@@ -146,7 +146,7 @@ public class DependencyUtils {
 			Utils.sendExceptionLog(e);
 			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eKingdoms &cregions from this plugin will NOT be protected!");
 		}
-		regionCheck = (check == null) ? loc -> true : check;
+		regionCheck = (check == null) ? loc -> false : check;
 		
 		try {
 			Object coreProtect = getCoreProtect(plugin);

@@ -1,6 +1,7 @@
 package com.github.jewishbanana.deadlydisasters.disasters.destructive;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -338,7 +339,7 @@ public class Landslide extends Disaster implements Listener {
 		return Utils.convertString(DataUtils.getLanguageString(isAvalanche ? "disasters.destructive.avalanche" : getConfigPath()));
 	}
 	public Set<Environment> getBannedEnvironments() {
-		return Set.of(Environment.NETHER, Environment.THE_END);
+		return EnumSet.of(Environment.NETHER, Environment.THE_END);
 	}
 	
 	@EventHandler(priority=EventPriority.LOWEST)

@@ -1,6 +1,7 @@
 package com.github.jewishbanana.deadlydisasters.disasters.destructive;
 
 import java.util.ArrayDeque;
+import java.util.EnumSet;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -134,7 +135,7 @@ public class LavaGeyser extends Disaster {
 		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
 	}
 	public Set<Environment> getBannedEnvironments() {
-		return Set.of(Environment.NORMAL, Environment.THE_END);
+		return EnumSet.of(Environment.NORMAL, Environment.THE_END);
 	}
 	private class Geyser {
 		

@@ -94,7 +94,7 @@ messages:
         targetGlobal: "GLOBAL"
 disasters:
     destructive:
-        sinkhole: "(hex:#fcc84e)SinkHole"
+        sinkhole: "(hex:#fcc84e)Sinkhole"
         earthquake: "(hex:#c9c0a9)Earthquake"
         tornado: "(hex:#e3e3e3)Tornado"
         water_geyser: "(hex:#64a5f5)Water Geyser"

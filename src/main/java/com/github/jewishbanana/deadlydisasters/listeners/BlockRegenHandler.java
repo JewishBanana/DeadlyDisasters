@@ -309,7 +309,7 @@ public class BlockRegenHandler implements Listener {
 		upwardPhysicBlocks.addAll(Tag.SAND.getValues());
 		upwardPhysicBlocks.addAll(Tag.SAPLINGS.getValues());
 		upwardPhysicBlocks.addAll(Tag.SNOW.getValues());
-		upwardPhysicBlocks.addAll(Tag.TALL_FLOWERS.getValues());
+		upwardPhysicBlocks.addAll(Tag.SMALL_FLOWERS.getValues());
 		upwardPhysicBlocks.addAll(gravityBlockTypes);
 		
 		final Set<Material> downwardPhysicBlocks = EnumSet.of(Material.SPORE_BLOSSOM, Material.WEEPING_VINES, Material.WEEPING_VINES_PLANT, Material.VINE, Material.GLOW_LICHEN, Material.HANGING_ROOTS, Material.LANTERN, Material.SOUL_LANTERN, Material.LEVER);
@@ -333,6 +333,9 @@ public class BlockRegenHandler implements Listener {
 			gravityBlockTypes.add(Material.SUSPICIOUS_GRAVEL);
 		} else {
 			upwardPhysicBlocks.addAll(Tag.SIGNS.getValues());
+		}
+		if (!VersionUtils.isMCVersionOrAbove("1.21.4")) {
+			upwardPhysicBlocks.addAll(Tag.TALL_FLOWERS.getValues());
 		}
 		
 		physicBlockTypes = new EnumMap<>(BlockFace.class);

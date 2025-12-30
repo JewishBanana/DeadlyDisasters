@@ -1,5 +1,6 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -370,7 +371,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 		return "disasters.weather.monsoon";
 	}
 	public Set<Environment> getBannedEnvironments() {
-		return Set.of(Environment.NETHER, Environment.THE_END);
+		return EnumSet.of(Environment.NETHER, Environment.THE_END);
 	}
 	
 	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

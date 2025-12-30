@@ -1,5 +1,6 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -366,7 +367,7 @@ public class Sandstorm extends WeatherDisaster implements MobDisaster {
 		return 0.01;
 	}
 	public Set<Environment> getBannedEnvironments() {
-		return Set.of(Environment.NETHER, Environment.THE_END);
+		return EnumSet.of(Environment.NETHER, Environment.THE_END);
 	}
 	
 	public static boolean isAreaDesert(Set<Block> blocks, int threshold) {

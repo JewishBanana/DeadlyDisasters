@@ -2,6 +2,7 @@ package com.github.jewishbanana.deadlydisasters.disasters.destructive;
 
 import java.util.ArrayDeque;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -387,6 +388,6 @@ public class Sinkhole extends Disaster {
 		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
 	}
 	public Set<Environment> getBannedEnvironments() {
-		return Set.of(Environment.NETHER, Environment.THE_END);
+		return EnumSet.of(Environment.NETHER, Environment.THE_END);
 	}
 }

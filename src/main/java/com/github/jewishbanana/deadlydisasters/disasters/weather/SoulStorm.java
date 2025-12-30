@@ -1,5 +1,6 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -210,6 +211,6 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 		return "disasters.weather.soul_storm";
 	}
 	public Set<Environment> getBannedEnvironments() {
-		return Set.of(Environment.NORMAL, Environment.THE_END);
+		return EnumSet.of(Environment.NORMAL, Environment.THE_END);
 	}
 }

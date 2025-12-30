@@ -1,5 +1,6 @@
 package com.github.jewishbanana.deadlydisasters.disasters.destructive;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -287,6 +288,6 @@ public class Supernova extends Disaster {
 		return level * 2;
 	}
 	public Set<Environment> getBannedEnvironments() {
-		return Set.of(Environment.NETHER);
+		return EnumSet.of(Environment.NETHER);
 	}
 }

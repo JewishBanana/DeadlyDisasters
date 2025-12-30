@@ -1,5 +1,6 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -409,7 +410,7 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 		return "disasters.weather.blizzard";
 	}
 	public Set<Environment> getBannedEnvironments() {
-		return Set.of(Environment.NETHER, Environment.THE_END);
+		return EnumSet.of(Environment.NETHER, Environment.THE_END);
 	}
 	
 }

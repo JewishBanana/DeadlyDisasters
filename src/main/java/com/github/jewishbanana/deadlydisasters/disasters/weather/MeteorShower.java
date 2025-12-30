@@ -3,6 +3,7 @@ package com.github.jewishbanana.deadlydisasters.disasters.weather;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -203,7 +204,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 		return "disasters.weather.meteor_shower";
 	}
 	public Set<Environment> getBannedEnvironments() {
-		return Set.of(Environment.NETHER, Environment.THE_END);
+		return EnumSet.of(Environment.NETHER, Environment.THE_END);
 	}
 	
 	public class MeteorFactory {
