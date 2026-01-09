@@ -5,7 +5,6 @@ import org.bukkit.EntityEffect;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
@@ -181,37 +180,5 @@ public class EntityUtils {
 		if (entity == null)
 			return false;
 		return entity.getHealth() < entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() * value;
-	}
-	public static boolean isLocationExposedToOutdoors(Location location, double testRange) {
-		final World world = location.getWorld();
-		final Location reference = location.clone();
-		final Vector vec = new Vector(1, 0, 0);
-		int accuracy = 0;
-		for (int i=0; i < 12; i++) {
-			final Vector angle = new Vector(0, -.5, 0);
-			for (int j=0; j < 3; j++) {
-				final Vector forward = vec.clone().add(angle).multiply(0.9);
-				final Location loc = reference.clone().add(forward);
-				boolean flag = false;
-				for (double l=0; l < testRange; l += 0.9) {
-					if (!loc.getBlock().isPassable()) {
-						if (world.getHighestBlockYAt(loc) != loc.getBlockY())
-							accuracy++;
-						else
-							flag = true;
-						break;
-					}
-					loc.add(forward);
-				}
-				if (!flag && world.getHighestBlockYAt(loc) > loc.getBlockY())
-					accuracy += 2;
-				if (accuracy >= 80)
-					return false;
-				angle.setY(angle.getY() + .5);
-			}
-			vec.rotateAroundY(360.0 / 12.0);
-		}
-//		plugin.getLogger().info("acc "+accuracy);
-		return accuracy < 80;
 	}
 }

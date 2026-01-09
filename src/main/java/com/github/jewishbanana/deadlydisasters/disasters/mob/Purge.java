@@ -1,12 +1,11 @@
 package com.github.jewishbanana.deadlydisasters.disasters.mob;
 
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 
@@ -51,36 +50,34 @@ public class Purge extends Disaster implements MobDisaster {
 		purgeMobMetadata = "dd:pm";
 	}
 	
-	private double entitySpawnDistance;
+	private float entitySpawnDistance;
 	private int maxHordeSize;
 	private int hordeVanquishThreshold;
 	
 	private UUID targetUUID;
 	private float entitySpawnRate;
 	private BossBar bar;
-	private Queue<EntityContainer> entityContainers;
+	private List<EntityContainer> entityContainers;
 
 	public Purge(@NotNull Location location, Player player, int level) {
 		super(location, player, level);
 	}
 	public void init() {
 		super.init();
-		this.entitySpawnDistance = getConfigDouble("entity_spawn_distance");
+		this.entitySpawnDistance = (float) getConfigDouble("entity_spawn_distance");
 		this.maxHordeSize = getConfigInt("max_horde_size.level_"+level);
 		this.hordeVanquishThreshold = getConfigInt("horde_vanquish_threshold.level_"+level);
 		
 		this.entitySpawnRate = (float) (0.05 * getConfigDouble("entity_spawn_rate") * level);
 		if (getConfigBoolean("display_boss_bar"))
 			this.bar = Bukkit.createBossBar(Utils.convertString(DataUtils.getLanguageString("disasters.features.purge_boss_bar_title")), BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY, BarFlag.CREATE_FOG);
-		this.entityContainers = new ArrayDeque<>();
+		this.entityContainers = new ArrayList<>();
 		List<Map<?, ?>> containers = getConfigMapList("entity_spawns");
 		if (containers != null)
 			containers.forEach(m -> {
 				EntityContainer container = EntityContainer.createContainer(m, this);
-				if (container == null) {
-					Utils.sendConsoleMessage("&eWARNING a Purge entity entry was improperly entered and must be fixed in the world disaster config &b'"+getWorldLink().getConfigName()+"' &eat the section &cdisasters.mob.purge.entity_spawns&e!");
+				if (container == null)
 					return;
-				}
 				entityContainers.add(container);
 			});
 	}
@@ -157,7 +154,7 @@ public class Purge extends Disaster implements MobDisaster {
 				}
 				if ((set == null || set.size() < maxHordeSize) && random.nextFloat() < entitySpawnRate) {
 					for (int i=0; i < 10; i++) {
-						Location spawn = SpawnUtils.findMonsterSpawnLocation(playerLoc, 2, entitySpawnDistance, entitySpawnDistance + 5.0);
+						Location spawn = SpawnUtils.findMonsterSpawnLocation(playerLoc, 2, entitySpawnDistance, entitySpawnDistance + 5f);
 						if (spawn == null)
 							continue;
 						if (spawn.getWorld().getNearbyEntities(spawn, Math.min(entitySpawnDistance-1, 15.0), Math.min(entitySpawnDistance-1, 10.0), Math.min(entitySpawnDistance-1, 15.0), e -> e instanceof Player p && !EntityUtils.isPlayerImmune(p)).stream().count() != 0)
@@ -166,7 +163,7 @@ public class Purge extends Disaster implements MobDisaster {
 						if (container == null)
 							continue;
 						Entity entity = container.spawnEntity(spawn);
-						if (!Utils.isAreaClear(spawn.clone().add(0, entity.getHeight() / 2.0, 0), entity.getWidth(), entity.getHeight()-0.2)) {
+						if (!Utils.isAreaClear(spawn, (float) entity.getWidth(), (float) (entity.getHeight() - 0.2))) {
 							entity.remove();
 							continue;
 						}
@@ -312,6 +309,7 @@ public class Purge extends Disaster implements MobDisaster {
 						com.github.jewishbanana.uiframework.entities.UIEntityManager manager = com.github.jewishbanana.uiframework.entities.UIEntityManager.getEntityType(typeString.toLowerCase());
 						if (manager == null) {
 							Utils.sendConsoleMessage("&eWARNING the entity type &d'"+typeString+"' &efor a Purge entity entry does not exist in the world disaster config &b'"+disaster.getWorldLink().getConfigName()+"' &eat the section &cdisasters.mob.purge.entity_spawns&e!");
+							Utils.sendConsoleMessage("&eWARNING a Purge entity entry was improperly entered and must be fixed in the world disaster config &b'"+disaster.getWorldLink().getConfigName()+"' &eat the section &cdisasters.mob.purge.entity_spawns&e!");
 							return null;
 						}
 						container.entityClass = manager.getEntityClass();
@@ -320,6 +318,7 @@ public class Purge extends Disaster implements MobDisaster {
 						return null;
 				} else {
 					Utils.sendConsoleMessage("&eWARNING the entity type &d'"+typeString+"' &efor a Purge entity entry does not exist in the world disaster config &b'"+disaster.getWorldLink().getConfigName()+"' &eat the section &cdisasters.mob.purge.entity_spawns&e!");
+					Utils.sendConsoleMessage("&eWARNING a Purge entity entry was improperly entered and must be fixed in the world disaster config &b'"+disaster.getWorldLink().getConfigName()+"' &eat the section &cdisasters.mob.purge.entity_spawns&e!");
 					return null;
 				}
 			}

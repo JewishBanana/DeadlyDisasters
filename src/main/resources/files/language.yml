@@ -115,6 +115,7 @@ disasters:
         meteor_shower: "(hex:#8c20b0)Meteor Shower"
         monsoon: "(hex:#1f3dff)Monsoon"
         end_storm: "(hex:#ec3dff)End Storm"
+        solar_storm: "(hex:#ffc71f)Solar Storm"
     mob:
         black_plague: "(hex:#4d4d4d)Black Plague"
         purge: "(hex:#917a7a)Purge"

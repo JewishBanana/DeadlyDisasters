@@ -1,14 +1,13 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,7 +21,6 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
@@ -37,7 +35,6 @@ import org.jetbrains.annotations.NotNull;
 import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
 import com.github.jewishbanana.deadlydisasters.disasters.WeatherDisaster;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
-import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
@@ -117,9 +114,8 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 	
 	private float particleRate;
 	private float soundVolume;
-	private Set<PotionEffect> effects;
-	private final Map<Material, Material[]> blockChanges = new HashMap<>();
-	private Set<Entity> currentEntities = Set.of();
+	private List<PotionEffect> effects;
+	private Map<Material, Material[]> blockChanges;
 	
 	public AcidStorm(@NotNull Location location, Player player, int level) {
 		super(location, player, level);
@@ -136,24 +132,7 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 		this.dissolveDroppedItems = getConfigBoolean("dissolve_dropped_items");
 		
 		this.effects = buildPotionEffects("entity_effects");
-		ConfigurationSection section = getConfigSection("block_changes");
-		if (section != null)
-			for (String material : section.getKeys(false)) {
-				Set<Material> materials = BlockUtils.getMaterials(material);
-				if (materials == null) {
-					Utils.sendConsoleMessage("&cERROR the block type or category &d'"+material+"' &cdoes not exist in the world disaster config &b'"+getWorldLink().getConfigName()+"' &cat the section &c'"+getConfigPath()+".block_changes'&c!");
-					continue;
-				}
-				String toMaterial = DataUtils.getConfigString(getWorldLink().getConfig(), getWorldLink().getConfigName(), section.getCurrentPath()+'.'+material, null);
-				if (toMaterial == null)
-					continue;
-				Set<Material> toSet = BlockUtils.getMaterials(toMaterial);
-				if (toSet == null) {
-					Utils.sendConsoleMessage("&cERROR the block type or category &d'"+toMaterial+"' &cdoes not exist in the world disaster config &b'"+getWorldLink().getConfigName()+"' &cat the section &c'"+getConfigPath()+".block_changes."+material+"'&c!");
-					continue;
-				}
-				materials.forEach(type -> blockChanges.put(type, toSet.toArray(Material[]::new)));
-			}
+		this.blockChanges = buildBlockChanges("block_changes");
 		
 		this.particleRate = (float) (0.025 * particleMultiplier * (scale / 3.0));
 		this.soundVolume = (float) (0.2 * scale);
@@ -178,27 +157,28 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 			
 			@Override
 			public void run() {
-				for (Entity entity : currentEntities) {
-					Location loc = entity.getLocation();
-					if (entity instanceof Player player) {
-						if (EntityUtils.isPlayerImmune(player))
-							continue;
-						if (random.nextFloat() < mobSpawnRate) {
-							Location spawn = SpawnUtils.findMonsterSpawnLocation(loc, 1, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
-							if (spawn != null)
-								world.spawn(spawn, Slime.class, slime -> {
-									slime.setSize(random.nextInt(3));
-									slime.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.3);
-									addEntityToDisasterList(slime, player);
-								});
-						}
+				for (Player player : playersInMonitorArea) {
+					if (EntityUtils.isPlayerImmune(player))
+						continue;
+					if (random.nextFloat() < mobSpawnRate) {
+						Location spawn = SpawnUtils.findMonsterSpawnLocation(player.getLocation(), 1, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
+						if (spawn != null)
+							world.spawn(spawn, Slime.class, slime -> {
+								slime.setSize(random.nextInt(3));
+								slime.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.3);
+								addEntityToDisasterList(slime, player);
+							});
 					}
+				}
+				for (Entity entity : entitiesInMonitorArea) {
+					if (EntityUtils.isEntityImmunePlayer(entity))
+						continue;
 					if (entity instanceof LivingEntity alive) {
 						ItemStack[] armor = alive.getEquipment().getArmorContents();
 						if (armor[3] != null && DependencyUtils.getBasicCoatingLevel(armor[3]) != 0)
 							continue;
 						if (entity instanceof Player player)
-							playSound(player, loc, Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.WEATHER, soundVolume, 2);
+							playSound(player, player.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.WEATHER, soundVolume, 2);
 						if (dissolveEntityArmor)
 							for (ItemStack item : armor)
 								if (item != null)
@@ -240,11 +220,12 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 						case GOLDEN_APPLE:
 							if (DependencyUtils.getBasicCoatingLevel(stack) != 0)
 								break;
-							if (random.nextFloat() > itemDissolveChance)
-								break;
-							stack.setAmount(0);
-							world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
-							playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 2);
+							if (random.nextFloat() < itemDissolveChance) {
+								stack.setAmount(0);
+								Location loc = entity.getLocation();
+								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 2);
+							}
 							break;
 						case IRON_SWORD:
 						case IRON_AXE:
@@ -260,6 +241,7 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 								break;
 							Utils.damageItem(stack, toolDamage);
 							if (stack.getAmount() == 0) {
+								Location loc = entity.getLocation();
 								world.dropItem(loc, new ItemStack(Material.STICK));
 								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
 								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 2);
@@ -277,6 +259,7 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 								break;
 							Utils.damageItem(stack, armorDamage);
 							if (stack.getAmount() == 0) {
+								Location loc = entity.getLocation();
 								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
 								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 2);
 							}
@@ -286,51 +269,37 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 						}
 					}
 				}
+				
 				updateEntityTargets();
+				
 				time -= 5;
 				if (time <= 0)
 					stop();
 			}
 		}.runTaskTimer(plugin, 0, 5));
-		scheduleTask(new BukkitRunnable() {
-			final AtomicBoolean processEntities = new AtomicBoolean();
-			final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
-			final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
 
-			@Override
-			public void run() {
-				if (processEntities.get())
-					return;
-				processEntities.set(true);
-				foundEntities.clear();
-				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
-					foundEntities.put(entity, entity.getLocation().add(0, entity.getHeight() / 2.0, 0));
-				currentEntities = Set.copyOf(entitiesInStorm);
-				scheduleTask(new BukkitRunnable() {
-					private final double radiusSquared = disasterRange * disasterRange;
-					
-					@Override
-					public void run() {
-						final Set<Entity> set = new HashSet<>();
-						foundEntities.forEach((entity, loc) -> {
-							if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared))
-								return;
-							if (isEntityProtected(entity) || !isBlockInClimate(loc.getBlock()))
-								return;
-							if (world.getHighestBlockYAt(loc) <= loc.getY() + (entity.getHeight() / 2.0))
-								set.add(entity);
-						});
-						entitiesInStorm.clear();
-						entitiesInStorm.addAll(set);
-						processEntities.set(false);
-					}
-				}.runTaskAsynchronously(plugin));
-			}
-		}.runTaskTimer(plugin, 0, 1));
-		
 		final double distanceSquared = disasterRange * disasterRange;
+		createAsyncEntityMonitor(Entity::isValid, 
+				(found, entities, players) -> {
+					found.forEach((entity, loc) -> {
+						if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+							return;
+						if (isEntityProtected(entity) || !isBlockInClimate(loc.getBlock()))
+							return;
+						if (world.getHighestBlockYAt(loc) <= loc.getY() + (entity.getHeight() / 2.0)) {
+							entities.add(entity);
+							if (entity instanceof Player p)
+								players.add(p);
+							return;
+						}
+						if (entity instanceof Player p && loc.getY() > minHeight - 5)
+							players.add(p);
+					});
+				});
+
 		final double trueSmoothingRange = (disasterRange + smoothingRange) * (disasterRange + smoothingRange);
 		createParticleAsyncTask(player -> {
+			final ThreadLocalRandom random = ThreadLocalRandom.current();
 			final Location loc = player.getLocation();
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
 				if (new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location) > distanceSquared 
@@ -344,6 +313,7 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 				player.spawnParticle(Particle.FALLING_SPORE_BLOSSOM, new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 8, block.getZ() + 0.5), 1, .5, 6.0, .5, 1);
 			}
 		}, pair -> {
+			final ThreadLocalRandom random = ThreadLocalRandom.current();
 			final Player player = pair.getFirst();
 			final double intensity = pair.getSecond();
 			final Location loc = player.getLocation();
@@ -383,6 +353,7 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 				public void run() {
 					if (currentStrength < 0.5)
 						return;
+					final ThreadLocalRandom random = ThreadLocalRandom.current();
 					involvedChunks.forEach(chunk -> {
 						if (!chunk.isLoaded())
 							return;

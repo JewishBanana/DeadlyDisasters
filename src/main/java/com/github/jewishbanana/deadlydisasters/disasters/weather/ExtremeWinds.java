@@ -1,11 +1,14 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -38,7 +41,6 @@ public class ExtremeWinds extends WeatherDisaster {
 	private int minimumYLevel;
 	
 	private double currentForce;
-	private Set<Entity> currentEntities = Set.of();
 
 	public ExtremeWinds(@NotNull Location location, Player player, int level) {
 		super(location, player, level);
@@ -49,7 +51,7 @@ public class ExtremeWinds extends WeatherDisaster {
 		super.init();
 		this.windForce = (float) (getConfigDouble("wind_force") * scale);
 		this.windBreakThreshold = (float) (getConfigDouble("wind_damage_threshold"));
-		this.blockChangeRate = (float) (0.2 * getConfigDouble("block_damage_rate") * (scale / 2.0));
+		this.blockChangeRate = (float) (0.05 * getConfigDouble("block_damage_rate") * (scale / 2.0));
 		this.minimumYLevel = getConfigInt("minimum_entity_Y_level");
 		
 		this.particleRate = (float) (0.03 * particleMultiplier * scale);
@@ -64,7 +66,6 @@ public class ExtremeWinds extends WeatherDisaster {
 	public void start() {
 		super.start();
 		location.setY(128);
-		final World world = location.getWorld();
 		final Vector direction = Utils.getRandomizedVector().setY(0).normalize().setY(Math.min(0.2 * scale, 0.6));
 		scheduleTask(new BukkitRunnable() {
 			private final double increment = windForce / 60.0;
@@ -72,20 +73,38 @@ public class ExtremeWinds extends WeatherDisaster {
 			private final double minNegative = -(windForce / 60.0 * 25.0);
 			private final double maxNegative = minNegative * 2.5;
 			private double currentNegative;
+			private final Vector opposite = direction.clone().multiply(-1).setY(0.1);
 			
 			@Override
 			public void run() {
 				final Vector currentVelocity = direction.clone().multiply(currentForce);
-				if (currentForce > 0)
-					for (Entity entity : currentEntities) {
-						if (entity instanceof Player player) {
-							Location loc = player.getLocation();
-							if ((EntityUtils.isPlayerImmune(player) && player.isFlying())
-									|| loc.clone().add(0, player.getHeight(), 0).getBlock().isLiquid() || !EntityUtils.isLocationExposedToOutdoors(loc.clone().add(0, player.getHeight() / 2.0, 0), 8.0))
+				if (currentForce > 0) {
+					if (currentForce >= windBreakThreshold)
+						for (Player player : playersInMonitorArea) {
+							if (EntityUtils.isPlayerImmune(player))
 								continue;
+							if (random.nextFloat() < blockChangeRate) {
+								for (int i=0; i < 3; i++) {
+									Block block = BlockUtils.rayTraceForBlock(player.getLocation().add(0, player.getHeight() / 2.0, 0), opposite.clone().add(new Vector(random.nextFloat(-.5f, .5f), random.nextFloat(-.1f, .8f), random.nextFloat(-.5f, .5f))), 7.0);
+									if (block != null) {
+										FallingBlock fb = convertBlockIntoFallingBlock(block);
+										if (fb == null)
+											continue;
+										fb.setVelocity(direction.clone().multiply(0.8));
+										fb.setHurtEntities(true);
+										fb.setDropItem(false);
+										entitiesInMonitorArea.add(fb);
+										break;
+									}
+								}
+							}
 						}
+					for (Entity entity : entitiesInMonitorArea) {
+						if (entity instanceof Player player && player.isFlying() && EntityUtils.isPlayerImmune(player))
+							continue;
 						entity.setVelocity(entity.getVelocity().add(currentVelocity));
 					}
+				}
 				if (increasing) {
 					currentForce += increment;
 					if (currentForce >= windForce) {
@@ -105,74 +124,51 @@ public class ExtremeWinds extends WeatherDisaster {
 			}
 		}.runTaskTimer(plugin, 0, 1));
 		
-		scheduleTask(new BukkitRunnable() {
-			final AtomicBoolean processEntities = new AtomicBoolean();
-			final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
-			final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
-
-			@Override
-			public void run() {
-				if (processEntities.get())
-					return;
-				processEntities.set(true);
-				foundEntities.clear();
-				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
-					foundEntities.put(entity, entity.getLocation().add(0, entity.getHeight() / 2.0, 0));
-				currentEntities = Set.copyOf(entitiesInStorm);
-				scheduleTask(new BukkitRunnable() {
-					private final double radiusSquared = disasterRange * disasterRange;
-					private final Vector opposite = direction.clone().multiply(-1).setY(0.1);
-					
-					@Override
-					public void run() {
-						final Set<Entity> set = new HashSet<>();
-						foundEntities.forEach((entity, loc) -> {
-							if (loc.getY() < minimumYLevel || !Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared))
-								return;
-							if (isEntityProtected(entity))
-								return;
-							if (!loc.clone().add(0, entity.getHeight(), 0).getBlock().isLiquid() && EntityUtils.isLocationExposedToOutdoors(loc, 6.0))
-								set.add(entity);
-							if (currentForce >= windBreakThreshold && entity instanceof Player p)
-								for (int i=0; i < 3; i++)
-									if (random.nextFloat() < blockChangeRate)
-										for (int j=0; j < 3; j++) {
-											Block block = BlockUtils.rayTraceForBlock(p.getLocation().add(0, p.getHeight() / 2.0, 0), opposite.clone().add(new Vector(random.nextFloat(-.5f, .5f), random.nextFloat(-.1f, .8f), random.nextFloat(-.5f, .5f))), 7.0);
-											if (block != null) {
-												new BukkitRunnable() {
-													@Override
-													public void run() {
-														FallingBlock fb = convertBlockIntoFallingBlock(block);
-														if (fb == null)
-															return;
-														fb.setVelocity(direction.clone().multiply(0.8));
-														fb.setHurtEntities(true);
-														fb.setDropItem(false);
-														entitiesInStorm.add(fb);
-													}
-												}.runTaskLater(plugin, random.nextInt(10));
-												break;
-											}
-										}
-						});
-						entitiesInStorm.clear();
-						entitiesInStorm.addAll(set);
-						processEntities.set(false);
-					}
-				}.runTaskAsynchronously(plugin));
-			}
-		}.runTaskTimer(plugin, 0, 1));
-		
 		final double distanceSquared = disasterRange * disasterRange;
+		final Set<UUID> playersInStorm = ConcurrentHashMap.newKeySet();
+		final List<UUID> playersIteratedOver = new ArrayList<>();
+		final Map<UUID, Integer> timeInStorm = new HashMap<>();
+		createAsyncEntityMonitor(Entity::isValid, 
+				(found, entities, players) -> {
+					playersInStorm.clear();
+					playersInStorm.addAll(playersIteratedOver);
+					playersIteratedOver.clear();
+					found.forEach((entity, loc) -> {
+						final World world = loc.getWorld();
+						if (loc.getY() < minimumYLevel || !Utils.isLocationsWithinDistance(new Location(world, loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+							return;
+						if (isEntityProtected(entity))
+							return;
+						if (!world.getBlockAt(loc.getBlockX(), loc.getBlockY() + (int) Math.ceil(entity.getHeight()), loc.getBlockZ()).isLiquid() && entity instanceof Player ? Utils.isLocationExposedToOutdoors(loc) : Utils.isLocationExposedToOutdoorsOptimized(loc, 8f, 6)) {
+							int time = timeInStorm.compute(entity.getUniqueId(), (key, oldValue) -> Math.min((oldValue != null ? oldValue : 0) + 1, 15));
+							if (time > 5) {
+								entities.add(entity);
+								if (entity instanceof Player p) {
+									players.add(p);
+									playersIteratedOver.add(p.getUniqueId());
+								}
+								return;
+							}
+						} else
+							timeInStorm.computeIfPresent(entity.getUniqueId(), (key, oldValue) -> {
+								int newValue = oldValue - 5;
+								return newValue > 0 ? newValue : null;
+							});
+						if (entity instanceof Player p)
+							players.add(p);
+					});
+				});
+		
 		final double trueSmoothingRange = (disasterRange + smoothingRange) * (disasterRange + smoothingRange);
 		final double soundIncrement = 1.0 / windForce;
 		createParticleAsyncTask(player -> {
 			if (currentForce <= 0)
 				return;
+			final ThreadLocalRandom random = ThreadLocalRandom.current();
 			final Location loc = player.getLocation();
 			Block closest = null;
 			double closestDistance = 0;
-			final boolean flag = currentEntities.contains(player);
+			final boolean flag = playersInStorm.contains(player.getUniqueId());
 			final double currentSoundLevel = Utils.clamp(soundIncrement * currentForce, 0.0, 1.0);
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
 				if (new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location) > distanceSquared 
@@ -199,6 +195,7 @@ public class ExtremeWinds extends WeatherDisaster {
 		}, pair -> {
 			if (currentForce <= 0)
 				return;
+			final ThreadLocalRandom random = ThreadLocalRandom.current();
 			final Player player = pair.getFirst();
 			final double intensity = pair.getSecond();
 			final Location loc = player.getLocation();

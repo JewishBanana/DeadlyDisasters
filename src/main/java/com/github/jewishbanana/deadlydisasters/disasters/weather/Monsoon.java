@@ -1,13 +1,12 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -21,9 +20,9 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Drowned;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -33,6 +32,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.FluidLevelChangeEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +41,6 @@ import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
 import com.github.jewishbanana.deadlydisasters.disasters.WeatherDisaster;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
-import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
@@ -58,11 +57,12 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 		tempSet.addAll(Tag.WOODEN_SLABS.getValues());
 		tempSet.addAll(Tag.WOODEN_TRAPDOORS.getValues());
 		tempSet.addAll(Tag.LEAVES.getValues());
-		leakBlockTypes = Set.copyOf(tempSet);
+		leakBlockTypes = EnumSet.copyOf(tempSet);
 	}
 
 	private int minHeight;
 	private int drownRate;
+	private boolean extinguishDroppedItems;
 	private float puddleSpawnRate;
 	private float puddleDryRate;
 	private float blockChangeRate;
@@ -71,10 +71,9 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 	private float particleRate;
 	private float waterLeakRate;
 	private float soundVolume;
-	private Set<PotionEffect> effects;
-	private final Map<Material, Material[]> blockChanges = new HashMap<>();
+	private List<PotionEffect> effects;
+	private Map<Material, Material[]> blockChanges;
 	private final Set<Block> puddles = new HashSet<>();
-	private Set<Entity> currentEntities = Set.of();
 	
 	public Monsoon(@NotNull Location location, Player player, int level) {
 		super(location, player, level);
@@ -84,6 +83,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 	public void init() {
 		super.init();
 		this.drownRate = (int) (5.0 * getConfigDouble("entity_drown_rate") * scale);
+		this.extinguishDroppedItems = getConfigBoolean("extinguish_dropped_items");
 		this.puddleSpawnRate = (float) (0.007 * getConfigDouble("puddle_spawn_rate") * scale);
 		this.puddleDryRate = (float) (0.5 * getConfigDouble("puddle_dry_rate") * scale);
 		this.waterLeakRate = (float) (0.7 * getConfigDouble("water_leak_multiplier") * (scale / 2.0));
@@ -91,24 +91,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 		this.mobSpawnRate = (float) (0.02 * getConfigDouble("mob_spawn_multiplier") * (scale / 2.0));
 		
 		this.effects = buildPotionEffects("entity_effects");
-		ConfigurationSection section = getConfigSection("block_changes");
-		if (section != null)
-			for (String material : section.getKeys(false)) {
-				Set<Material> materials = BlockUtils.getMaterials(material);
-				if (materials == null) {
-					Utils.sendConsoleMessage("&cERROR the block type or category &d'"+material+"' &cdoes not exist in the world disaster config &b'"+getWorldLink().getConfigName()+"' &cat the section &c'"+getConfigPath()+".block_changes'&c!");
-					continue;
-				}
-				String toMaterial = DataUtils.getConfigString(getWorldLink().getConfig(), getWorldLink().getConfigName(), section.getCurrentPath()+'.'+material, null);
-				if (toMaterial == null)
-					continue;
-				Set<Material> toSet = BlockUtils.getMaterials(toMaterial);
-				if (toSet == null) {
-					Utils.sendConsoleMessage("&cERROR the block type or category &d'"+toMaterial+"' &cdoes not exist in the world disaster config &b'"+getWorldLink().getConfigName()+"' &cat the section &c'"+getConfigPath()+".block_changes."+material+"'&c!");
-					continue;
-				}
-				materials.forEach(type -> blockChanges.put(type, toSet.toArray(Material[]::new)));
-			}
+		this.blockChanges = buildBlockChanges("block_changes");
 		
 		this.particleRate = (float) (0.3 * particleMultiplier * (scale / 3.0));
 		this.soundVolume = (float) (0.2 * scale);
@@ -119,7 +102,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 			return false;
 		// Jungle only climate
 		final Block block = getLocation().getBlock();
-		if (block.getTemperature() < 0.9 || block.getHumidity() < 0.8)
+		if (block.getWorld().getTemperature(block.getX(), block.getY(), block.getZ()) < 0.9 || block.getWorld().getHumidity(block.getX(), block.getY(), block.getZ()) < 0.8)
 			return false;
 		return super.canStart();
 	}
@@ -130,40 +113,78 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 		final World world = location.getWorld();
 		final Set<LivingEntity> drowningEntities = new HashSet<>();
 		scheduleTask(new BukkitRunnable() {
+			private final float itemExtinguishChance = (float) (0.04 * (scale / 2.0));
+			
 			@Override
 			public void run() {
-				drowningEntities.clear();
-				for (Entity entity : currentEntities) {
-					Location loc = entity.getLocation();
-					if (entity instanceof Player player) {
-						if (EntityUtils.isPlayerImmune(player))
-							continue;
-						if (random.nextFloat() < mobSpawnRate) {
-							Location spawn = SpawnUtils.findMonsterSpawnLocation(loc, 2, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
-							if (spawn != null) {
-								Mob mob = null;
-								switch (DependencyUtils.isUltimateContentEnabled() ? random.nextInt(2) : random.nextInt(1)) {
-								default:
-								case 0:
+				for (Player player : playersInMonitorArea) {
+					if (EntityUtils.isPlayerImmune(player))
+						continue;
+					if (random.nextFloat() < mobSpawnRate) {
+						Location spawn = SpawnUtils.findMonsterSpawnLocation(player.getLocation(), 2, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
+						if (spawn != null) {
+							Mob mob = null;
+							switch (random.nextInt(DependencyUtils.isUltimateContentEnabled() ? 2 : 1)) {
+							default:
+							case 0:
+								mob = world.spawn(spawn, Drowned.class);
+								break;
+							case 1:
+								if (random.nextInt(8) == 0)
+									mob = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(spawn, com.github.jewishbanana.ultimatecontent.entities.waterentities.CursedDiver.class).getCastedEntity();
+								else
 									mob = world.spawn(spawn, Drowned.class);
-									break;
-								case 2:
-									if (random.nextInt(8) == 0)
-										mob = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(spawn, com.github.jewishbanana.ultimatecontent.entities.waterentities.CursedDiver.class).getCastedEntity();
-									else
-										mob = world.spawn(spawn, Drowned.class);
-									break;
-								}
-								addEntityToDisasterList(mob, player);
+								break;
 							}
+							addEntityToDisasterList(mob, player);
 						}
 					}
-					if (entity instanceof LivingEntity alive) {
-						alive.addPotionEffects(effects);
-						drowningEntities.add(alive);
+				}
+				drowningEntities.clear();
+				for (Entity entity : entitiesInMonitorArea) {
+					if (entity instanceof LivingEntity living) {
+						if (EntityUtils.isEntityImmunePlayer(entity))
+							continue;
+						living.addPotionEffects(effects);
+						drowningEntities.add(living);
+					} else if (extinguishDroppedItems && entity instanceof Item item) {
+						ItemStack stack = item.getItemStack();
+						switch (stack.getType()) {
+						case BLAZE_ROD:
+						case FIRE_CHARGE:
+							if (random.nextFloat() < itemExtinguishChance) {
+								stack.setAmount(0);
+								final Location loc = entity.getLocation();
+								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 2);
+							}
+							break;
+						case WATER_BUCKET:
+							if (random.nextFloat() < itemExtinguishChance) {
+								final Location loc = entity.getLocation();
+								entity.remove();
+								world.dropItem(loc, new ItemStack(Material.BUCKET));
+								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 2);
+							}
+							break;
+						case MAGMA_BLOCK:
+							if (random.nextFloat() < itemExtinguishChance) {
+								final Location loc = entity.getLocation();
+								entity.remove();
+								world.dropItem(loc, new ItemStack(Material.NETHERRACK));
+								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 2);
+							}
+							break;
+						default:
+							break;
+						}
 					}
 				}
+				
 				updateEntityTargets();
+				
 				time -= 5;
 				if (time <= 0)
 					stop();
@@ -187,45 +208,29 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 						damageTick = 0;
 				}
 			}.runTaskTimer(plugin, 1, 1));
-		scheduleTask(new BukkitRunnable() {
-			final AtomicBoolean processEntities = new AtomicBoolean();
-			final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
-			final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
-
-			@Override
-			public void run() {
-				if (processEntities.get())
-					return;
-				processEntities.set(true);
-				foundEntities.clear();
-				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
-					foundEntities.put(entity, entity.getLocation());
-				currentEntities = Set.copyOf(entitiesInStorm);
-				scheduleTask(new BukkitRunnable() {
-					private final double radiusSquared = disasterRange * disasterRange;
-					
-					@Override
-					public void run() {
-						final Set<Entity> set = new HashSet<>();
-						foundEntities.forEach((entity, loc) -> {
-							if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared))
-								return;
-							if (isEntityProtected(entity) || !isBlockInClimate(loc.getBlock()))
-								return;
-							if (world.getHighestBlockYAt(loc) <= loc.getY() + entity.getHeight())
-								set.add(entity);
-						});
-						entitiesInStorm.clear();
-						entitiesInStorm.addAll(set);
-						processEntities.set(false);
-					}
-				}.runTaskAsynchronously(plugin));
-			}
-		}.runTaskTimer(plugin, 0, 1));
 		
 		final double distanceSquared = disasterRange * disasterRange;
+		createAsyncEntityMonitor(Entity::isValid, 
+				(found, entities, players) -> {
+					found.forEach((entity, loc) -> {
+						if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+							return;
+						if (isEntityProtected(entity) || !isBlockInClimate(loc.getBlock()))
+							return;
+						if (world.getHighestBlockYAt(loc) <= loc.getY() + entity.getHeight()) {
+							entities.add(entity);
+							if (entity instanceof Player p)
+								players.add(p);
+							return;
+						}
+						if (entity instanceof Player p && loc.getY() > minHeight - 5)
+							players.add(p);
+					});
+				});
+		
 		final double trueSmoothingRange = (disasterRange + smoothingRange) * (disasterRange + smoothingRange);
 		createParticleAsyncTask(player -> {
+			final ThreadLocalRandom random = ThreadLocalRandom.current();
 			final Location loc = player.getLocation();
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
 				if (new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location) > distanceSquared 
@@ -258,6 +263,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 				}
 			}
 		}, pair -> {
+			final ThreadLocalRandom random = ThreadLocalRandom.current();
 			final Player player = pair.getFirst();
 			final double intensity = pair.getSecond();
 			final Location loc = player.getLocation();
@@ -296,6 +302,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 				public void run() {
 					if (currentStrength < 0.5)
 						return;
+					final ThreadLocalRandom random = ThreadLocalRandom.current();
 					involvedChunks.forEach(chunk -> {
 						if (!chunk.isLoaded())
 							return;
@@ -364,7 +371,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 		HandlerList.unregisterAll(this);
 	}
 	public boolean isBlockInClimate(Block block) {
-		final double temp = block.getTemperature();
+		final double temp = block.getWorld().getTemperature(block.getX(), block.getY(), block.getZ());
 		return temp > 0.15 && temp <= 0.95;
 	}
 	protected String getConfigPath() {

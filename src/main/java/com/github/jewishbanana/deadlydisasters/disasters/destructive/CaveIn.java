@@ -1,18 +1,20 @@
 package com.github.jewishbanana.deadlydisasters.disasters.destructive;
 
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Queue;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -39,8 +41,8 @@ public class CaveIn extends Disaster {
 	private double speed;
 	private int maxBlocks;
 	
-	private Queue<CollapsingBlock> collapsingList = new ArrayDeque<>();
-	private Queue<FallingBlock> fallingBlocks = new ArrayDeque<>();
+	private List<CollapsingBlock> collapsingList = new ArrayList<>();
+	private List<FallingBlock> fallingBlocks = new ArrayList<>();
 	
 	public CaveIn(Location location, Player player, int level) {
 		super(location, player, level);
@@ -119,7 +121,7 @@ public class CaveIn extends Disaster {
 //			int count = recursionCheck(getLocation().getBlock(), 0, 200, 0, 15, new HashSet<>());
 //			plugin.getLogger().info("count is "+count);
 //		});
-		Set<Block> blocks = new HashSet<>(BlockUtils.getBlocksInCircleRadius(location, disasterRange));
+		Set<Block> blocks = new HashSet<>(BlockUtils.getBlocksInCircleRadius(location, (float) disasterRange));
 		if (blocks.isEmpty()) {
 			stop();
 			return;
@@ -133,18 +135,18 @@ public class CaveIn extends Disaster {
 				try {
 					Set<CollapsingBlock> collapsing = new HashSet<>();
 					for (Block next : blocks) {
-						Block block = getHighestExposedBlock(next, level * 3 + random.nextInt(level), temp -> !temp.isPassable());
+						Block block = getHighestExposedBlock(next, level * 3 + ThreadLocalRandom.current().nextInt(level), temp -> !temp.isPassable());
 						if (block == null)
 							continue;
 						Location bc = block.getLocation();
-						double extraNoise = random.nextDouble(level);
+						double extraNoise = ThreadLocalRandom.current().nextDouble(level);
 						double dx = bc.getX() + 0.5 + extraNoise - location.getX();
 						double dz = bc.getZ() + 0.5 + extraNoise - location.getZ();
 						double distSq = dx * dx + dz * dz;
 						double t = Math.min(distSq / rangeSq, 1.0);
 						double falloff = Math.pow(1.0 - t, 2.0);
 						double edge = 1.0 - falloff;
-						double jitter = -random.nextDouble() * noise * edge;
+						double jitter = -ThreadLocalRandom.current().nextDouble() * noise * edge;
 						int depth = (int) Math.max(0, Math.round(centerDepth * falloff + jitter));
 						if (depth > 0)
 							collapsing.add(new CollapsingBlock(block, distSq, depth));
@@ -152,7 +154,7 @@ public class CaveIn extends Disaster {
 					collapsingList = collapsing.stream()
 						    .sorted(Comparator
 						        .comparingDouble((CollapsingBlock cb) -> cb.distance))   // sort by Y first
-						    .collect(Collectors.toCollection(ArrayDeque::new));
+						    .collect(Collectors.toCollection(ArrayList::new));
 					final double excessSoundRange = level * 7.0;
 					final double soundRange = (disasterRange + excessSoundRange) * (disasterRange + excessSoundRange);
 					final double distanceSquared = disasterRange * disasterRange;
@@ -272,25 +274,31 @@ public class CaveIn extends Disaster {
 		}
 	}
 	public Block getHighestExposedBlock(Block start, int maxDistance, Predicate<Block> filter) {
-		if (start == null)
-			return null;
-		Block b = start;
-		if (filter.test(b)) {
-			for (int i=0; i < maxDistance; i++) {
-				b = b.getRelative(BlockFace.DOWN);
-				if (!filter.test(b))
-					return b.getRelative(BlockFace.UP);
-			}
-			return null;
-		} else
-			for (int i=0; i < maxDistance; i++) {
-				b = b.getRelative(BlockFace.UP);
-				if (b == null)
-					return start.getRelative(BlockFace.UP, i);
-				if (filter.test(b))
-					return b;
-			}
-		return b;
+	    if (start == null)
+	        return null;
+	    final World world = start.getWorld();
+	    final int x = start.getX();
+	    final int z = start.getZ();
+	    int y = start.getY();
+	    if (filter.test(start)) {
+	        for (int i = 0; i < maxDistance; i++) {
+	            y--;
+	            final Block b = world.getBlockAt(x, y, z);
+	            if (!filter.test(b))
+	                return world.getBlockAt(x, y + 1, z);
+	        }
+	        return null;
+	    } else {
+	        for (int i = 0; i < maxDistance; i++) {
+	            y++;
+	            final Block b = world.getBlockAt(x, y, z);
+	            if (b == null)
+	                return world.getBlockAt(x, start.getY() + i, z);
+	            if (filter.test(b))
+	                return b;
+	        }
+	    }
+	    return world.getBlockAt(x, y, z);
 	}
 	protected String getConfigPath() {
 		return "disasters.destructive.cavein";

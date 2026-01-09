@@ -7,8 +7,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -147,6 +149,7 @@ public class Supernova extends Disaster {
 							scheduleTask(new BukkitRunnable() {
 								private final Iterator<Entry<Block, Float>> iterator = blocks.entrySet().iterator();
 								private final int maxThrottle = 7000;
+								private final ThreadLocalRandom rng = ThreadLocalRandom.current();
 								
 								@Override
 								public void run() {
@@ -161,7 +164,7 @@ public class Supernova extends Disaster {
 												if (random.nextInt(8) == 0)
 													placeBlock(entry.getKey(), debris[random.nextInt(debris.length)]);
 												else
-													removeBlock(entry.getKey(), true, false);
+													removeBlock(entry.getKey(), true, false, rng);
 											}
 											if (entry.getValue() > distanceSquared) {
 												explosionRange++;
@@ -174,7 +177,7 @@ public class Supernova extends Disaster {
 												return;
 											Entry<Block, Float> entry = iterator.next();
 											if (entry.getKey().getType() != Material.AIR)
-												removeBlock(entry.getKey(), true, false);
+												removeBlock(entry.getKey(), true, false, rng);
 											if (entry.getValue() > distanceSquared) {
 												explosionRange++;
 												return;
@@ -218,6 +221,7 @@ public class Supernova extends Disaster {
 		scheduleTask(new BukkitRunnable() {
 			private final double soundRange = (disasterRange + 100) * (disasterRange + 100);
 			private int soundTick;
+			private Color flashColor = Color.WHITE;
 			
 			@Override
 			public void run() {
@@ -246,7 +250,7 @@ public class Supernova extends Disaster {
 							return;
 						path.add(direction);
 					}
-					player.spawnParticle(Particle.FLASH, loc.clone().add(direction.clone().multiply(3.0)), 1, 1, 1, 1, .001);
+					VersionUtils.spawnFlashParticle(player, loc.clone().add(direction.clone().multiply(3.0)), 1, 1, 1, 1, .001, flashColor);
 				});
 			}
 		}.runTaskTimerAsynchronously(plugin, 0, 1));
@@ -254,19 +258,34 @@ public class Supernova extends Disaster {
 			scheduleTask(new BukkitRunnable() {
 				@Override
 				public void run() {
-					final Vector initial = new Vector(location.getX(), location.getY(), location.getZ());
-					final double disasterRangeSquared = disasterRange * disasterRange;
-					for (double x = -disasterRange; x <= disasterRange; x++)
-						for (double y = -disasterRange; y <= disasterRange; y++)
-							for (double z = -disasterRange; z <= disasterRange; z++) {
-								Vector position = new Vector(initial.getX() + x, initial.getY() + y, initial.getZ() + z);
-								double distance = position.distanceSquared(initial);
-								if (distance > disasterRangeSquared)
-									continue;
-								Block block = position.toLocation(world).getBlock();
-								if (block != null)
-									blocks.put(block, (float) distance);
-							}
+					final float centerX = (float) location.getX();
+					final float centerY = (float) location.getY();
+					final float centerZ = (float) location.getZ();
+					final float disasterRangeSquared = (float) (disasterRange * disasterRange);
+					final int minX = (int) Math.floor(centerX - disasterRange);
+					final int maxX = (int) Math.floor(centerX + disasterRange);
+					final int minY = (int) Math.floor(centerY - disasterRange);
+					final int maxY = (int) Math.floor(centerY + disasterRange);
+					final int minZ = (int) Math.floor(centerZ - disasterRange);
+					final int maxZ = (int) Math.floor(centerZ + disasterRange);
+					for (int x = minX; x <= maxX; x++) {
+					    final float dx = x - centerX;
+					    final float dxSquared = dx * dx;
+					    for (int y = minY; y <= maxY; y++) {
+					        final float dy = y - centerY;
+					        final float dySquared = dy * dy;
+					        final float dxdySquared = dxSquared + dySquared;
+					        for (int z = minZ; z <= maxZ; z++) {
+					            final float dz = z - centerZ;
+					            final float distanceSquared = dxdySquared + dz * dz;
+					            if (distanceSquared <= disasterRangeSquared) {
+					                final Block block = world.getBlockAt(x, y, z);
+					                if (block != null)
+					                    blocks.put(block, distanceSquared);
+					            }
+					        }
+					    }
+					}
 					blocks = Utils.sortByValue(blocks);
 					isThreadReady.set(true);
 				}

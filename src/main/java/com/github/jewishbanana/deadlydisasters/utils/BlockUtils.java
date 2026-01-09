@@ -3,15 +3,15 @@ package com.github.jewishbanana.deadlydisasters.utils;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
@@ -154,14 +154,14 @@ public class BlockUtils {
 						if (material.toString().equals(key.toUpperCase())) {
 							double value = DataUtils.getConfigDouble(config, "blocks.yml", path, 0.0);
 							if (value != 0.0)
-								overrides.put(material, (float) value);
+								overrides.put(material, Utils.clamp((float) value, 0f, 1f));
 							break;
 						}
 					}
 					set.forEach(material -> {
 						double value = DataUtils.getConfigDouble(config, "blocks.yml", path, 0.0);
 						if (value != 0.0)
-							resistances.put(material, (float) value);
+							resistances.put(material, Utils.clamp((float) value, 0f, 1f));
 					});
 					break;
 				}
@@ -196,33 +196,43 @@ public class BlockUtils {
 	    } catch (NoSuchFieldException | IllegalAccessException e) {}
 	    return null;
 	}
-	public static boolean testBlockResistance(Block block) {
-		if (disableResistances)
-			return true;
-		Float value = resistances.get(block.getType());
-		return value != null && (value == 1 || value < random.nextFloat());
+	public static boolean doesBlockResist(Block block, ThreadLocalRandom rng) {
+	    if (disableResistances)
+	        return true;
+	    final Float value = resistances.get(block.getType());
+	    return value != null && (value == 1f || rng.nextFloat() < value);
+	}
+	public static boolean doesBlockResist(Block block) {
+	    return doesBlockResist(block, ThreadLocalRandom.current());
 	}
 	public static boolean isBlockImmune(Block block) {
 		return disableResistances || resistances.getOrDefault(block.getType(), 0f) == 1f;
 	}
-	public static boolean rayTraceForSolidBlock(Location initial, Location target) {
-		Vector vec = new Vector(target.getX() - initial.getX(), target.getY() - initial.getY(), target.getZ() - initial.getZ()).normalize();
-		double distance = Math.ceil(initial.distance(target));
-		for (int i=0; i < distance; i++)
-			if (!initial.clone().add(vec.clone().multiply(i)).getBlock().isPassable())
-				return true;
-		return false;
-	}
 	public static Block rayTraceForBlock(Location location, Vector direction, double maxDistance, Predicate<Block> conditions) {
-		Vector vec = direction.normalize().multiply(0.8);
-		Location forward = location.clone().add(vec);
-		for (double i=0.8; i < maxDistance; i += 0.8) {
-			Block temp = forward.getBlock();
-			if (temp != null && conditions.test(temp))
-				return temp;
-			forward.add(vec);
-		}
-		return null;
+	    final float dx = (float)direction.getX();
+	    final float dy = (float)direction.getY();
+	    final float dz = (float)direction.getZ();
+	    final float lengthSquared = dx * dx + dy * dy + dz * dz;
+	    if (lengthSquared == 0.0f)
+	        return null;
+	    final float invLength = Utils.fastInverseSqrt(lengthSquared);
+	    final float dirX = dx * invLength * 0.8f;
+	    final float dirY = dy * invLength * 0.8f;
+	    final float dirZ = dz * invLength * 0.8f;
+	    final World world = location.getWorld();
+	    final int steps = (int)(maxDistance / 0.8);
+	    float x = (float)location.getX() + dirX;
+	    float y = (float)location.getY() + dirY;
+	    float z = (float)location.getZ() + dirZ;
+	    for (int i = 0; i < steps; i++) {
+	        final Block temp = world.getBlockAt((int)Math.floor(x), (int)Math.floor(y), (int)Math.floor(z));
+	        if (temp != null && conditions.test(temp))
+	            return temp;
+	        x += dirX;
+	        y += dirY;
+	        z += dirZ;
+	    }
+	    return null;
 	}
 	public static Block rayTraceForBlock(Location location, Vector direction, double maxDistance) {
 		return rayTraceForBlock(location, direction, maxDistance, temp -> !temp.isPassable());
@@ -238,127 +248,194 @@ public class BlockUtils {
 	    Block adjacentBlock = lastTwoTargetBlocks.get(0);
 	    return targetBlock.getFace(adjacentBlock);
 	}
-	public static Block rayCastForBlock(Location location, int minRange, int maxRange, int maxAttempts, Set<Material> materialWhitelist) {
-		for (int i=0; i < maxAttempts; i++) {
-			Location tempLoc = location.clone();
-			Vector tempVec = new Vector((random.nextDouble()*2)-1, (random.nextDouble()*2)-1, (random.nextDouble()*2)-1).normalize();
-			for (int c=0; c < maxRange; c++) {
-				tempLoc.add(tempVec);
-				Block b = tempLoc.getBlock();
-				if (!b.isPassable()) {
-					if (c < minRange || (materialWhitelist != null && !materialWhitelist.contains(b.getType())))
-						break;
-					return b;
-				}
-			}
-		}
-		return null;
-	}
 	public static Block rayCastForBlock(Location location, int minRange, int maxRange, int maxAttempts, Set<Material> materialWhitelist, Set<Block> blockWhitelist) {
-		for (int i=0; i < maxAttempts; i++) {
-			Location tempLoc = location.clone();
-			Vector tempVec = new Vector((random.nextDouble()*2)-1, (random.nextDouble()*2)-1, (random.nextDouble()*2)-1).normalize();
-			for (int c=0; c < maxRange; c++) {
-				tempLoc.add(tempVec);
-				Block b = tempLoc.getBlock();
-				if (!b.isPassable()) {
-					if (c < minRange || !blockWhitelist.contains(b) || (materialWhitelist != null && !materialWhitelist.contains(b.getType())))
-						break;
-					return b;
-				}
-			}
-		}
-		return null;
+	    final World world = location.getWorld();
+	    final float startX = (float)location.getX();
+	    final float startY = (float)location.getY();
+	    final float startZ = (float)location.getZ();
+	    for (int i = 0; i < maxAttempts; i++) {
+	        final float dx = random.nextFloat(-1.0f, 1.0f);
+	        final float dy = random.nextFloat(-1.0f, 1.0f);
+	        final float dz = random.nextFloat(-1.0f, 1.0f);
+	        final float lengthSquared = dx * dx + dy * dy + dz * dz;
+	        if (lengthSquared == 0.0f)
+	            continue;
+	        final float invLength = Utils.fastInverseSqrt(lengthSquared);
+	        final float dirX = dx * invLength;
+	        final float dirY = dy * invLength;
+	        final float dirZ = dz * invLength;
+	        float x = startX;
+	        float y = startY;
+	        float z = startZ;
+	        for (int c = 0; c < maxRange; c++) {
+	            x += dirX;
+	            y += dirY;
+	            z += dirZ;
+	            final Block b = world.getBlockAt((int)Math.floor(x), (int)Math.floor(y), (int)Math.floor(z));
+	            if (!b.isPassable()) {
+	                if (c < minRange)
+	                    break;
+	                if (blockWhitelist != null && !blockWhitelist.contains(b))
+	                    break;
+	                if (materialWhitelist != null && !materialWhitelist.contains(b.getType()))
+	                    break;
+	                return b;
+	            }
+	        }
+	    }
+	    return null;
+	}
+	public static Block rayCastForBlock(Location location, int minRange, int maxRange, int maxAttempts, Set<Material> materialWhitelist) {
+	    return rayCastForBlock(location, minRange, maxRange, maxAttempts, materialWhitelist, null);
 	}
 	public static boolean rayTraceForSolid(Location initial, Location target) {
-		Vector vec = Utils.getVectorTowards(initial, target);
-		try {
-			vec.checkFinite();
-		} catch (IllegalArgumentException err) {
-			return false;
-		}
-		int distance = (int) initial.distance(target);
-		if (!initial.getBlock().isPassable())
-			return true;
-		Location temp = initial.clone();
-		for (int i=1; i < distance; i++)
-			if (!temp.add(vec.clone().multiply(i)).getBlock().isPassable())
-				return true;
-		return false;
+	    final float dx = (float) (target.getX() - initial.getX());
+	    final float dy = (float) (target.getY() - initial.getY());
+	    final float dz = (float) (target.getZ() - initial.getZ());
+	    final float lengthSquared = dx * dx + dy * dy + dz * dz;
+	    if (lengthSquared == 0.0f || !Float.isFinite(lengthSquared))
+	        return !initial.getBlock().isPassable();
+	    final float distance = (float) Math.sqrt(lengthSquared);
+	    final float dirX = dx / distance;
+	    final float dirY = dy / distance;
+	    final float dirZ = dz / distance;
+	    if (!Float.isFinite(dirX) || !Float.isFinite(dirY) || !Float.isFinite(dirZ))
+	        return !initial.getBlock().isPassable();
+	    final World world = initial.getWorld();
+	    final int distanceInt = (int) distance;
+	    if (!initial.getBlock().isPassable())
+	        return true;
+	    float x = (float) initial.getX();
+	    float y = (float) initial.getY();
+	    float z = (float) initial.getZ();
+	    for (int i = 1; i < distanceInt; i++) {
+	        x += dirX;
+	        y += dirY;
+	        z += dirZ;
+	        if (!world.getBlockAt((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z)).isPassable())
+	            return true;
+	    }
+	    return false;
 	}
-	public static Queue<Block> getBlocksInCircleRadius(Location location, double radius) {
-		Queue<Block> queue = new ArrayDeque<>();
-		double radiusSquared = radius * radius;
-		Vector block = new Vector(location.getX(), location.getY(), location.getZ());
-		World world = location.getWorld();
-		for (double x = -radius; x <= radius; x++)
-			for (double z = -radius; z <= radius; z++) {
-				Vector position = block.clone().add(new Vector(x, 0, z));
-				if (block.distanceSquared(position) <= radiusSquared)
-					queue.add(position.toLocation(world).getBlock());
-			}
-		return queue;
+	public static List<Block> getBlocksInCircleRadius(Location location, float radius) {
+	    final List<Block> list = new ArrayList<>((int) (Math.PI * radius * radius) + 1);
+	    final float radiusSquared = radius * radius;
+	    final World world = location.getWorld();
+	    final float centerX = (float) location.getX();
+	    final float centerY = (float) location.getY();
+	    final float centerZ = (float) location.getZ();
+	    final int minX = (int) Math.floor(centerX - radius);
+	    final int maxX = (int) Math.floor(centerX + radius);
+	    final int minZ = (int) Math.floor(centerZ - radius);
+	    final int maxZ = (int) Math.floor(centerZ + radius);
+	    final int blockY = (int) Math.floor(centerY);
+	    for (int x = minX; x <= maxX; x++) {
+	        final float dx = x - centerX;
+	        final float dxSquared = dx * dx;
+	        for (int z = minZ; z <= maxZ; z++) {
+	            final float dz = z - centerZ;
+	            final float distanceSquared = dxSquared + dz * dz;
+	            if (distanceSquared <= radiusSquared)
+	                list.add(world.getBlockAt(x, blockY, z));
+	        }
+	    }
+	    return list;
 	}
-	public static Queue<Block> getBlocksInCircleCircumference(Location location, double radius) {
-		Queue<Block> queue = new ArrayDeque<>();
-		double outerRadius = radius * radius;
-		double innerRadius = (radius - 1) * (radius - 1);
-		Vector block = new Vector(location.getX(), location.getY(), location.getZ());
-		World world = location.getWorld();
-		for (double x = -radius; x <= radius; x++)
-			for (double z = -radius; z <= radius; z++) {
-				Vector position = block.clone().add(new Vector(x, 0, z));
-				double distance = block.distanceSquared(position);
-				if (distance <= outerRadius && distance > innerRadius)
-					queue.add(position.toLocation(world).getBlock());
-			}
-		return queue;
+	public static List<Block> getBlocksInCircleCircumference(Location location, float radius) {
+	    final List<Block> list = new ArrayList<>((int) (2 * Math.PI * radius) + 1);
+	    final float outerRadius = radius * radius;
+	    final float innerRadius = (radius - 1) * (radius - 1);
+	    final World world = location.getWorld();
+	    final float centerX = (float) location.getX();
+	    final float centerY = (float) location.getY();
+	    final float centerZ = (float) location.getZ();
+	    final int minX = (int) Math.floor(centerX - radius);
+	    final int maxX = (int) Math.floor(centerX + radius);
+	    final int minZ = (int) Math.floor(centerZ - radius);
+	    final int maxZ = (int) Math.floor(centerZ + radius);
+	    final int blockY = (int) Math.floor(centerY);
+	    for (int x = minX; x <= maxX; x++) {
+	        final float dx = x - centerX;
+	        final float dxSquared = dx * dx;
+	        for (int z = minZ; z <= maxZ; z++) {
+	            final float dz = z - centerZ;
+	            final float distanceSquared = dxSquared + dz * dz;
+	            if (distanceSquared <= outerRadius && distanceSquared > innerRadius)
+	                list.add(world.getBlockAt(x, blockY, z));
+	        }
+	    }
+	    return list;
 	}
-	public static Queue<Block> getBlocksInSphereRadius(Location location, double radius) {
-		Queue<Block> queue = new ArrayDeque<>();
-		double radiusSquared = radius * radius;
-		Vector block = new Vector(location.getX(), location.getY(), location.getZ());
-		World world = location.getWorld();
-		for (double x = -radius; x <= radius; x++)
-			for (double y = -radius; y <= radius; y++)
-				for (double z = -radius; z <= radius; z++) {
-					Vector position = block.clone().add(new Vector(x, y, z));
-					if (block.distanceSquared(position) <= radiusSquared)
-						queue.add(position.toLocation(world).getBlock());
-				}
-		return queue;
+	public static List<Block> getBlocksInSphereRadius(Location location, float radius) {
+	    final List<Block> list = new ArrayList<>((int) (4.188790 * radius * radius * radius) + 1);
+	    final float radiusSquared = radius * radius;
+	    final World world = location.getWorld();
+	    final float centerX = (float) location.getX();
+	    final float centerY = (float) location.getY();
+	    final float centerZ = (float) location.getZ();
+	    final int minX = (int) Math.floor(centerX - radius);
+	    final int maxX = (int) Math.floor(centerX + radius);
+	    final int minY = (int) Math.floor(centerY - radius);
+	    final int maxY = (int) Math.floor(centerY + radius);
+	    final int minZ = (int) Math.floor(centerZ - radius);
+	    final int maxZ = (int) Math.floor(centerZ + radius);
+	    for (int x = minX; x <= maxX; x++) {
+	        final float dx = x - centerX;
+	        final float dxSquared = dx * dx;
+	        for (int y = minY; y <= maxY; y++) {
+	            final float dy = y - centerY;
+	            final float dySquared = dy * dy;
+	            final float dxdySquared = dxSquared + dySquared;
+	            for (int z = minZ; z <= maxZ; z++) {
+	                final float dz = z - centerZ;
+	                final float distanceSquared = dxdySquared + dz * dz;
+	                if (distanceSquared <= radiusSquared)
+	                    list.add(world.getBlockAt(x, y, z));
+	            }
+	        }
+	    }
+	    return list;
 	}
-	public static Queue<Block> getBlocksInCylinderRadius(Location location, double radius, double height) {
-		Queue<Block> queue = new ArrayDeque<>();
-		double radiusSquared = radius * radius;
-		Vector block = new Vector(location.getX(), location.getY(), location.getZ());
-		World world = location.getWorld();
-		for (double x = -radius; x <= radius; x++)
-			for (double y = -height; y <= height; y++)
-				for (double z = -radius; z <= radius; z++) {
-					Vector position = block.clone().add(new Vector(x, y, z));
-					if (block.distanceSquared(position) <= radiusSquared)
-						queue.add(position.toLocation(world).getBlock());
-				}
-		return queue;
+	public static List<Block> getBlocksInCylinderRadius(Location location, float radius, float height) {
+		List<Block> list = new ArrayList<>();
+	    double radiusSquared = radius * radius;
+	    int blockX = location.getBlockX();
+	    int blockY = location.getBlockY();
+	    int blockZ = location.getBlockZ();
+	    World world = location.getWorld();
+	    int radiusCeil = (int) Math.ceil(radius);
+	    for (int y = 0; y <= height; y++)
+	        for (int x = -radiusCeil; x <= radiusCeil; x++)
+	            for (int z = -radiusCeil; z <= radiusCeil; z++) {
+	                double distSquared = x * x + z * z;
+	                if (distSquared <= radiusSquared)
+	                    list.add(world.getBlockAt(blockX + x, blockY + y, blockZ + z));
+	            }
+	    return list;
 	}
 	public static Block getHighestExposedBlock(Block block, int maxDistance, Predicate<Block> filter) {
-		if (block == null)
-			return null;
-		Block b = block;
-		if (!filter.test(b))
-			for (int i=0; i < maxDistance; i++) {
-				b = b.getRelative(BlockFace.DOWN);
-				if (filter.test(b))
-					return b;
-			}
-		else
-			for (int i=0; i < maxDistance; i++) {
-				b = b.getRelative(BlockFace.UP);
-				if (!filter.test(b))
-					return b.getRelative(BlockFace.DOWN);
-			}
-		return null;
+	    if (block == null)
+	        return null;
+	    final World world = block.getWorld();
+	    final int x = block.getX();
+	    final int z = block.getZ();
+	    int y = block.getY();
+	    if (!filter.test(block)) {
+	        for (int i = 0; i < maxDistance; i++) {
+	            y--;
+	            final Block b = world.getBlockAt(x, y, z);
+	            if (filter.test(b))
+	                return b;
+	        }
+	    } else {
+	        for (int i = 0; i < maxDistance; i++) {
+	            y++;
+	            final Block b = world.getBlockAt(x, y, z);
+	            if (!filter.test(b))
+	                return world.getBlockAt(x, y - 1, z);
+	        }
+	    }
+	    return null;
 	}
 	public static Block getHighestExposedBlock(Block block, int maxDistance) {
 		return getHighestExposedBlock(block, maxDistance, temp -> !temp.isPassable());

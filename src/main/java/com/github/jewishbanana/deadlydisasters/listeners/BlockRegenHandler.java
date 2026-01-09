@@ -29,6 +29,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.Bed.Part;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -158,13 +159,21 @@ public class BlockRegenHandler implements Listener {
 				blockOrigin.put(from, to);
 		}
 	}
+	public static FallingBlock createFallingBlock(Location location, BlockData data, Disaster disaster) {
+		FallingBlock entity = location.getWorld().spawnFallingBlock(location, data);
+		EntityUtils.markFallingBlock(entity);
+		fallingBlocks.put(entity.getUniqueId(), Pair.of(null, disaster));
+		EntitiesListener.attachRemoveKey(entity);
+		return entity;
+	}
 	public static FallingBlock convertBlockIntoFallingBlock(Block block, Disaster disaster) {
+		Block from = blockToBlock.get(block);
 		BlockState state = removeBlock(block, disaster, true);
 		if (state == null)
 			return null;
 		FallingBlock entity = block.getWorld().spawnFallingBlock(BlockUtils.getCenterOfBlock(block), state.getBlockData());
 		EntityUtils.markFallingBlock(entity);
-		fallingBlocks.put(entity.getUniqueId(), Pair.of(block, disaster));
+		fallingBlocks.put(entity.getUniqueId(), Pair.of(from != null ? from : block, disaster));
 		EntitiesListener.attachRemoveKey(entity);
 		return entity;
 	}
@@ -550,11 +559,18 @@ public class BlockRegenHandler implements Listener {
     }
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onFallingBlockForm(EntityChangeBlockEvent event) {
+    	final Block block = event.getBlock();
     	Pair<Block, Disaster> pair = fallingBlocks.remove(event.getEntity().getUniqueId());
     	if (pair != null) {
-    		Block block = event.getBlock();
-    		if (pair.getFirst().equals(block)) {
-    			BlockState fromState = damagedBlocks.get(pair.getFirst());
+    		Block origin = pair.getFirst();
+    		if (origin == null) {
+    			event.setCancelled(true);
+    			pair.getSecond().getModifiedBlocks().add(block);
+    			placeBlock(block, event.getBlockData(), pair.getSecond(), true);
+    			return;
+    		}
+    		if (origin.equals(block)) {
+    			BlockState fromState = damagedBlocks.get(origin);
     			if (fromState != null && fromState instanceof InventoryHolder fromHolder)
     				new BukkitRunnable() {
     				@Override
@@ -571,9 +587,9 @@ public class BlockRegenHandler implements Listener {
     		event.setCancelled(true);
     		pair.getSecond().getModifiedBlocks().add(block);
     		placeBlock(block, event.getBlockData(), pair.getSecond(), true);
-    		blockToBlock.put(block, pair.getFirst());
-        	blockOrigin.put(pair.getFirst(), block);
-        	BlockState fromState = damagedBlocks.get(pair.getFirst());
+    		blockToBlock.put(block, origin);
+        	blockOrigin.put(origin, block);
+        	BlockState fromState = damagedBlocks.get(origin);
         	if (fromState != null && fromState instanceof InventoryHolder fromHolder) {
         		BlockState toState = block.getState();
         		if (toState instanceof InventoryHolder toHolder)
@@ -581,10 +597,17 @@ public class BlockRegenHandler implements Listener {
         	}
         	return;
     	}
-    	Disaster disaster = collateralBlocks.remove(event.getBlock());
+    	if (event.getEntityType() != EntityType.FALLING_BLOCK || event.getTo() != Material.AIR)
+    		return;
+    	Disaster disaster = collateralBlocks.remove(block);
     	if (disaster != null) {
     		event.setCancelled(true);
-    		convertBlockIntoFallingBlock(event.getBlock(), disaster);
+    		convertBlockIntoFallingBlock(block, disaster);
+    		return;
+    	}
+    	if (damagedBlocks.containsKey(block)) {
+    		event.setCancelled(true);
+    		convertBlockIntoFallingBlock(block, damageTracker.get(block));
     		return;
     	}
     }

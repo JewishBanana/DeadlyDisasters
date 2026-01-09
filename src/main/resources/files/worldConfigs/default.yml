@@ -571,6 +571,8 @@ disasters:
         monsoon:
             # The multiplier to control how fast entities lose oxygen ticks while in monsoon rainfall.
             entity_drown_rate: 1.0
+            # If certain flammable dropped items should extinguish when exposed to monsoon rainfall.
+            extinguish_dropped_items: true
             # Multiplier to control how many puddles spawn in monsoon rainfall.
             puddle_spawn_rate: 1.0
             # Multiplier to control how fast puddles dry up after monsoons end.
@@ -598,6 +600,51 @@ disasters:
             frequency: 0.6
             blacklisted_mob_types:
             - drowned
+        #######################################################################################################################################################################
+        #
+        # Solar Storm
+        #
+        #######################################################################################################################################################################
+        solar_storm:
+            # If players should have their in-game time set to dawn during the solar storm.
+            set_to_dawn: true
+            # The chance from 0-100 in percent, of entities that are near heat sources and exposed to solar storms catching on fire. This value scales with the scale factor.
+            entity_ignite_chance: 5.0
+            # The chance from 0-100 in percent, of burnable blocks that are exposed to solar storms catching on fire. This value scales with the scale factor.
+            block_ignite_chance: 2.5
+            # The multiplier for how much falling fire spawns near players in solar storms.
+            fire_spawn_multiplier: 1.0
+            # The size in blocks of explosions from falling fire balls.
+            fireball_explosion_size: 3.0
+            # Controls how many solar storm related mobs spawn near players in solar storms. By default no mobs spawn. If you are using UltimateContent then fire phantoms can spawn!
+            mob_spawn_multiplier: 1.0
+            # The block damage rate is a multiplier that controls how many blocks are damaged by solar storms.
+            block_damage_rate: 1.0
+            # Controls what effects are applied to vulnerable entities exposed to solar storms. Effects are applied every storm tick. You can add or remove any effect you wish with its in game name.
+            entity_effects:
+                slowness:
+                    ticks: 40
+                    level: 1
+                nausea:
+                    ticks: 69
+                    level: 1
+                weakness:
+                    ticks: 40
+                    level: 1
+            # Control block changes to blocks that are exposed to solar storms. The format is as follows: "BLOCK_MATERIAL: NEW_BLOCK_MATERIAL"
+            # Block changes are done at random, to control how many blocks get changed modify the setting "block_damage_rate" multiplier. Bukkit and custom tags can be used here too!
+            block_changes:
+                leaves: air
+                dirt: coarse_dirt
+                farmland: coarse_dirt
+                crops: air
+                sugar_cane: air
+            # The minimum height on the Y block axis that this disaster can start at.
+            min_height: 55
+            # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
+            frequency: 1.0
+            blacklisted_mob_types:
+            - blaze
         #######################################################################################################################################################################
         #
         # Soul Storm
@@ -648,6 +695,7 @@ disasters:
             frequency: 1.0
             blacklisted_mob_types:
             - ender_dragon
+            - end_crystal
             - enderman
             - endermite
     ###########################################################################################################################################################################

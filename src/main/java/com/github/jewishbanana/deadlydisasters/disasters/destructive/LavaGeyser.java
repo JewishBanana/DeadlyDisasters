@@ -1,7 +1,9 @@
 package com.github.jewishbanana.deadlydisasters.disasters.destructive;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,7 +41,7 @@ public class LavaGeyser extends Disaster {
 	private int maxSpawnInterval;
 	private double spawnRange;
 	
-	private Queue<Geyser> geysers = new ArrayDeque<>();
+	private List<Geyser> geysers = new ArrayList<>();
 	
 	public LavaGeyser(Location location, Player player, int level) {
 		super(location, player, level);
@@ -87,7 +89,7 @@ public class LavaGeyser extends Disaster {
 			return null;
 		Location temp = new Location(initial.getWorld(), initial.getX(), random.nextInt(4, 8), initial.getZ());
 		int count = 0;
-		for (Block b : BlockUtils.getBlocksInSphereRadius(temp, disasterRange))
+		for (Block b : BlockUtils.getBlocksInSphereRadius(temp, (float) disasterRange))
 			if (!b.isPassable())
 				count++;
 		if (count >= Math.pow(disasterRange, 3.0) * 0.7)
@@ -154,7 +156,7 @@ public class LavaGeyser extends Disaster {
 			this.riseRate = riseRate;
 		}
 		public void start() {
-			Queue<Location> positions = new ArrayDeque<>(BlockUtils.getBlocksInCircleRadius(location, size + damageRadius).stream().map(b -> BlockUtils.getCenterOfBlock(b)).collect(Collectors.toList()));
+			Queue<Location> positions = new ArrayDeque<>(BlockUtils.getBlocksInCircleRadius(location, (float) (size + damageRadius)).stream().map(b -> BlockUtils.getCenterOfBlock(b)).collect(Collectors.toList()));
 			final Geyser reference = this;
 			final double innerDistanceFalloff = (size + (size / 3.0)) * (size + (size / 3.0));
 			scheduleTask(new BukkitRunnable() {

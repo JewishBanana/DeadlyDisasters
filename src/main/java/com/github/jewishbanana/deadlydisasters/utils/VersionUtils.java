@@ -3,11 +3,14 @@ package com.github.jewishbanana.deadlydisasters.utils;
 import java.util.Arrays;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Registry;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.potion.PotionEffectType;
 
@@ -46,6 +49,9 @@ public class VersionUtils {
 	private static final ItemFlag hide_effects;
 	
 	private static final Material short_grass;
+	
+	private static final boolean legacyDragonParticles;
+	private static final boolean legacyFlashParticles;
 	
 	static {
 		serverVersion = Arrays.stream(Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf('-')).split("\\.")).map(e -> Integer.parseInt(e)).toArray(Integer[]::new);
@@ -114,6 +120,9 @@ public class VersionUtils {
 		}
 		
 		is17OrHigher = isMCVersionOrAbove("1.17");
+		
+		legacyDragonParticles = !isMCVersionOrAbove("1.21.9");
+		legacyFlashParticles = legacyDragonParticles;
 	}
 	public static boolean isMCVersionOrAbove(String version) {
 		try {
@@ -132,6 +141,18 @@ public class VersionUtils {
 		} catch (NumberFormatException ex) {
 			throw new NumberFormatException("The version string you supplied '"+version+"' is not a valid version string! Format must be as follows: '1.2.3' or '1.2' or '1'!");
 		}
+	}
+	public static void spawnDragonBreathParticle(Location location, int count, double offX, double offY, double offZ, double speed, float data) {
+		location.getWorld().spawnParticle(Particle.DRAGON_BREATH, location, count, offX, offY, offZ, speed, legacyDragonParticles ? null : data);
+	}
+	public static void spawnDragonBreathParticle(Player player, Location location, int count, double offX, double offY, double offZ, double speed, float data) {
+		player.spawnParticle(Particle.DRAGON_BREATH, location, count, offX, offY, offZ, speed, legacyDragonParticles ? null : data);
+	}
+	public static void spawnFlashParticle(Location location, int count, double offX, double offY, double offZ, double speed, Color data) {
+		location.getWorld().spawnParticle(Particle.FLASH, location, count, offX, offY, offZ, speed, legacyFlashParticles ? null : data);
+	}
+	public static void spawnFlashParticle(Player player, Location location, int count, double offX, double offY, double offZ, double speed, Color data) {
+		player.spawnParticle(Particle.FLASH, location, count, offX, offY, offZ, speed, legacyFlashParticles ? null : data);
 	}
 	
 	public static Enchantment getSharpness() {

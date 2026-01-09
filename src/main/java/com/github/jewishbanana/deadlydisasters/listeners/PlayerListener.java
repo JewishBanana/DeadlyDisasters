@@ -67,6 +67,11 @@ public class PlayerListener implements Listener	{
 			}
 		}.runTaskLater(plugin, 10);
 	}
+//	@EventHandler
+//	public void onDebug(PlayerInteractEvent event) {
+//		Block block = event.getPlayer().getLocation().getBlock();
+//		event.getPlayer().sendMessage("temp is "+block.getWorld().getTemperature(block.getX(), block.getY(), block.getZ())+" hum is "+block.getWorld().getHumidity(block.getX(), block.getY(), block.getZ()));
+//	}
 	private void sendWorldForecast(Player player) {
 		if (player == null || !player.isOnline())
 			return;

@@ -138,8 +138,10 @@ public class DisasterSelector {
 						|| (disaster.getFrequency() != 1f && disaster.getFrequency() > random.nextFloat()))
 					continue;
 				Location temp = disaster.findPossiblePosition(loc);
+				if (temp == null)
+					continue;
 				disaster.setLocation(temp);
-				if (temp == null || !disaster.canStart())
+				if (!disaster.canStart())
 					continue;
 				if (DependencyUtils.isRealisticSeasonsEnabled() && !DependencyUtils.isDisasterInSeason(registry, loc.getWorld()))
 					continue;

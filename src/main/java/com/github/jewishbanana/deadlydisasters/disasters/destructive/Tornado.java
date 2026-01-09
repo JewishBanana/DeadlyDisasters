@@ -2,13 +2,13 @@ package com.github.jewishbanana.deadlydisasters.disasters.destructive;
 
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
 import org.bukkit.Location;
@@ -26,12 +26,11 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
-import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.ultimatecontent.utils.EntityUtils;
 
 public class Tornado extends Disaster {
 	
@@ -44,7 +43,6 @@ public class Tornado extends Disaster {
 	
 	private double blockPickupRate;
 	private double blockPickupRange;
-	private Set<Entity> entitiesInList = new HashSet<>();
 	private double width;
 	private float particleRate;
 	
@@ -107,82 +105,8 @@ public class Tornado extends Disaster {
 		super.start();
 		addDeathWatcher("deaths.tornado");
 		final World world = getLocation().getWorld();
-		final Set<Entity> entities = ConcurrentHashMap.newKeySet();
-		final Map<Entity, Location> nearbyEntities = new ConcurrentHashMap<>();
-		final AtomicBoolean processEntities = new AtomicBoolean();
-		final Set<Entity> interruptEntities = new HashSet<>();
-		final Map<Entity, Integer> cooldowns = new HashMap<>();
-		scheduleTask(new BukkitRunnable() {
-			@Override
-			public void run() {
-				if (processEntities.get())
-					return;
-				processEntities.set(true);
-				nearbyEntities.clear();
-				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
-					nearbyEntities.put(entity, entity.getLocation());
-				entitiesInList = new HashSet<>(entities);
-				entitiesInList.addAll(interruptEntities);
-				Iterator<Entry<Entity, Integer>> it = cooldowns.entrySet().iterator();
-				while (it.hasNext()) {
-					Entry<Entity, Integer> entry = it.next();
-					if (entry.getValue() > 0)
-						entry.setValue(entry.getValue() - 1);
-					else
-						it.remove();
-				}
-				entitiesInList.removeIf(e -> cooldowns.containsKey(e));
-				interruptEntities.clear();
-				
-				final Map<Entity, Location> map = Map.copyOf(nearbyEntities);
-				
-				scheduleTask(new BukkitRunnable() {
-					private final double radiusSquared = disasterRange * disasterRange;
-					
-					@Override
-					public void run() {
-						Set<Entity> set = new HashSet<>();
-						map.forEach((entity, loc) -> {
-							if (set.size() >= maxEntities && !(entity instanceof LivingEntity))
-								return;
-							if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared))
-								return;
-							if (isEntityProtected(entity))
-								return;
-							if (!loc.clone().add(0, entity.getHeight(), 0).getBlock().isLiquid() && (!(entity instanceof LivingEntity) || EntityUtils.isLocationExposedToOutdoors(loc, 6.0)))
-								set.add(entity);
-							if (entity instanceof Player p)
-								for (int i=0; i < 3; i++)
-									if (random.nextFloat() < blockPickupRate)
-										for (int j=0; j < 3; j++) {
-											Vector towards = Utils.getVectorTowards(loc, location.clone().add(0, random.nextInt(3, 30), 0));
-											Block block = BlockUtils.rayTraceForBlock(p.getLocation().add(0, p.getHeight() / 2.0, 0), towards.clone().add(new Vector(random.nextFloat(-.5f, .5f), random.nextFloat(-.1f, .8f), random.nextFloat(-.5f, .5f))), 7.0);
-											if (block != null && !Main.isDisablingPlugin) {
-												new BukkitRunnable() {
-													@Override
-													public void run() {
-														FallingBlock fb = convertBlockIntoFallingBlock(block);
-														if (fb == null)
-															return;
-														fb.setVelocity(towards.clone().multiply(0.8));
-														fb.setHurtEntities(true);
-														fb.setDropItem(false);
-														entitiesInList.add(fb);
-														interruptEntities.add(fb);
-													}
-												}.runTaskLater(plugin, random.nextInt(10));
-												break;
-											}
-										}
-						});
-						entities.clear();
-						entities.addAll(set);
-						processEntities.set(false);
-					}
-				}.runTaskAsynchronously(plugin));
-			}
-		}.runTaskTimer(plugin, 0, 1));
-		
+		final Set<Entity> interruptEntities = ConcurrentHashMap.newKeySet();
+		final Map<Entity, Integer> cooldowns = new ConcurrentHashMap<>();
 		scheduleTask(new BukkitRunnable() {
 			private double height;
 			private final Vector movement = Utils.getRandomizedVector().setY(0).normalize().multiply(0.1 * speed);
@@ -201,10 +125,28 @@ public class Tornado extends Disaster {
 //				for (int i=0; i < 10; i++)
 //					location.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, location.clone().add(new Vector(0, i, 0)), 1, 0, 0, 0, 0.0001);
 				
+				for (Player player : playersInMonitorArea)
+					if (!EntityUtils.isPlayerImmune(player) && random.nextFloat() < blockPickupRate)
+						for (int i=0; i < 3; i++)
+							for (int j=0; j < 3; j++) {
+								final Location loc = player.getLocation();
+								final Vector towards = Utils.getVectorTowards(loc, location.clone().add(0, ThreadLocalRandom.current().nextInt(3, 30), 0));
+								final Block block = BlockUtils.rayTraceForBlock(loc.add(0, player.getHeight() / 2.0, 0), towards.clone().add(new Vector(random.nextFloat(-.5f, .5f), random.nextFloat(-.1f, .8f), random.nextFloat(-.5f, .5f))), 7.0);
+								if (block != null) {
+									FallingBlock fb = convertBlockIntoFallingBlock(block);
+									if (fb == null)
+										continue;
+									fb.setVelocity(towards.multiply(0.8));
+									fb.setHurtEntities(true);
+									fb.setDropItem(false);
+									entitiesInMonitorArea.add(fb);
+									interruptEntities.add(fb);
+									break;
+								}
+							}
 				final double heightIncrement = width / height;
-				final Iterator<Entity> iterator = entitiesInList.iterator();
-				while (iterator.hasNext()) {
-					Entity entity = iterator.next();
+				for (int i = entitiesInMonitorArea.size() - 1; i >= 0; i--) {
+					Entity entity = entitiesInMonitorArea.get(i);
 					Location loc = entity.getLocation();
 					if (entity instanceof Player player) {
 						if (player.isFlying())
@@ -227,13 +169,13 @@ public class Tornado extends Disaster {
 						if (random.nextFloat() < particleRate) {
 							double particleSpeed = (level * 0.1) - (new Location(world, loc.getX(), location.getY(), loc.getZ()).distance(loc) * (0.07 * forceMultiplier));
 							vec.normalize();
-							for (int i=0; i < 2; i++)
+							for (int j=0; j < 2; j++)
 								world.spawnParticle(particleType, loc.clone().add(random.nextFloat() * 3 - 1.5, random.nextFloat() * 3 - 1.5, random.nextFloat() * 3 - 1.5), 0, vec.getX() * particleSpeed, (random.nextFloat(0, 0.8f) / 1.5) * particleSpeed, vec.getZ() * particleSpeed, 1, null, true);
 						}
 						if (random.nextInt(level * 10 + 70) == 0) {
 							cooldowns.put(entity, random.nextInt(3, 12));
 							heightMap.remove(entity);
-							iterator.remove();
+							entitiesInMonitorArea.remove(i);
 							continue;
 						}
 					} else {
@@ -257,7 +199,7 @@ public class Tornado extends Disaster {
 						if (random.nextInt(level * 10 + 70) == 0) {
 							cooldowns.put(entity, random.nextInt(3, 12));
 							heightMap.remove(entity);
-							iterator.remove();
+							entitiesInMonitorArea.remove(i);
 							continue;
 						}
 					}
@@ -278,7 +220,7 @@ public class Tornado extends Disaster {
 							if (fb == null)
 								return;
 							fb.setVelocity(new Vector(0, 0.3, 0));
-							entitiesInList.add(fb);
+							entitiesInMonitorArea.add(fb);
 							interruptEntities.add(fb);
 						}
 					}
@@ -286,7 +228,7 @@ public class Tornado extends Disaster {
 					heightIteration++;
 				}
 				for (int i=0; i < (0.4 * level + 3); i++)
-					if (entitiesInList.size() < maxEntities && random.nextFloat() < blockPickupRate) {
+					if (entitiesInMonitorArea.size() < maxEntities && random.nextFloat() < blockPickupRate) {
 						Location pickup = location.clone().add(Utils.getRandomizedVector().setY(0).multiply(random.nextInt(3, (int) blockPickupRange)));
 						Block b = pickup.getWorld().getHighestBlockAt(pickup);
 						if (b.isPassable())
@@ -305,13 +247,73 @@ public class Tornado extends Disaster {
 //						Location loc = fb.getLocation();
 //						fb.setVelocity(Utils.getVectorTowards(loc, centerTornado).multiply(0.04 * level * forceMultiplier).setY(level / 20));
 						fb.setVelocity(new Vector(0, 0.3, 0));
-						entitiesInList.add(fb);
+						entitiesInMonitorArea.add(fb);
 						interruptEntities.add(fb);
 					}
 				if (time-- <= 0)
 					stop();
 			}
 		}.runTaskTimer(plugin, 1, 1));
+		
+		final double distanceSquared = disasterRange * disasterRange;
+		final Map<UUID, Integer> timeInStorm = new HashMap<>();
+		createAsyncEntityMonitor(Entity::isValid, 
+				(found, entities, players) -> {
+					entities.addAll(interruptEntities);
+					interruptEntities.clear();
+					Iterator<Entry<Entity, Integer>> it = cooldowns.entrySet().iterator();
+					while (it.hasNext()) {
+						Entry<Entity, Integer> entry = it.next();
+						if (entry.getValue() > 0)
+							entry.setValue(entry.getValue() - 1);
+						else
+							it.remove();
+					}
+					found.forEach((entity, loc) -> {
+						if (cooldowns.containsKey(entity))
+							return;
+						if (entities.size() >= maxEntities && !(entity instanceof LivingEntity))
+							return;
+						if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+							return;
+						if (isEntityProtected(entity))
+							return;
+						if (entity instanceof FallingBlock) {
+							entities.add(entity);
+							return;
+						}
+						if (entity instanceof Player) {
+							Block block = world.getBlockAt(loc.getBlockX(), loc.getBlockY() + (int) Math.ceil(entity.getHeight()), loc.getBlockZ());
+							boolean isUnderwater = true;
+							for (int i=0; i < 3; i++) {
+								if (block == null || !block.isLiquid()) {
+									isUnderwater = false;
+									break;
+								}
+								block = block.getRelative(BlockFace.UP);
+							}
+							if (!isUnderwater && Utils.isLocationExposedToOutdoors(loc)) {
+								int time = timeInStorm.compute(entity.getUniqueId(), (key, oldValue) -> Math.min((oldValue != null ? oldValue : 0) + 1, 15));
+								if (time > 5)
+									entities.add(entity);
+							} else
+								timeInStorm.computeIfPresent(entity.getUniqueId(), (key, oldValue) -> {
+									int newValue = oldValue - 5;
+									return newValue > 0 ? newValue : null;
+								});
+							return;
+						}
+						if (!world.getBlockAt(loc.getBlockX(), loc.getBlockY() + (int) Math.ceil(entity.getHeight()), loc.getBlockZ()).isLiquid() && Utils.isLocationExposedToOutdoorsOptimized(loc, 8f, 6)) {
+							int time = timeInStorm.compute(entity.getUniqueId(), (key, oldValue) -> Math.min((oldValue != null ? oldValue : 0) + 1, 15));
+							if (time > 5)
+								entities.add(entity);
+						} else
+							timeInStorm.computeIfPresent(entity.getUniqueId(), (key, oldValue) -> {
+								int newValue = oldValue - 5;
+								return newValue > 0 ? newValue : null;
+							});
+					});
+				});
 	}
 	public void clean() {
 		super.clean();

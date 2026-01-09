@@ -1,7 +1,6 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -10,11 +9,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -64,7 +60,6 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 	private final Map<UUID, Meteor> meteorBlocks = new HashMap<>();
 	private final List<MeteorFactory> meteorFactory = new ArrayList<>();
 	private long currentTime;
-	private Set<Entity> currentEntities = Set.of();
 	
 	public MeteorShower(@NotNull Location location, Player player, int level) {
 		super(location, player, level);
@@ -106,7 +101,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 			@Override
 			public void run() {
 				if (activeMeteors.size() < maxMeteors)
-					for (Entity entity : currentEntities) {
+					for (Entity entity : entitiesInMonitorArea) {
 						if (entity instanceof Player player) {
 							if (EntityUtils.isPlayerImmune(player))
 								continue;
@@ -128,41 +123,19 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 					stop();
 			}
 		}.runTaskTimer(plugin, 0, 5));
-		scheduleTask(new BukkitRunnable() {
-			final AtomicBoolean processEntities = new AtomicBoolean();
-			final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
-			final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
-
-			@Override
-			public void run() {
-				if (processEntities.get())
-					return;
-				processEntities.set(true);
-				foundEntities.clear();
-				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid() && e instanceof LivingEntity))
-					foundEntities.put(entity, entity.getLocation());
-				currentEntities = Set.copyOf(entitiesInStorm);
-				scheduleTask(new BukkitRunnable() {
-					private final double radiusSquared = disasterRange * disasterRange;
-					
-					@Override
-					public void run() {
-						final Set<Entity> set = new HashSet<>();
-						foundEntities.forEach((entity, loc) -> {
-							if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared))
-								return;
-							if (isEntityProtected(entity))
-								return;
-							if (loc.getY() >= minHeight)
-								set.add(entity);
-						});
-						entitiesInStorm.clear();
-						entitiesInStorm.addAll(set);
-						processEntities.set(false);
-					}
-				}.runTaskAsynchronously(plugin));
-			}
-		}.runTaskTimer(plugin, 0, 1));
+		
+		final double distanceSquared = disasterRange * disasterRange;
+		createAsyncEntityMonitor(e -> e instanceof LivingEntity && e.isValid(), 
+				(found, entities, players) -> {
+					found.forEach((entity, loc) -> {
+						if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+							return;
+						if (isEntityProtected(entity))
+							return;
+						if (loc.getY() >= minHeight)
+							entities.add(entity);
+					});
+				});
 		
 		createParticleAsyncTask(player -> {
 			if (!setNight)
@@ -188,9 +161,6 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 				return;
 			player.resetPlayerTime();
 		});
-	}
-	public void addPlayerToWeather(Player player) {
-		super.addPlayerToWeather(player);
 	}
 	public void removePlayerFromWeather(Player player) {
 		super.removePlayerFromWeather(player);
@@ -493,7 +463,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 			clean();
 			final double explosionRadius = size * 3;
 			final double perimeterCheck = (explosionRadius - 1) * (explosionRadius - 1);
-			for (Block b : BlockUtils.getBlocksInSphereRadius(first, explosionRadius)) {
+			for (Block b : BlockUtils.getBlocksInSphereRadius(first, (float) explosionRadius)) {
 				if (BlockUtils.getCenterOfBlock(b).distanceSquared(first) < perimeterCheck) {
 					removeBlock(b);
 					if (random.nextInt(300) == 0)
@@ -531,7 +501,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 		}
 		public void stopMeteor() {
 			Location first = centerBlock.getLocation();
-			Queue<Entity> flyingBlocks = new ArrayDeque<>();
+			List<Entity> flyingBlocks = new ArrayList<>();
 			for (UUID uuid : blocks.keySet()) {
 				Entity temp = Bukkit.getEntity(uuid);
 				if (temp == null)

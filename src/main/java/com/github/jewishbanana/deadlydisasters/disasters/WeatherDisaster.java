@@ -1,7 +1,10 @@
 package com.github.jewishbanana.deadlydisasters.disasters;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -231,11 +234,11 @@ public abstract class WeatherDisaster extends Disaster {
 			return getWorldLink().getConfigStringList("disasters.weather.global_weather."+path);
 		return getWorldLink().getConfigStringList("disasters.global."+path);
 	}
-	public Set<PotionEffect> buildPotionEffects(String path) {
+	public List<PotionEffect> buildPotionEffects(String path) {
 		ConfigurationSection section = getConfigSection(path);
 		if (section == null)
-			return Set.of();
-		Set<PotionEffect> set = new HashSet<>();
+			return List.of();
+		List<PotionEffect> set = new ArrayList<>();
 		for (String effect : section.getKeys(false)) {
 			PotionEffectType type = Registry.EFFECT.get(NamespacedKey.minecraft(effect));
 			if (type == null) {
@@ -255,7 +258,30 @@ public abstract class WeatherDisaster extends Disaster {
 			boolean icon = effectSection.contains("icon", true) ? DataUtils.getConfigBoolean(getWorldLink().getConfig(), getWorldLink().getConfigName(), effectSection.getCurrentPath()+".icon", true) : true;
 			set.add(new PotionEffect(type, ticks, level - 1, true, particles, icon));
 		}
-		return Set.copyOf(set);
+		return List.copyOf(set);
+	}
+	public Map<Material, Material[]> buildBlockChanges(String path) {
+		ConfigurationSection section = getConfigSection(path);
+		if (section == null)
+			return Map.of();
+		final Map<Material, Material[]> map = new EnumMap<>(Material.class);
+		for (String material : section.getKeys(false)) {
+			Set<Material> materials = BlockUtils.getMaterials(material);
+			if (materials == null) {
+				Utils.sendConsoleMessage("&cERROR the block type or category &d'"+material+"' &cdoes not exist in the world disaster config &b'"+getWorldLink().getConfigName()+"' &cat the section &c'"+getConfigPath()+'.'+path+"'&c!");
+				continue;
+			}
+			String toMaterial = DataUtils.getConfigString(getWorldLink().getConfig(), getWorldLink().getConfigName(), section.getCurrentPath()+'.'+material, null);
+			if (toMaterial == null)
+				continue;
+			Set<Material> toSet = BlockUtils.getMaterials(toMaterial);
+			if (toSet == null) {
+				Utils.sendConsoleMessage("&cERROR the block type or category &d'"+toMaterial+"' &cdoes not exist in the world disaster config &b'"+getWorldLink().getConfigName()+"' &cat the section &c'"+getConfigPath()+'.'+path+'.'+material+"'&c!");
+				continue;
+			}
+			materials.forEach(type -> map.put(type, toSet.toArray(Material[]::new)));
+		}
+		return map;
 	}
 	public String getBroadcastMessageConfigPath() {
 		return "messages.disaster_broadcasts.weather.level_"+level;
@@ -264,16 +290,16 @@ public abstract class WeatherDisaster extends Disaster {
 		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
 	}
 	public void placeDebugRings() {
-		BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 110, location.getZ()), disasterRange).forEach(b -> b.setType(Material.GREEN_WOOL));
-		BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 111, location.getZ()), disasterRange + smoothingRange).forEach(b -> b.setType(Material.YELLOW_WOOL));
-		BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 112, location.getZ()), disasterRange + smoothingRange + smoothingRangeExcess).forEach(b -> b.setType(Material.RED_WOOL));
+		BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 110, location.getZ()), (float) disasterRange).forEach(b -> b.setType(Material.GREEN_WOOL));
+		BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 111, location.getZ()), (float) (disasterRange + smoothingRange)).forEach(b -> b.setType(Material.YELLOW_WOOL));
+		BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 112, location.getZ()), (float) (disasterRange + smoothingRange + smoothingRangeExcess)).forEach(b -> b.setType(Material.RED_WOOL));
 		BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 113, location.getZ()), weatherEffectsRange).forEach(b -> b.setType(Material.WHITE_WOOL));
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 110, location.getZ()), disasterRange).forEach(b -> b.setType(Material.AIR));
-				BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 111, location.getZ()), disasterRange + smoothingRange).forEach(b -> b.setType(Material.AIR));
-				BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 112, location.getZ()), disasterRange + smoothingRange + smoothingRangeExcess).forEach(b -> b.setType(Material.AIR));
+				BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 110, location.getZ()), (float) disasterRange).forEach(b -> b.setType(Material.AIR));
+				BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 111, location.getZ()), (float) (disasterRange + smoothingRange)).forEach(b -> b.setType(Material.AIR));
+				BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 112, location.getZ()), (float) (disasterRange + smoothingRange + smoothingRangeExcess)).forEach(b -> b.setType(Material.AIR));
 				BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 113, location.getZ()), weatherEffectsRange).forEach(b -> b.setType(Material.AIR));
 			}
 		}.runTaskLater(plugin, time);

@@ -56,13 +56,14 @@ public class DependencyUtils {
 	private static final String UltimateContentVersion = "2.0.0";
 	
 	public static void init(Main plugin) {
-		if (plugin.getServer().getPluginManager().isPluginEnabled("UltimateContent")) {
+		PluginManager pm = plugin.getServer().getPluginManager();
+		if (pm.isPluginEnabled("UltimateContent")) {
 			if (!isVersionOrAbove(plugin.getServer().getPluginManager().getPlugin("UltimateContent"), UltimateContentVersion))
 				Utils.sendConsoleMessage("&cERROR Cannot hook into UltimateContent because UltimateContent is out of date! Please update to at least &a"+UltimateContentVersion+" &c(Current version installed is &b"+(plugin.getServer().getPluginManager().getPlugin("UltimateContent").getDescription().getVersion())+"&c). The only effect this error will have is that all custom items related to DeadlyDisasters will be disabled. You can update UltimateContent here:&6 https://www.spigotmc.org/resources/ultimatecontent.118256/");
 			else
 				ultimateContent = true;
 		}
-		if (plugin.getServer().getPluginManager().isPluginEnabled("UIFramework")) {
+		if (pm.isPluginEnabled("UIFramework")) {
 			if (!UIFramework.isVersionOrAbove(UIFrameworkVersion))
 				Utils.sendConsoleMessage("&cERROR Cannot hook into UIFramework because UIFramework is out of date! Please update to at least &a"+UIFrameworkVersion+" &c(Current version installed is &b"+(plugin.getServer().getPluginManager().getPlugin("UIFramework").getDescription().getVersion())+"&c). The only effect this error will have is that all custom items related to DeadlyDisasters will be disabled. You can update UIFramework here:&6 https://www.spigotmc.org/resources/uiframework.110768/");
 			else {
@@ -84,11 +85,13 @@ public class DependencyUtils {
 			Utils.sendConsoleMessage("&bThere is an optional dependency UIFramework, that adds some custom items to DeadlyDisasters such as the plague cure potion, basic coating enchant, and more! Get UIFramework here:&6 https://www.spigotmc.org/resources/uiframework.110768/");
 		
 		Predicate<Location> check = null;
-		PluginManager pm = plugin.getServer().getPluginManager();
 		try {
 			if (pm.isPluginEnabled("WorldGuard")) {
-				check = (check == null) ? loc -> isWGRegion(loc) : check.and(loc -> isWGRegion(loc));
-				plugin.getLogger().info("Successfully hooked into World Guard");
+				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.world_guard")) {
+					check = (check == null) ? loc -> isWGRegion(loc) : check.and(loc -> isWGRegion(loc));
+					plugin.getLogger().info("Successfully hooked into World Guard");
+				} else
+					plugin.getLogger().info("World Guard was detected, but region protection for this plugin is disabled in the main config.yml file. World Guard regions will NOT be protected!");
 			}
 		} catch (Exception e) {
 			Utils.sendExceptionLog(e);
@@ -96,16 +99,19 @@ public class DependencyUtils {
 		}
 		try {
 			if (pm.isPluginEnabled("Towny")) {
-				townyHook = com.palmergames.bukkit.towny.TownyAPI.getInstance();
-				TownyListener.registerTowns();
-				new TownyListener(plugin);
-				plugin.getCommand("towndisasters").setTabCompleter(new TownyDisasters(plugin));
-			    check = (check == null) ? 
-			            loc -> townyHook.getTownBlock(loc) != null &&
-			            		townyHook.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true) : 
-			            check.and(loc -> townyHook.getTownBlock(loc) != null &&
-			            		townyHook.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true));
-				plugin.getLogger().info("Successfully hooked into Towny");
+				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.towny")) {
+					townyHook = com.palmergames.bukkit.towny.TownyAPI.getInstance();
+					TownyListener.registerTowns();
+					new TownyListener(plugin);
+					plugin.getCommand("towndisasters").setTabCompleter(new TownyDisasters(plugin));
+				    check = (check == null) ? 
+				            loc -> townyHook.getTownBlock(loc) != null &&
+				            		townyHook.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true) : 
+				            check.and(loc -> townyHook.getTownBlock(loc) != null &&
+				            		townyHook.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true));
+					plugin.getLogger().info("Successfully hooked into Towny");
+				} else
+					plugin.getLogger().info("Towny was detected, but region protection for this plugin is disabled in the main config.yml file. Towny regions will NOT be protected!");
 			}
 		} catch (Exception e) {
 			Utils.sendExceptionLog(e);
@@ -113,11 +119,14 @@ public class DependencyUtils {
 		}
 		try {
 			if (pm.isPluginEnabled("GriefPrevention")) {
-				me.ryanhamshire.GriefPrevention.DataStore api = me.ryanhamshire.GriefPrevention.GriefPrevention.instance.dataStore;
-				check = (check == null) ? 
-			            loc -> api.getClaimAt(loc, true, null) != null : 
-			            check.and(loc -> api.getClaimAt(loc, true, null) != null);
-				plugin.getLogger().info("Successfully hooked into Grief Prevention");
+				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.grief_prevention")) {
+					me.ryanhamshire.GriefPrevention.DataStore api = me.ryanhamshire.GriefPrevention.GriefPrevention.instance.dataStore;
+					check = (check == null) ? 
+				            loc -> api.getClaimAt(loc, true, null) != null : 
+				            check.and(loc -> api.getClaimAt(loc, true, null) != null);
+					plugin.getLogger().info("Successfully hooked into Grief Prevention");
+				} else
+					plugin.getLogger().info("Grief Prevention was detected, but region protection for this plugin is disabled in the main config.yml file. Grief Prevention regions will NOT be protected!");
 			}
 		} catch (Exception e) {
 			Utils.sendExceptionLog(e);
@@ -125,11 +134,14 @@ public class DependencyUtils {
 		}
 		try {
 			if (pm.isPluginEnabled("Lands")) {
-				me.angeschossen.lands.api.LandsIntegration api = me.angeschossen.lands.api.LandsIntegration.of(plugin);
-			    check = (check == null) ? 
-			            loc -> api.getArea(loc) != null : 
-			            check.and(loc -> api.getArea(loc) != null);
-				plugin.getLogger().info("Successfully hooked into Lands");
+				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.lands")) {
+					me.angeschossen.lands.api.LandsIntegration api = me.angeschossen.lands.api.LandsIntegration.of(plugin);
+				    check = (check == null) ? 
+				            loc -> api.getArea(loc) != null : 
+				            check.and(loc -> api.getArea(loc) != null);
+					plugin.getLogger().info("Successfully hooked into Lands");
+				} else
+					plugin.getLogger().info("Lands was detected, but region protection for this plugin is disabled in the main config.yml file. Lands regions will NOT be protected!");
 			}
 		} catch (Exception e) {
 			Utils.sendExceptionLog(e);
@@ -137,10 +149,13 @@ public class DependencyUtils {
 		}
 		try {
 			if (pm.isPluginEnabled("Kingdoms")) {
-				check = (check == null) ? 
-			            loc -> org.kingdoms.constants.land.Land.getLand(loc) != null : 
-			            check.and(loc -> org.kingdoms.constants.land.Land.getLand(loc) != null);
-				plugin.getLogger().info("Successfully hooked into Kingdoms");
+				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.kingdoms")) {
+					check = (check == null) ? 
+				            loc -> org.kingdoms.constants.land.Land.getLand(loc) != null : 
+				            check.and(loc -> org.kingdoms.constants.land.Land.getLand(loc) != null);
+					plugin.getLogger().info("Successfully hooked into Kingdoms");
+				} else
+					plugin.getLogger().info("Kingdoms was detected, but region protection for this plugin is disabled in the main config.yml file. Kingdoms regions will NOT be protected!");
 			}
 		} catch (Exception e) {
 			Utils.sendExceptionLog(e);
@@ -151,8 +166,11 @@ public class DependencyUtils {
 		try {
 			Object coreProtect = getCoreProtect(plugin);
 			if (coreProtect != null) {
-				cpHook = ((net.coreprotect.CoreProtect) coreProtect).getAPI();
-				plugin.getLogger().info("Successfully hooked into Core Protect");
+				if (DataUtils.getMainConfigBoolean("external.core_protect_damage_logging")) {
+					cpHook = (net.coreprotect.CoreProtectAPI) coreProtect;
+					plugin.getLogger().info("Successfully hooked into Core Protect");
+				} else
+					plugin.getLogger().info("Core Protect was detected, but damage logging is disabled in the main config.yml file! Rollbacks will not be available.");
 			}
 		} catch (Exception e) {
 			Utils.sendExceptionLog(e);

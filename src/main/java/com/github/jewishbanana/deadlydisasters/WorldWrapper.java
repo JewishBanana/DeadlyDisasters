@@ -179,7 +179,7 @@ public class WorldWrapper {
 				break;
 			}
 		});
-		wrapper.disabledDisasters = Set.copyOf(disasters);
+		wrapper.disabledDisasters = !disasters.isEmpty() ? Set.copyOf(disasters) : Set.of();
 		wrapper.minimumTime = DataUtils.getConfigInt(wrapper.config, wrapper.configName, "world.minimum_time", 120);
 		wrapper.maximumTime = DataUtils.getConfigInt(wrapper.config, wrapper.configName, "world.maximum_time", 180);
 		if (wrapper.maximumTime < wrapper.minimumTime) {

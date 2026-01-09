@@ -76,6 +76,7 @@ public class DataUtils {
 			}
 		}
 		dataYaml = YamlConfiguration.loadConfiguration(dataFile);
+		updateConfigChanges();
 	}
 
 	public static void reload() {
@@ -94,6 +95,31 @@ public class DataUtils {
 			Utils.sendExceptionLog(e);
 		}
 		languageConfig = YamlConfiguration.loadConfiguration(translationsFile);
+	}
+	private static void updateConfigChanges() {
+		String last = dataYaml.contains("stored_version") ? dataYaml.getString("stored_version") : null;
+		if (last != null && last.equals(plugin.getDescription().getVersion()))
+			return;
+		File folder = new File(plugin.getDataFolder().getAbsolutePath(), "worldConfigs");
+		folder.mkdirs();
+		switch (last != null ? last : "default") {
+		default:
+		case "1.0.1-BETA":
+			for (File f : folder.listFiles())
+				try {
+					FileConfiguration file = YamlConfiguration.loadConfiguration(f);
+					List<String> list = file.getStringList("disasters.weather.end_storm.blacklisted_mob_types");
+					if (!list.isEmpty()) {
+						list.add("end_crystal");
+						file.set("disasters.weather.end_storm.blacklisted_mob_types", list);
+					}
+					file.save(f);
+				} catch (Exception e) {
+					Utils.sendExceptionLog(e);
+				}
+			break;
+		}
+		writeToDataFile(file -> file.set("stored_version", plugin.getDescription().getVersion()));
 	}
 	public static int getMainConfigInt(String path) {
 		try {

@@ -68,3 +68,26 @@ items:
     basic_coating_book:
         # The chance of this book spawning in a naturally generated chest (mineshafts, dungeons, etc.)
         loot_table_chance: 1.0
+        
+###############################################################################################################################################################################
+#
+# Third-Party Plugin Settings
+#
+# This section is for settings related to third-party plugin hooks into DeadlyDisasters. For specifically RealisticSeasons, an independent config file is generated in the plugins 
+# folder. This section is for smaller settings like specific region protection toggling and other important settings.
+#
+# CHANGING THESE SETTINGS REQUIRES A SERVER RESTART TO TAKE EFFECT!
+#
+###############################################################################################################################################################################
+
+external:
+    # This setting controls of damaged blocks are logged to core protect, by default it is turned off. Why? Because logging every block change will decrease performance and 
+    # this should only be done if you are unsatisfied or concerned about the built-in disaster damage regeneration. If toggled on then all block damage will be done by the user "deadly-disasters"
+    core_protect_damage_logging: false
+    # This section is to enable or disable region protection from specific plugins. This is for if you are using multiple of them and want finer control. To disable region protection entirely, you can do so in the world disaster config file.
+    region_protection_plugins:
+        world_guard: true
+        towny: true
+        grief_prevention: true
+        lands: true
+        kingdoms: true

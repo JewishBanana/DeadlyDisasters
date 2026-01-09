@@ -265,7 +265,8 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					return true;
 				}
 			}
-			Iterator<Disaster> iterator = Disaster.onGoingDisasters.iterator();
+			final List<Disaster> copyList = new ArrayList<>(Disaster.onGoingDisasters);
+			Iterator<Disaster> iterator = copyList.iterator();
 			int stopped = 0;
 			while (iterator.hasNext()) {
 				Disaster temp = iterator.next();

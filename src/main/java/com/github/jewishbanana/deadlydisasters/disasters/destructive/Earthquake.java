@@ -1,6 +1,7 @@
 package com.github.jewishbanana.deadlydisasters.disasters.destructive;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -9,7 +10,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -44,7 +44,7 @@ public class Earthquake extends Disaster {
 	private double forceMultiplier;
 	private boolean placeLava;
 	
-	private Queue<CollapsingBlock> collapsingList = new ArrayDeque<>();
+	private List<CollapsingBlock> collapsingList = new ArrayList<>();
 	private ArrayDeque<Block> modifiedOrder = new ArrayDeque<>();
 	private Map<Block, Integer> firstBlockIndex = new HashMap<>();
 	private Map<Integer, Block> reinsertOrdering = new TreeMap<>();
@@ -162,7 +162,7 @@ public class Earthquake extends Disaster {
 				.sorted(Comparator
 						.comparingDouble((CollapsingBlock cb) -> -cb.distance)
 						.thenComparingInt(cb -> cb.block.getY()))
-				.collect(Collectors.toCollection(ArrayDeque::new));
+				.collect(Collectors.toCollection(ArrayList::new));
 		final double excessSoundRange = level * 7.0;
 		final double soundRange = (disasterRange + excessSoundRange) * (disasterRange + excessSoundRange);
 		final double distanceSquared = disasterRange * disasterRange;
@@ -318,25 +318,31 @@ public class Earthquake extends Disaster {
 		}
 	}
 	public Block getHighestExposedBlock(Block start, int maxDistance, Predicate<Block> filter) {
-		if (start == null)
-			return null;
-		Block b = start;
-		if (!filter.test(b)) {
-			for (int i=0; i < maxDistance; i++) {
-				b = b.getRelative(BlockFace.DOWN);
-				if (filter.test(b))
-					return b;
-			}
-			return null;
-		} else
-			for (int i=0; i < maxDistance; i++) {
-				b = b.getRelative(BlockFace.UP);
-				if (b == null)
-					return start.getRelative(BlockFace.UP, i);
-				if (!filter.test(b))
-					return b.getRelative(BlockFace.DOWN);
-			}
-		return b;
+	    if (start == null)
+	        return null;
+	    final World world = start.getWorld();
+	    final int x = start.getX();
+	    final int z = start.getZ();
+	    int y = start.getY();
+	    if (!filter.test(start)) {
+	        for (int i = 0; i < maxDistance; i++) {
+	            y--;
+	            final Block b = world.getBlockAt(x, y, z);
+	            if (filter.test(b))
+	                return b;
+	        }
+	        return null;
+	    } else {
+	        for (int i = 0; i < maxDistance; i++) {
+	            y++;
+	            final Block b = world.getBlockAt(x, y, z);
+	            if (b == null)
+	                return world.getBlockAt(x, start.getY() + i, z);
+	            if (!filter.test(b))
+	                return world.getBlockAt(x, y - 1, z);
+	        }
+	    }
+	    return world.getBlockAt(x, y, z);
 	}
 	public Function<PlayerDeathEvent, Boolean> getDeathCheck() {
 		return event -> {

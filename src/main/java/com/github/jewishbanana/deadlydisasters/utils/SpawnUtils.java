@@ -1,18 +1,19 @@
 package com.github.jewishbanana.deadlydisasters.utils;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 
 public class SpawnUtils {
 	
-	public static final double MIN_SPAWN_DISTANCE_FROM_PLAYERS = 24.0;
-	public static final double MAX_SPAWN_DISTANCE_FROM_PLAYERS = 70.0;
+	public static final float MIN_SPAWN_DISTANCE_FROM_PLAYERS = 24f;
+	public static final float MAX_SPAWN_DISTANCE_FROM_PLAYERS = 70f;
 
-	public static Location findMonsterSpawnLocation(Location area, int height, double minDistance, double maxDistance) {
+	public static Location findMonsterSpawnLocation(Location area, int height, float minDistance, float maxDistance) {
 		for (int i=0; i < 5; i++) {
-			Location spawn = Utils.findRandomSpotInRadius(area, minDistance, maxDistance, height, 3, () -> Utils.getRandomizedVector(1.0, 0.25, 1.0));
+			Location spawn = Utils.findRandomSpotInRadius(area, minDistance, maxDistance, height, 3, () -> Utils.getRandomizedVector(1f, 0.25f, 1f));
 			if (canMonsterSpawn(spawn, minDistance))
 				return spawn;
 		}
@@ -26,55 +27,67 @@ public class SpawnUtils {
 	}
 	public static Location findMonsterSpawnLocationNoCollision(Location area, int height, double minDistance, double maxDistance) {
 		for (int i=0; i < 10; i++) {
-			Location spawn = area.clone().add(Utils.getRandomizedVector(1.0, 0.25, 1.0).multiply(Utils.getRandomGenerator().nextDouble(minDistance, maxDistance)));
+			Location spawn = area.clone().add(Utils.getRandomizedVector(1f, 0.25f, 1f).multiply(Utils.getRandomGenerator().nextDouble(minDistance, maxDistance)));
 			if (canMonsterSpawn(spawn, minDistance))
 				return spawn;
 		}
 		return null;
 	}
 	public static boolean canMonsterSpawn(Location location, double minDistance) {
-		return location != null
-				&& !location.getBlock().isLiquid()
-				&& location.getBlock().getLightFromBlocks() == 0
-				&& location.getWorld().getNearbyEntities(location, minDistance, minDistance, minDistance, e -> e instanceof Player).size() == 0;
+		if (location == null)
+			return false;
+		final Block block = location.getBlock();
+		if (block != null && (block.isLiquid() || block.getLightFromBlocks() != 0 || Utils.isNotNullAndCondition(block.getRelative(BlockFace.DOWN), t -> t.isPassable())))
+			return false;
+		return location.getWorld().getNearbyEntities(location, minDistance, minDistance, minDistance, e -> e instanceof Player).size() == 0;
 	}
 	public static Location findSmartYSpawn(Location pivot, Location spawn, double height, int maxDistance) {
-		if (pivot == null || spawn == null)
-			return null;
-		Block b = spawn.getBlock();
-		Location loc1 = null, loc2 = null;
-		down:
-			for (int i = spawn.getBlockY(); i > spawn.getBlockY()-maxDistance; i--) {
-				b = b.getRelative(BlockFace.DOWN);
-				if (!b.isPassable() && b.getRelative(BlockFace.UP).isPassable() && !b.getRelative(BlockFace.UP).isLiquid()) {
-					for (int c = 2; c <= height-1; c++)
-						if (!b.getRelative(BlockFace.UP, c).isPassable())
-							continue down;
-					loc1 = b.getRelative(BlockFace.UP).getLocation().add(0.5,0.01,0.5);
-					break down;
-				}
-			}
-		b = spawn.getBlock();
-		up:
-			for (int i = spawn.getBlockY(); i < spawn.getBlockY()+maxDistance; i++) {
-				b = b.getRelative(BlockFace.UP);
-				if (b.isPassable() && !b.getRelative(BlockFace.DOWN).isPassable() && !b.isLiquid()) {
-					for (int c = 1; c < height; c++)
-						if (!b.getRelative(BlockFace.UP, c).isPassable())
-							continue up;
-					loc2 = b.getLocation().add(0.5,0.01,0.5);
-					break up;
-				}
-			}
-		if (loc1 != null && loc2 == null)
-			return loc1;
-		else if (loc1 == null && loc2 != null)
-			return loc2;
-		else if (loc1 == null && loc2 == null)
-			return null;
-		if (Math.abs(pivot.getY()-loc2.getY()) < Math.abs(pivot.getY()-loc1.getY()))
-			return loc1;
-		else
-			return loc2;
+	    if (pivot == null || spawn == null)
+	        return null;
+	    final World world = spawn.getWorld();
+	    final int spawnX = spawn.getBlockX();
+	    final int spawnZ = spawn.getBlockZ();
+	    final int spawnY = spawn.getBlockY();
+	    final int heightInt = (int)height;
+	    final double pivotY = pivot.getY();
+	    Location loc1 = null;
+	    Location loc2 = null;
+	    down:
+	    for (int y = spawnY; y > spawnY - maxDistance; y--) {
+	        final Block current = world.getBlockAt(spawnX, y, spawnZ);
+	        if (!current.isPassable()) {
+	            final Block above = world.getBlockAt(spawnX, y + 1, spawnZ);
+	            if (above.isPassable() && !above.isLiquid()) {
+	                for (int c = 2; c <= heightInt - 1; c++) {
+	                    if (!world.getBlockAt(spawnX, y + c, spawnZ).isPassable())
+	                        continue down;
+	                }
+	                loc1 = new Location(world, spawnX + 0.5, y + 1.01, spawnZ + 0.5);
+	                break;
+	            }
+	        }
+	    }
+	    up:
+	    for (int y = spawnY; y < spawnY + maxDistance; y++) {
+	        final Block current = world.getBlockAt(spawnX, y, spawnZ);
+	        if (current.isPassable() && !current.isLiquid()) {
+	            final Block below = world.getBlockAt(spawnX, y - 1, spawnZ);
+	            if (!below.isPassable()) {
+	                for (int c = 1; c < heightInt; c++) {
+	                    if (!world.getBlockAt(spawnX, y + c, spawnZ).isPassable())
+	                        continue up;
+	                }
+	                loc2 = new Location(world, spawnX + 0.5, y + 0.01, spawnZ + 0.5);
+	                break;
+	            }
+	        }
+	    }
+	    if (loc1 != null && loc2 == null)
+	        return loc1;
+	    if (loc1 == null)
+	        return loc2;
+	    final double dist1 = Math.abs(pivotY - loc1.getY());
+	    final double dist2 = Math.abs(pivotY - loc2.getY());
+	    return dist2 < dist1 ? loc2 : loc1;
 	}
 }

@@ -1,11 +1,9 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
 import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -40,8 +38,7 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 	
 	private float particleRate;
 	
-	private Set<PotionEffect> effects;
-	private Set<Entity> currentEntities = Set.of();
+	private List<PotionEffect> effects;
 
 	public SoulStorm(@NotNull Location location, Player player, int level) {
 		super(location, player, level);
@@ -55,9 +52,6 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 		this.particleRate = (float) (0.8 * particleMultiplier * (scale / 3.0));
 		this.soundTickRate = 80;
 	}
-	public boolean canStart() {
-		return super.canStart();
-	}
 	public void start() {
 		super.start();
 		location.setY(128);
@@ -65,7 +59,7 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 		scheduleTask(new BukkitRunnable() {
 			@Override
 			public void run() {
-				for (Entity entity : currentEntities) {
+				for (Entity entity : entitiesInMonitorArea) {
 					if (entity instanceof Player player) {
 						if (EntityUtils.isPlayerImmune(player))
 							continue;
@@ -94,49 +88,30 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 					else if (entity instanceof Item && random.nextInt(10) == 0)
 						entity.setVelocity(entity.getVelocity().add(new Vector(random.nextFloat(-1, 1), random.nextFloat(), random.nextFloat(-1, 1)).multiply(scale / 2.0 * currentStrength)));
 				}
+				
 				updateEntityTargets();
+				
 				time -= 5;
 				if (time <= 0)
 					stop();
 			}
 		}.runTaskTimer(plugin, 0, 5));
-		scheduleTask(new BukkitRunnable() {
-			final AtomicBoolean processEntities = new AtomicBoolean();
-			final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
-			final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
-
-			@Override
-			public void run() {
-				if (processEntities.get())
-					return;
-				processEntities.set(true);
-				foundEntities.clear();
-				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
-					foundEntities.put(entity, entity.getLocation().add(0, entity.getHeight() / 2.0, 0));
-				currentEntities = Set.copyOf(entitiesInStorm);
-				scheduleTask(new BukkitRunnable() {
-					private final double radiusSquared = disasterRange * disasterRange;
-					
-					@Override
-					public void run() {
-						final Set<Entity> set = new HashSet<>();
-						foundEntities.forEach((entity, loc) -> {
-							if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared)
-									|| isEntityProtected(entity))
-								return;
-							set.add(entity);
-						});
-						entitiesInStorm.clear();
-						entitiesInStorm.addAll(set);
-						processEntities.set(false);
-					}
-				}.runTaskAsynchronously(plugin));
-			}
-		}.runTaskTimer(plugin, 0, 1));
 		
 		final double distanceSquared = disasterRange * disasterRange;
+		createAsyncEntityMonitor(Entity::isValid, 
+				(found, entities, players) -> {
+					found.forEach((entity, loc) -> {
+						if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+							return;
+						if (isEntityProtected(entity))
+							return;
+						entities.add(entity);
+					});
+				});
+		
 		final double trueSmoothingRange = (disasterRange + smoothingRange) * (disasterRange + smoothingRange);
 		createParticleAsyncTask(player -> {
+			final ThreadLocalRandom random = ThreadLocalRandom.current();
 			final Location loc = player.getLocation();
 			if (new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()).distanceSquared(location) > distanceSquared 
 					|| random.nextFloat() > particleRate * currentStrength)
@@ -154,6 +129,7 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 					playSound(player, particleLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, SoundCategory.WEATHER, 1, .75);
 			}
 		}, pair -> {
+			final ThreadLocalRandom random = ThreadLocalRandom.current();
 			final Player player = pair.getFirst();
 			final double intensity = pair.getSecond();
 			final Location loc = player.getLocation();

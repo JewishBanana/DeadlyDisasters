@@ -1,14 +1,16 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -55,8 +57,7 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 	
 	private float particleRate;
 	private float soundVolume;
-	private Set<PotionEffect> effects;
-	private Set<Entity> currentEntities = Set.of();
+	private List<PotionEffect> effects;
 	private final Map<Location, Integer> activeRifts = new ConcurrentHashMap<>();
 	private final Set<Location> rifts = ConcurrentHashMap.newKeySet();
 
@@ -90,57 +91,59 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 			
 			@Override
 			public void run() {
-				for (Entity entity : currentEntities) {
-					if (entity instanceof Player player) {
-						if (EntityUtils.isPlayerImmune(player))
-							continue;
-						if (random.nextFloat() < riftSpawnRate)
-							scheduleTask(new BukkitRunnable() {
-								private final Location playerLoc = entity.getLocation();
-								
-								@Override
-								public void run() {
-									for (int i=0; i < 30; i++) {
-										final Location temp = SpawnUtils.findSmartYSpawn(playerLoc, Utils.findRandomSpotInCircle(playerLoc, 3.0, 20.0), 3.0, 15);
-										if (temp == null)
-											continue;
-										temp.add(0, 2.1, 0);
-										if (rifts.stream().anyMatch(rift -> rift.distanceSquared(temp) <= 25))
-											continue;
-										if (!Utils.isAreaClear(temp.getBlock().getRelative(BlockFace.UP), AreaClearing.PLUS_SIGN_3D_FROM_CENTER) || !EntityUtils.isLocationExposedToOutdoors(temp, 12.0))
-											continue;
-										rifts.add(temp);
-										scheduleTask(new BukkitRunnable() {
-											private int tick = 60;
-											
-											@Override
-											public void run() {
-												if (tick-- <= 0) {
-													activeRifts.put(temp, random.nextInt(80, 240));
-													this.cancel();
-													return;
-												}
-												temp.getWorld().spawnParticle(Particle.PORTAL, temp, (59 - tick) / 10 * 2, .1, 1.2, .1, .01, null, true);
+				for (Player player : playersInMonitorArea) {
+					if (EntityUtils.isPlayerImmune(player))
+						continue;
+					if (random.nextFloat() < riftSpawnRate)
+						scheduleTask(new BukkitRunnable() {
+							private final Location playerLoc = player.getLocation();
+							
+							@Override
+							public void run() {
+								for (int i=0; i < 30; i++) {
+									final Location temp = SpawnUtils.findSmartYSpawn(playerLoc, Utils.findRandomSpotInCircle(playerLoc, 3f, 20f), 3.0, 15);
+									if (temp == null)
+										continue;
+									temp.add(0, 2.1, 0);
+									if (rifts.stream().anyMatch(rift -> rift.distanceSquared(temp) <= 25))
+										continue;
+									if (!Utils.isAreaClear(temp.getBlock().getRelative(BlockFace.UP), AreaClearing.PLUS_SIGN_3D_FROM_CENTER) || !Utils.isLocationExposedToOutdoors(temp))
+										continue;
+									rifts.add(temp);
+									scheduleTask(new BukkitRunnable() {
+										private int tick = 60;
+										
+										@Override
+										public void run() {
+											if (tick-- <= 0) {
+												activeRifts.put(temp, ThreadLocalRandom.current().nextInt(80, 240));
+												this.cancel();
+												return;
 											}
-										}.runTaskTimer(plugin, 0, 1));
-										break;
-									}
+											temp.getWorld().spawnParticle(Particle.PORTAL, temp, (59 - tick) / 10 * 2, .1, 1.2, .1, .01, null, true);
+										}
+									}.runTaskTimer(plugin, 0, 1));
+									break;
 								}
-							}.runTaskAsynchronously(plugin));
-					}
-					if (entity instanceof LivingEntity alive) {
+							}
+						}.runTaskAsynchronously(plugin));
+				}
+				for (Entity entity : entitiesInMonitorArea) {
+					if (EntityUtils.isEntityImmunePlayer(entity))
+						continue;
+					if (entity instanceof LivingEntity alive)
 						alive.addPotionEffects(effects);
-					} else if (entity instanceof Item && random.nextInt(10) == 0)
+					else if (entity instanceof Item && random.nextInt(10) == 0)
 						entity.setVelocity(entity.getVelocity().add(new Vector(random.nextFloat(-1, 1), random.nextFloat(), random.nextFloat(-1, 1)).multiply(scale / 2.0 * currentStrength)));
 					if (random.nextFloat() < teleportRate) {
 						Location entityLoc = entity.getLocation();
-						Location spawn = Utils.findRandomSpotInRadius(entityLoc, Math.min(teleportRange - 1, 7.0), teleportRange, 2, 10, () -> Utils.getRandomizedVector(1.0, 0.25, 1.0));
+						Location spawn = Utils.findRandomSpotInRadius(entityLoc, Math.min(teleportRange - 1, 7f), teleportRange, 2, 10, () -> Utils.getRandomizedVector(1f, 0.25f, 1f));
 						if (spawn != null) {
 							spawn.setDirection(entityLoc.getDirection());
 							entity.teleport(spawn);
 							world.playSound(spawn, Sound.ENTITY_ENDERMAN_TELEPORT, SoundCategory.HOSTILE, 1, 1);
 							if (entity instanceof Player p)
-								p.spawnParticle(Particle.DRAGON_BREATH, spawn.add(0, 1.5, 0), 30, 3, 1, 3, 3);
+								VersionUtils.spawnDragonBreathParticle(p, spawn.add(0, 1.5, 0), 30, 3, 1, 3, 3, 1f);
 						}
 					}
 				}
@@ -226,50 +229,49 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 					stop();
 			}
 		}.runTaskTimer(plugin, 0, 5));
-		scheduleTask(new BukkitRunnable() {
-			final AtomicBoolean processEntities = new AtomicBoolean();
-			final Map<Entity, Location> foundEntities = new ConcurrentHashMap<>();
-			final Set<Entity> entitiesInStorm = ConcurrentHashMap.newKeySet();
-
-			@Override
-			public void run() {
-				if (processEntities.get())
-					return;
-				processEntities.set(true);
-				foundEntities.clear();
-				for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, e -> e.isValid()))
-					foundEntities.put(entity, entity.getLocation().add(0, entity.getHeight() / 2.0, 0));
-				currentEntities = Set.copyOf(entitiesInStorm);
-				scheduleTask(new BukkitRunnable() {
-					private final double radiusSquared = disasterRange * disasterRange;
-					
-					@Override
-					public void run() {
-						final Set<Entity> set = new HashSet<>();
-						foundEntities.forEach((entity, loc) -> {
-							if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, radiusSquared))
-								return;
-							if (isEntityProtected(entity))
-								return;
-							if (EntityUtils.isLocationExposedToOutdoors(loc, 12.0))
-								set.add(entity);
-						});
-						entitiesInStorm.clear();
-						entitiesInStorm.addAll(set);
-						processEntities.set(false);
-					}
-				}.runTaskAsynchronously(plugin));
-			}
-		}.runTaskTimer(plugin, 0, 1));
 		
 		final double distanceSquared = disasterRange * disasterRange;
+		final Set<UUID> playersInStorm = ConcurrentHashMap.newKeySet();
+		final List<UUID> playersIteratedOver = new ArrayList<>();
+		final Map<UUID, Integer> timeInStorm = new HashMap<>();
+		createAsyncEntityMonitor(Entity::isValid, 
+				(found, entities, players) -> {
+					playersInStorm.clear();
+					playersInStorm.addAll(playersIteratedOver);
+					playersIteratedOver.clear();
+					found.forEach((entity, loc) -> {
+						if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+							return;
+						if (isEntityProtected(entity))
+							return;
+						if (entity instanceof Player ? Utils.isLocationExposedToOutdoors(loc) : Utils.isLocationExposedToOutdoorsOptimized(loc, 8f, 6)) {
+							int time = timeInStorm.compute(entity.getUniqueId(), (key, oldValue) -> Math.min((oldValue != null ? oldValue : 0) + 1, 20));
+							if (time > 10) {
+								entities.add(entity);
+								if (entity instanceof Player p) {
+									players.add(p);
+									playersIteratedOver.add(p.getUniqueId());
+								}
+								return;
+							}
+						} else
+							timeInStorm.computeIfPresent(entity.getUniqueId(), (key, oldValue) -> {
+								int newValue = oldValue - 5;
+								return newValue > 0 ? newValue : null;
+							});
+						if (entity instanceof Player p)
+							players.add(p);
+					});
+				});
+		
 		final double trueSmoothingRange = (disasterRange + smoothingRange) * (disasterRange + smoothingRange);
 		final double internalDistanceSquared = (particleRenderDistance - 1.5) * (particleRenderDistance - 1.5);
 		createParticleAsyncTask(player -> {
+			final ThreadLocalRandom random = ThreadLocalRandom.current();
 			final Location loc = player.getLocation();
 			Block closest = null;
 			double closestDistance = 0;
-			final boolean flag = currentEntities.contains(player);
+			final boolean flag = playersInStorm.contains(player.getUniqueId());
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
 				if (new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location) > distanceSquared 
 						|| random.nextFloat() > particleRate * currentStrength)
@@ -280,14 +282,14 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 					continue;
 				final Location particleLoc = new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 2.5, block.getZ() + 0.5);
 				if (!flag) {
-					player.spawnParticle(Particle.DRAGON_BREATH, particleLoc, 2, .5, 2.5, .5, .05);
+					VersionUtils.spawnDragonBreathParticle(player, particleLoc, 2, .5, 2.5, .5, .05, 1f);
 					player.spawnParticle(VersionUtils.getLargeSmoke(), particleLoc, 1, .5, 2.5, .5, .05);
 				} else if (new Location(particleLoc.getWorld(), particleLoc.getX(), loc.getY(), particleLoc.getZ()).distanceSquared(loc) > internalDistanceSquared) {
-					player.spawnParticle(Particle.DRAGON_BREATH, particleLoc, 5, .5, 2.5, .5, .05);
+					VersionUtils.spawnDragonBreathParticle(player, particleLoc, 5, .5, 2.5, .5, .05, 1f);
 					player.spawnParticle(VersionUtils.getLargeSmoke(), particleLoc, 2, .5, 2.5, .5, .05);
 				} else {
 					for (int i=0; i < 2; i++)
-						player.spawnParticle(Particle.DRAGON_BREATH, particleLoc.clone().add(random.nextFloat()-.5, random.nextFloat(3f) + 7, random.nextFloat()-.5), 0, random.nextFloat(-.5f, .5f), random.nextFloat(-1.25f, -.5f), random.nextFloat(-.5f, .5f), 1);
+						VersionUtils.spawnDragonBreathParticle(player, particleLoc.clone().add(random.nextFloat()-.5, random.nextFloat(3f) + 7, random.nextFloat()-.5), 0, random.nextFloat(-.5f, .5f), random.nextFloat(-1.25f, -.5f), random.nextFloat(-.5f, .5f), 1, 1f);
 					if (random.nextInt(3) == 0)
 						player.spawnParticle(VersionUtils.getLargeSmoke(), particleLoc.clone().add(random.nextFloat()-.5, random.nextFloat(3f) + 7, random.nextFloat()-.5), 0, random.nextFloat(-.5f, .5f), random.nextFloat(-1.25f, -.5f), random.nextFloat(-.5f, .5f), 1);
 				}
@@ -306,6 +308,7 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 				}
 			}
 		}, pair -> {
+			final ThreadLocalRandom random = ThreadLocalRandom.current();
 			final Player player = pair.getFirst();
 			final double intensity = pair.getSecond();
 			final Location loc = player.getLocation();
@@ -322,10 +325,10 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 				aboveFlag = true;
 				final Location particleLoc = new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 5, block.getZ() + 0.5);
 				if (actualDistance <= distanceSquared) {
-					player.spawnParticle(Particle.DRAGON_BREATH, particleLoc, 1, .5, .7, .5, .05);
+					VersionUtils.spawnDragonBreathParticle(player, particleLoc, 1, .5, .7, .5, .05, 1f);
 					player.spawnParticle(VersionUtils.getLargeSmoke(), particleLoc, 1, .5, .7, .5, .05);
 				} else {
-					player.spawnParticle(Particle.DRAGON_BREATH, particleLoc.clone().add(random.nextFloat()-.5, random.nextFloat(5f) + 3, random.nextFloat()-.5), 0, random.nextFloat(-.2f, .2f), random.nextFloat(-.5f, -.2f), random.nextFloat(-.2f, .2f), .05);
+					VersionUtils.spawnDragonBreathParticle(player, particleLoc.clone().add(random.nextFloat()-.5, random.nextFloat(5f) + 3, random.nextFloat()-.5), 0, random.nextFloat(-.2f, .2f), random.nextFloat(-.5f, -.2f), random.nextFloat(-.2f, .2f), .05, 1f);
 					player.spawnParticle(VersionUtils.getLargeSmoke(), particleLoc.clone().add(random.nextFloat()-.5, random.nextFloat(5f) + 3, random.nextFloat()-.5), 0, random.nextFloat(-.2f, .2f), random.nextFloat(-.5f, -.2f), random.nextFloat(-.2f, .2f), .05);
 				}
 				if (!soundFlag && loc.distanceSquared(BlockUtils.getCenterOfBlock(highest)) <= 25

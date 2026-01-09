@@ -1,6 +1,7 @@
 package com.github.jewishbanana.deadlydisasters.disasters.destructive;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -12,6 +13,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -41,7 +44,7 @@ public class Sinkhole extends Disaster {
 	private double speed;
 	private int lavaDepth;
 	
-	private Queue<CollapsingBlock> collapsingList = new ArrayDeque<>();
+	private List<CollapsingBlock> collapsingList = new ArrayList<>();
 	private ArrayDeque<Block> modifiedOrder = new ArrayDeque<>();
 	private Map<Block, Integer> firstBlockIndex = new HashMap<>();
 	private Map<Integer, Block> reinsertOrdering = new TreeMap<>();
@@ -88,7 +91,7 @@ public class Sinkhole extends Disaster {
 	}
 	public void start() {
 		super.start();
-		Set<Block> blocks = new HashSet<>(BlockUtils.getBlocksInCircleRadius(location, disasterRange));
+		Set<Block> blocks = new HashSet<>(BlockUtils.getBlocksInCircleRadius(location, (float) disasterRange));
 		if (blocks.isEmpty()) {
 			stop();
 			return;
@@ -107,13 +110,13 @@ public class Sinkhole extends Disaster {
 					Set<CollapsingBlock> collapsing = new HashSet<>();
 //					Set<Block> selected = new HashSet<>();
 					for (Block next : blocks) {
-						Block block = getHighestExposedBlock(next, level * 3 + random.nextInt(level), temp -> !temp.isPassable() || temp.isLiquid());
+						Block block = getHighestExposedBlock(next, level * 3 + ThreadLocalRandom.current().nextInt(level), temp -> !temp.isPassable() || temp.isLiquid());
 						if (block == null)
 							continue;
 						double distance = BlockUtils.getCenterOfBlock(block).distance(location);
-						int depth = (int) (Math.floor(centerDepth * Math.pow(1.0 - (distance / disasterRange), 2.0)) + ((random.nextDouble() * 2 - 1) * noise * (1.0 - distance)));
+						int depth = (int) (Math.floor(centerDepth * Math.pow(1.0 - (distance / disasterRange), 2.0)) + ((ThreadLocalRandom.current().nextDouble() * 2 - 1) * noise * (1.0 - distance)));
 						if (depth > 0)
-							collapsing.add(new CollapsingBlock(block, distance + random.nextDouble(level), (int) (depth + Math.max(block.getY() - location.getY(), 0))));
+							collapsing.add(new CollapsingBlock(block, distance + ThreadLocalRandom.current().nextDouble(level), (int) (depth + Math.max(block.getY() - location.getY(), 0))));
 //						selected.add(block);
 					}
 //					double radiusSquared = (radius - 1) * (radius - 1);
@@ -130,7 +133,7 @@ public class Sinkhole extends Disaster {
 						    .sorted(Comparator
 						        .comparingInt((CollapsingBlock cb) -> cb.block.getY())   // sort by Y first
 						        .thenComparingDouble(cb -> cb.distance))                 // then by distance
-						    .collect(Collectors.toCollection(ArrayDeque::new));
+						    .collect(Collectors.toCollection(ArrayList::new));
 					final double excessSoundRange = level * 7.0;
 					final double soundRange = (disasterRange + excessSoundRange) * (disasterRange + excessSoundRange);
 					final double distanceSquared = disasterRange * disasterRange;
@@ -323,25 +326,31 @@ public class Sinkhole extends Disaster {
 		}
 	}
 	public Block getHighestExposedBlock(Block start, int maxDistance, Predicate<Block> filter) {
-		if (start == null)
-			return null;
-		Block b = start;
-		if (!filter.test(b)) {
-			for (int i=0; i < maxDistance; i++) {
-				b = b.getRelative(BlockFace.DOWN);
-				if (filter.test(b))
-					return b;
-			}
-			return null;
-		} else
-			for (int i=0; i < maxDistance; i++) {
-				b = b.getRelative(BlockFace.UP);
-				if (b == null)
-					return start.getRelative(BlockFace.UP, i);
-				if (!filter.test(b))
-					return b.getRelative(BlockFace.DOWN);
-			}
-		return b;
+	    if (start == null)
+	        return null;
+	    final World world = start.getWorld();
+	    final int x = start.getX();
+	    final int z = start.getZ();
+	    int y = start.getY();
+	    if (!filter.test(start)) {
+	        for (int i = 0; i < maxDistance; i++) {
+	            y--;
+	            final Block b = world.getBlockAt(x, y, z);
+	            if (filter.test(b))
+	                return b;
+	        }
+	        return null;
+	    } else {
+	        for (int i = 0; i < maxDistance; i++) {
+	            y++;
+	            final Block b = world.getBlockAt(x, y, z);
+	            if (b == null)
+	                return world.getBlockAt(x, start.getY() + i, z);
+	            if (!filter.test(b))
+	                return world.getBlockAt(x, y - 1, z);
+	        }
+	    }
+	    return world.getBlockAt(x, y, z);
 	}
 	public Set<Block> findAttachedBlocks(Block startBlock, int maxStepsAway, Set<Block> selected) {
 	    Set<Block> visited = new HashSet<>();

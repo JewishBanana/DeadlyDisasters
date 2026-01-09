@@ -32,6 +32,7 @@ import com.github.jewishbanana.deadlydisasters.disasters.weather.ExtremeWinds;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.MeteorShower;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.Monsoon;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.Sandstorm;
+import com.github.jewishbanana.deadlydisasters.disasters.weather.SolarStorm;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.SoulStorm;
 import com.github.jewishbanana.deadlydisasters.listeners.BlockRegenHandler;
 import com.github.jewishbanana.deadlydisasters.listeners.DeathMessageHandler;
@@ -59,6 +60,7 @@ public class Main extends JavaPlugin {
 	 * Before Update:
 	 * - Verify disaster categories in WorldWrapper.java
 	 * - Verify config ignored sections in DataUtils.java
+	 * - Verify config changes in DataUtils.java
 	 */
 	
 	private static final String pluginSpigotPage = "https://www.spigotmc.org/resources/deadlydisasters-pro.100918/";
@@ -111,6 +113,7 @@ public class Main extends JavaPlugin {
 		DisasterRegistry.registerDisaster("monsoon", Monsoon.class);
 		DisasterRegistry.registerDisaster("meteor_shower", MeteorShower.class);
 		DisasterRegistry.registerDisaster("end_storm", EndStorm.class);
+		DisasterRegistry.registerDisaster("solar_storm", SolarStorm.class);
 		
 		// Mob
 		DisasterRegistry.registerDisaster("purge", Purge.class);

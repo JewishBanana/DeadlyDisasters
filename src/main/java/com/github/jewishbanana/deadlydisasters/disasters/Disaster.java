@@ -1,6 +1,5 @@
 package com.github.jewishbanana.deadlydisasters.disasters;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -9,10 +8,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.random.RandomGenerator;
 
 import javax.annotation.Nullable;
@@ -23,6 +23,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
+import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -55,22 +56,26 @@ public abstract class Disaster {
 	
 	protected static final Main plugin;
 	protected static final RandomGenerator random;
-	public static final Queue<Disaster> onGoingDisasters;
+	public static final List<Disaster> onGoingDisasters;
 	public static final Map<Disaster, RegeneratingTask> regeneratingDisasters;
 	static {
 		plugin = Main.getInstance();
 		random = RandomGenerator.of("SplittableRandom");
-		onGoingDisasters = new ArrayDeque<>();
+		onGoingDisasters = new ArrayList<>();
 		regeneratingDisasters = new HashMap<>();
 	}
 	
-	private Queue<BukkitTask> tasks = new ArrayDeque<>();
+	private List<BukkitTask> tasks = new ArrayList<>();
 	private WorldWrapper worldLink;
 	private List<Block> modifiedBlocks = new ArrayList<>();
 	private float volume = 1f;
 	private boolean regionsProtected;
 	private boolean affectEntitiesInRegions;
 	private Set<EntityType> blacklistedEntityTypes;
+	private boolean hasEnded;
+	
+	protected List<Entity> entitiesInMonitorArea;
+	protected List<Player> playersInMonitorArea;
 	
 	protected Location location;
 	protected Player player;
@@ -148,6 +153,7 @@ public abstract class Disaster {
 		Bukkit.getPluginManager().callEvent(event);
 		if (event.isCancelled())
 			return false;
+		hasEnded = true;
 		clean();
 		onGoingDisasters.remove(this);
 		if (reason != DisasterStopReason.SERVER_CLOSING)
@@ -163,9 +169,17 @@ public abstract class Disaster {
 		if (this instanceof MobDisaster cast)
 			cast.cleanEntities();
 	}
+	public boolean removeBlock(Block block, boolean ignoreImmuneOnly, boolean withPhysics, ThreadLocalRandom rng) {
+		if ((regionsProtected && isBlockProtected(block)) 
+				|| (ignoreImmuneOnly ? BlockUtils.isBlockImmune(block) : BlockUtils.doesBlockResist(block, rng)))
+			return false;
+		if (BlockRegenHandler.removeBlock(block, this, withPhysics) != null);
+			modifiedBlocks.add(block);
+		return true;
+	}
 	public boolean removeBlock(Block block, boolean ignoreImmuneOnly, boolean withPhysics) {
 		if ((regionsProtected && isBlockProtected(block)) 
-				|| (ignoreImmuneOnly ? BlockUtils.isBlockImmune(block) : BlockUtils.testBlockResistance(block)))
+				|| (ignoreImmuneOnly ? BlockUtils.isBlockImmune(block) : BlockUtils.doesBlockResist(block)))
 			return false;
 		if (BlockRegenHandler.removeBlock(block, this, withPhysics) != null);
 			modifiedBlocks.add(block);
@@ -175,8 +189,8 @@ public abstract class Disaster {
 		return removeBlock(block, false, true);
 	}
 	public boolean placeBlock(Block block, BlockData data, boolean ignoreImmuneOnly, boolean withPhysics) {
-		if ((regionsProtected && (ignoreImmuneOnly ? BlockUtils.isBlockImmune(block) : BlockUtils.testBlockResistance(block))) 
-				|| BlockUtils.testBlockResistance(block))
+		if ((regionsProtected && (ignoreImmuneOnly ? BlockUtils.isBlockImmune(block) : BlockUtils.doesBlockResist(block))) 
+				|| BlockUtils.doesBlockResist(block))
 			return false;
 		if (BlockRegenHandler.placeBlock(block, data, this, withPhysics) != null)
 			modifiedBlocks.add(block);
@@ -195,8 +209,8 @@ public abstract class Disaster {
 	}
 	public boolean moveBlock(Block from, Block to, boolean withPhysics) {
 		if ((regionsProtected && (isBlockProtected(from) || isBlockProtected(to))) 
-				|| BlockUtils.testBlockResistance(from) 
-				|| BlockUtils.testBlockResistance(to))
+				|| BlockUtils.doesBlockResist(from) 
+				|| BlockUtils.doesBlockResist(to))
 			return false;
 		BlockRegenHandler.moveBlock(from, to, this, withPhysics);
 		if (reverseRegenerationOrder()) {
@@ -211,9 +225,12 @@ public abstract class Disaster {
 	public boolean moveBlock(Block from, Block to) {
 		return moveBlock(from, to, true);
 	}
+	public FallingBlock createFallingBlock(Location location, BlockData data) {
+		return BlockRegenHandler.createFallingBlock(location, data, this);
+	}
 	public FallingBlock convertBlockIntoFallingBlock(Block block) {
 		if ((regionsProtected && isBlockProtected(block)) 
-				|| BlockUtils.testBlockResistance(block))
+				|| BlockUtils.doesBlockResist(block))
 			return null;
 		FallingBlock entity = BlockRegenHandler.convertBlockIntoFallingBlock(block, this);
 		if (entity != null)
@@ -318,7 +335,7 @@ public abstract class Disaster {
 		DeathMessageHandler.removeDeathWatcher(this, delayTicks);
 	}
 	public void getChunksInvolvedSafelyAndThen(Runnable function, boolean generateChunks) {
-		final double radiusSquared = disasterRange * disasterRange;
+		final float radiusSquared = (float) (disasterRange * disasterRange);
 		final int chunkX = location.getChunk().getX();
 		final int chunkZ = location.getChunk().getZ();
 		final int chunkRadius = (int) Math.ceil(disasterRange / 16.0);
@@ -331,8 +348,8 @@ public abstract class Disaster {
 						for (int z = -chunkRadius; z <= chunkRadius; z++) {
 							int currentX = chunkX + x;
 							int currentZ = chunkZ + z;
-							double deltaX = location.getBlockX() - (Utils.clamp(location.getBlockX(), currentX * 16, (currentX + 1) * 16 - 1));
-							double deltaZ = location.getBlockZ() - (Utils.clamp(location.getBlockZ(), currentZ * 16, (currentZ + 1) * 16 - 1));
+							float deltaX = location.getBlockX() - (Utils.clamp(location.getBlockX(), currentX * 16, (currentX + 1) * 16 - 1));
+							float deltaZ = location.getBlockZ() - (Utils.clamp(location.getBlockZ(), currentZ * 16, (currentZ + 1) * 16 - 1));
 							if (deltaX * deltaX + deltaZ * deltaZ <= radiusSquared)
 								try {
 									Chunk chunk = PaperLib.getChunkAtAsync(location.getWorld(), currentX, currentZ, generateChunks).get();
@@ -350,8 +367,8 @@ public abstract class Disaster {
 				for (int z = -chunkRadius; z <= chunkRadius; z++) {
 					int currentX = chunkX + x;
 					int currentZ = chunkZ + z;
-					double deltaX = location.getBlockX() - (Utils.clamp(location.getBlockX(), currentX * 16, (currentX + 1) * 16 - 1));
-					double deltaZ = location.getBlockZ() - (Utils.clamp(location.getBlockZ(), currentZ * 16, (currentZ + 1) * 16 - 1));
+					float deltaX = location.getBlockX() - (Utils.clamp(location.getBlockX(), currentX * 16, (currentX + 1) * 16 - 1));
+					float deltaZ = location.getBlockZ() - (Utils.clamp(location.getBlockZ(), currentZ * 16, (currentZ + 1) * 16 - 1));
 					if (deltaX * deltaX + deltaZ * deltaZ <= radiusSquared) {
 						Chunk chunk = location.getWorld().getChunkAt(currentX, currentZ, generateChunks);
 						if (chunk != null)
@@ -363,6 +380,40 @@ public abstract class Disaster {
 	}
 	public void getChunksInvolvedSafelyAndThen(Runnable function) {
 		getChunksInvolvedSafelyAndThen(function, false);
+	}
+	@FunctionalInterface
+	public interface EntityFilter {
+	    void filter(Map<Entity, Location> foundEntities, List<Entity> entities, List<Player> players);
+	}
+	public void createAsyncEntityMonitor(Predicate<Entity> findConditions, EntityFilter filter) {
+		entitiesInMonitorArea = new ArrayList<>();
+		playersInMonitorArea = new ArrayList<>();
+		recurringAsyncEntityMonitor(findConditions, filter);
+	}
+	private void recurringAsyncEntityMonitor(Predicate<Entity> findConditions, EntityFilter filter) {
+		final World world = location.getWorld();
+		final Map<Entity, Location> foundEntities = new HashMap<>();
+		for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, findConditions))
+			foundEntities.put(entity, entity.getLocation().add(0, entity.getHeight() / 2.0, 0));
+		final List<Player> players = new ArrayList<>(foundEntities.size());
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				final List<Entity> entities = new ArrayList<>(foundEntities.size());
+				filter.filter(foundEntities, entities, players);
+				new BukkitRunnable() {
+					@Override
+					public void run() {
+						entitiesInMonitorArea.clear();
+						entitiesInMonitorArea.addAll(entities);
+						playersInMonitorArea.clear();
+						playersInMonitorArea.addAll(players);
+						if (!hasEnded())
+							recurringAsyncEntityMonitor(findConditions, filter);
+					}
+				}.runTask(plugin);
+			}
+		}.runTaskAsynchronously(plugin);
 	}
 
 	protected int getConfigInt(String path) {
@@ -415,7 +466,7 @@ public abstract class Disaster {
 	public Location getLocation() {
 		return location;
 	}
-	public void setLocation(Location location) {
+	public void setLocation(@NotNull Location location) {
 		this.location = location;
 		this.worldLink = WorldWrapper.getWorldWrapper(location.getWorld());
 	}
@@ -424,6 +475,9 @@ public abstract class Disaster {
 	}
 	public void setPlayer(Player player) {
 		this.player = player;
+	}
+	public boolean hasEnded() {
+		return hasEnded;
 	}
 	public WorldWrapper getWorldLink() {
 		return worldLink;
@@ -463,7 +517,7 @@ public abstract class Disaster {
 		return Set.of();
 	}
 	public static void stopAll(DisasterStopReason reason) {
-		Queue<Disaster> disasters = new ArrayDeque<>(onGoingDisasters);
+		List<Disaster> disasters = new ArrayList<>(onGoingDisasters);
 		disasters.forEach(disaster -> {
 			try {
     			disaster.stop(reason);

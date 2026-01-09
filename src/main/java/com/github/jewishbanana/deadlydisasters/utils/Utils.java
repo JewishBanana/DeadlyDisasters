@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -40,6 +41,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import com.github.jewishbanana.deadlydisasters.Main;
@@ -111,7 +113,42 @@ public class Utils {
 	    return ChatColor.translateAlternateColorCodes('&', s);
 	}
 	public static Vector getVectorTowards(Location initial, Location towards) {
-		return new Vector(towards.getX() - initial.getX(), towards.getY() - initial.getY(), towards.getZ() - initial.getZ()).normalize();
+	    final float dx = (float)(towards.getX() - initial.getX());
+	    final float dy = (float)(towards.getY() - initial.getY());
+	    final float dz = (float)(towards.getZ() - initial.getZ());
+	    final float lengthSquared = dx * dx + dy * dy + dz * dz;
+	    if (lengthSquared == 0.0f)
+	        return new Vector(0, 0, 0);
+	    final float invLength = fastInverseSqrt(lengthSquared);
+	    return new Vector(dx * invLength, dy * invLength, dz * invLength);
+	}
+	public static float fastInverseSqrt(float x) {
+	    final float halfX = 0.5f * x;
+	    int i = Float.floatToRawIntBits(x);
+	    i = 0x5f3759df - (i >> 1);
+	    float y = Float.intBitsToFloat(i);
+	    y = y * (1.5f - halfX * y * y);
+	    return y;
+	}
+	public static Vector getRandomizedVector(float xWeight, float yWeight, float zWeight) {
+	    final float x = xWeight == 0 ? 0.0f : random.nextFloat(-xWeight, xWeight);
+	    final float y = yWeight == 0 ? 0.0f : random.nextFloat(-yWeight, yWeight);
+	    final float z = zWeight == 0 ? 0.0f : random.nextFloat(-zWeight, zWeight);
+	    final float lengthSquared = x * x + y * y + z * z;
+	    if (lengthSquared == 0.0f)
+	        return new Vector(0, 0, 0);
+	    final float invLength = fastInverseSqrt(lengthSquared);
+	    return new Vector(x * invLength, y * invLength, z * invLength);
+	}
+	public static Vector getRandomizedVector() {
+	    final float x = random.nextFloat(-1.0f, 1.0f);
+	    final float y = random.nextFloat(-1.0f, 1.0f);
+	    final float z = random.nextFloat(-1.0f, 1.0f);
+	    final float lengthSquared = x * x + y * y + z * z;
+	    if (lengthSquared == 0.0f)
+	        return new Vector(0, 0, 0);
+	    final float invLength = fastInverseSqrt(lengthSquared);
+	    return new Vector(x * invLength, y * invLength, z * invLength);
 	}
 	public static void copyUrlToFile(URL url, File destination) throws IOException {
 		HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
@@ -166,37 +203,58 @@ public class Utils {
 		damageable.setDamage(Math.max(damageable.getDamage() - health, 0));
 		toRepair.setItemMeta(meta);
 	}
-	public static Location findRandomSpotInRadius(Location initial, double minDist, double maxDist, int height, int attempts, Supplier<Vector> vector, Predicate<Location> conditions) {
-		double squaredMin = minDist * minDist;
-//		double squaredMax = maxDist * maxDist;
-		for (int i=0; i < attempts; i++) {
-			double distance = random.nextDouble(minDist, maxDist);
-			Location temp = SpawnUtils.findSmartYSpawn(initial, initial.clone().add(vector.get().multiply(distance)), height, (int) (maxDist - distance)); //(int) Math.floor(Math.sqrt(squaredMax - (distance * distance)))
-			if (temp != null && temp.distanceSquared(initial) >= squaredMin && conditions.test(temp.clone()))
-				return temp;
-		}
-		return null;
+	public static Location findRandomSpotInRadius(Location initial, float minDist, float maxDist, int height, int attempts, Supplier<Vector> vector, Predicate<Location> conditions) {
+		final double squaredMin = minDist * minDist;
+		final World world = initial.getWorld();
+		final double initialX = initial.getX();
+		final double initialY = initial.getY();
+	    final double initialZ = initial.getZ();
+	    final int verticalRange = (int) maxDist;
+	    for (int i = 0; i < attempts; i++) {
+	        final float distance = random.nextFloat(minDist, maxDist);
+	        final Vector dir = vector.get();
+	        final double offsetX = dir.getX() * distance;
+	        final double offsetZ = dir.getZ() * distance;
+	        final Location searchLoc = new Location(world, initialX + offsetX, initialY, initialZ + offsetZ);
+	        final Location temp = SpawnUtils.findSmartYSpawn(initial, searchLoc, height, verticalRange);
+	        if (temp != null) {
+	            final double dx = temp.getX() - initialX;
+	            final double dz = temp.getZ() - initialZ;
+	            final double distSquared = dx * dx + dz * dz;
+	            if (distSquared >= squaredMin && conditions.test(temp))
+	                return temp;
+	        }
+	    }
+	    return null;
 	}
-	public static Location findRandomSpotInRadius(Location initial, double minDist, double maxDist, int height, int attempts, Supplier<Vector> vector) {
+	public static Location findRandomSpotInRadius(Location initial, float minDist, float maxDist, int height, int attempts, Supplier<Vector> vector) {
 		return findRandomSpotInRadius(initial, minDist, maxDist, height, attempts, vector, test -> true);
 	}
-	public static Location findRandomSpotInRadius(Location initial, double minDist, double maxDist, int height, int attempts) {
+	public static Location findRandomSpotInRadius(Location initial, float minDist, float maxDist, int height, int attempts) {
 		return findRandomSpotInRadius(initial, minDist, maxDist, height, attempts, () -> getRandomizedVector());
 	}
-	public static Location findRandomSpotInCircle(Location initial, double minDist, double maxDist, int attempts, Predicate<Location> conditions) {
-		for (int i=0; i < attempts; i++) {
-			double distance = random.nextDouble(minDist, maxDist);
-			Location temp = initial.clone().add(getRandomizedVector(1.0, 0.0, 1.0).multiply(distance));
-			if (conditions.test(temp.clone()))
-				return temp;
-		}
-		return null;
+	public static Location findRandomSpotInCircle(Location initial, float minDist, float maxDist, int attempts, Predicate<Location> conditions) {
+	    final World world = initial.getWorld();
+	    final double initialX = initial.getX();
+	    final double initialY = initial.getY();
+	    final double initialZ = initial.getZ();
+	    for (int i = 0; i < attempts; i++) {
+	        final float distance = random.nextFloat(minDist, maxDist);
+	        final Vector dir = getRandomizedVector(1f, 0f, 1f);
+	        final double x = initialX + dir.getX() * distance;
+	        final double y = initialY + dir.getY() * distance;
+	        final double z = initialZ + dir.getZ() * distance;
+	        final Location temp = new Location(world, x, y, z);
+	        if (conditions.test(temp))
+	            return temp;
+	    }
+	    return null;
 	}
-	public static Location findRandomSpotInCircle(Location initial, double minDist, double maxDist) {
-		return initial.clone().add(getRandomizedVector(1.0, 0.0, 1.0).multiply(random.nextDouble(minDist, maxDist)));
+	public static Location findRandomSpotInCircle(Location initial, float minDist, float maxDist) {
+		return initial.clone().add(getRandomizedVector(1f, 0f, 1f).multiply(random.nextFloat(minDist, maxDist)));
 	}
-	public static Set<Chunk> getChunksInRadius(Location location, double radius) {
-		final double radiusSquared = radius * radius;
+	public static Set<Chunk> getChunksInRadius(Location location, float radius) {
+		final float radiusSquared = radius * radius;
 		final int chunkX = location.getChunk().getX();
 		final int chunkZ = location.getChunk().getZ();
 		final int chunkRadius = (int) Math.ceil(radius / 16.0);
@@ -205,8 +263,8 @@ public class Utils {
 			for (int z = -chunkRadius; z <= chunkRadius; z++) {
 				int currentX = chunkX + x;
 				int currentZ = chunkZ + z;
-				double deltaX = location.getBlockX() - (Utils.clamp(location.getBlockX(), currentX * 16, (currentX + 1) * 16 - 1));
-				double deltaZ = location.getBlockZ() - (Utils.clamp(location.getBlockZ(), currentZ * 16, (currentZ + 1) * 16 - 1));
+				float deltaX = location.getBlockX() - (Utils.clamp(location.getBlockX(), currentX * 16, (currentX + 1) * 16 - 1));
+				float deltaZ = location.getBlockZ() - (Utils.clamp(location.getBlockZ(), currentZ * 16, (currentZ + 1) * 16 - 1));
 				if (deltaX * deltaX + deltaZ * deltaZ <= radiusSquared)
 					chunks.add(location.getWorld().getChunkAt(currentX, currentZ));
 			}
@@ -221,7 +279,7 @@ public class Utils {
 	public static boolean isAreaFlatGrounded(Location location) {
 		int count = 0;
 		for (int i=0; i < 15; i++) {
-			Location temp = location.clone().add(getRandomizedVector(1, 0, 1).multiply(random.nextDouble(1, 12)));
+			Location temp = location.clone().add(getRandomizedVector(1, 0, 1).multiply(random.nextFloat(1, 12)));
 			if (BlockUtils.getHighestExposedBlock(temp.getBlock(), 12) != null)
 				if (++count == 12)
 					return true;
@@ -231,26 +289,29 @@ public class Utils {
 	public static enum AreaClearing {
 		
 		CUBE_3X3_FROM_CENTER(block -> {
+			final World world = block.getWorld();
 			for (int x = block.getX() - 1; x <= block.getX() + 1; x++)
 				for (int y = block.getY() - 1; y <= block.getY() + 1; y++)
 					for (int z = block.getZ() - 1; z <= block.getZ() + 1; z++)
-						if (!block.getWorld().getBlockAt(x, y, z).isPassable())
+						if (!world.getBlockAt(x, y, z).isPassable())
 							return false;
 			return true;
 		}),
 		CUBE_3X3_FROM_CENTER_BOTTOM(block -> {
+			final World world = block.getWorld();
 			for (int x = block.getX() - 1; x <= block.getX() + 1; x++)
 				for (int y = block.getY(); y <= block.getY() + 2; y++)
 					for (int z = block.getZ() - 1; z <= block.getZ() + 1; z++)
-						if (!block.getWorld().getBlockAt(x, y, z).isPassable())
+						if (!world.getBlockAt(x, y, z).isPassable())
 							return false;
 			return true;
 		}),
 		CUBE_3X3_FROM_CENTER_TOP(block -> {
+			final World world = block.getWorld();
 			for (int x = block.getX() - 1; x <= block.getX() + 1; x++)
 				for (int y = block.getY() - 2; y <= block.getY(); y++)
 					for (int z = block.getZ() - 1; z <= block.getZ() + 1; z++)
-						if (!block.getWorld().getBlockAt(x, y, z).isPassable())
+						if (!world.getBlockAt(x, y, z).isPassable())
 							return false;
 			return true;
 		}),
@@ -270,17 +331,293 @@ public class Utils {
 	public static boolean isAreaClear(Block block, AreaClearing clearing) {
 		return clearing.function.apply(block);
 	}
-	public static boolean isAreaClear(Location location, double radius) {
+	public static boolean isAreaClear(Location location, float radius) {
 		for (Block b : BlockUtils.getBlocksInSphereRadius(location, radius))
 			if (!b.isPassable())
 				return false;
 		return true;
 	}
-	public static boolean isAreaClear(Location location, double radius, double height) {
+	public static boolean isAreaClear(Location location, float radius, float height) {
 		for (Block b : BlockUtils.getBlocksInCylinderRadius(location, radius, height))
 			if (!b.isPassable())
 				return false;
 		return true;
+	}
+	public static boolean isLocationExposedToOutdoors(Location location, float testRange, int horizontalCasts) {
+	    final World world = location.getWorld();
+	    final float x = (float) location.getX();
+	    final float y = (float) location.getY();
+	    final float z = (float) location.getZ();
+	    final float angleStep = (float) (2 * Math.PI / horizontalCasts); // Distribute evenly around 360°
+	    final float invStepSize = 1f / 0.9f;
+	    final int maxSteps = (int) (testRange * invStepSize);
+	    
+	    // Scale accuracy threshold based on number of casts
+	    // Original: 12 horizontal × 3 vertical = 36 total, threshold 78
+	    // Formula: (horizontalCasts * 3) * (78.0 / 36.0) ≈ horizontalCasts * 6.5
+	    final int accuracyThreshold = (int) (horizontalCasts * 3 * 2.17);
+	    
+	    int accuracy = 0;
+	    for (int i = 0; i < horizontalCasts; i++) {
+	        final float radians = i * angleStep;
+	        final float cosR = (float) Math.cos(radians);
+	        final float sinR = (float) Math.sin(radians);
+	        for (int j = 0; j < 3; j++) {
+	            final float angleY = -0.5f + (j * 0.5f);
+	            final float dx = (cosR + angleY) * 0.9f;
+	            final float dy = angleY * 0.9f;
+	            final float dz = (sinR + angleY) * 0.9f;
+	            float locX = x + dx;
+	            float locY = y + dy;
+	            float locZ = z + dz;
+	            boolean flag = false;
+	            for (int step = 0; step < maxSteps; step++) {
+	                final int blockX = (int) Math.floor(locX);
+	                final int blockY = (int) Math.floor(locY);
+	                final int blockZ = (int) Math.floor(locZ);
+	                if (!world.getBlockAt(blockX, blockY, blockZ).isPassable()) {
+	                    if (world.getHighestBlockYAt(blockX, blockZ) != blockY)
+	                        accuracy++;
+	                    else
+	                        flag = true;
+	                    break;
+	                }
+	                locX += dx;
+	                locY += dy;
+	                locZ += dz;
+	            }
+	            if (!flag) {
+	                final int finalBlockX = (int) Math.floor(locX);
+	                final int finalBlockZ = (int) Math.floor(locZ);
+	                final int finalBlockY = (int) Math.floor(locY);
+	                if (world.getHighestBlockYAt(finalBlockX, finalBlockZ) > finalBlockY)
+	                    accuracy += 2;
+	            }
+	            if (accuracy >= accuracyThreshold)
+	                return false;
+	        }
+	    }
+	    return true;
+	}
+	public static boolean isLocationExposedToOutdoors(Location location, float testRange) {
+	    return isLocationExposedToOutdoors(location, testRange, 12);
+	}
+	public static boolean isLocationExposedToOutdoors(Location location) {
+	    return isLocationExposedToOutdoors(location, 12f, 12);
+	}
+	private static final Map<Long, Boolean> passableCache = new ConcurrentHashMap<>();
+	private static final Map<Long, Integer> highestBlockCache = new ConcurrentHashMap<>();
+	static {
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				clearCaches();
+			}
+		}.runTaskTimerAsynchronously(plugin, 0, 60);
+	}
+	public static boolean isLocationExposedToOutdoorsOptimized(Location location, float testRange, int horizontalCasts) {
+	    final World world = location.getWorld();
+	    final float x = (float) location.getX();
+	    final float y = (float) location.getY();
+	    final float z = (float) location.getZ();
+	    final float angleStep = (float) (2 * Math.PI / horizontalCasts);
+	    final float invStepSize = 1.111f;
+	    final int maxSteps = (int) (testRange * invStepSize);
+	    final int accuracyThreshold = (int) (horizontalCasts * 3 * 2.17);
+	    int accuracy = 0;
+	    for (int i = 0; i < horizontalCasts; i++) {
+	        final float radians = i * angleStep;
+	        final float cosR = (float) Math.cos(radians);
+	        final float sinR = (float) Math.sin(radians);
+	        for (int j = 0; j < 3; j++) {
+	            final float angleY = -0.5f + (j * 0.5f);
+	            final float dx = (cosR + angleY) * 0.9f;
+	            final float dy = angleY * 0.9f;
+	            final float dz = (sinR + angleY) * 0.9f;
+	            float locX = x + dx;
+	            float locY = y + dy;
+	            float locZ = z + dz;
+	            boolean flag = false;
+	            int lastBlockX = Integer.MIN_VALUE;
+	            int lastBlockY = Integer.MIN_VALUE;
+	            int lastBlockZ = Integer.MIN_VALUE;
+	            for (int step = 0; step < maxSteps; step++) {
+	                final int blockX = (int) Math.floor(locX);
+	                final int blockY = (int) Math.floor(locY);
+	                final int blockZ = (int) Math.floor(locZ);
+	                if (blockX == lastBlockX && blockY == lastBlockY && blockZ == lastBlockZ) {
+	                    locX += dx;
+	                    locY += dy;
+	                    locZ += dz;
+	                    continue;
+	                }
+	                lastBlockX = blockX;
+	                lastBlockY = blockY;
+	                lastBlockZ = blockZ;
+	                final long blockKey = blockKey(blockX, blockY, blockZ);
+	                final boolean passable = passableCache.computeIfAbsent(blockKey, 
+	                    k -> world.getBlockAt(blockX, blockY, blockZ).isPassable());
+	                if (!passable) {
+	                    long xzKey = xzKey(blockX, blockZ);
+	                    int highestY = highestBlockCache.computeIfAbsent(xzKey, 
+	                        k -> world.getHighestBlockYAt(blockX, blockZ));
+	                    if (highestY != blockY)
+	                        accuracy++;
+	                    else
+	                        flag = true;
+	                    break;
+	                }
+	                locX += dx;
+	                locY += dy;
+	                locZ += dz;
+	            }
+	            if (!flag) {
+	                final int finalBlockX = (int) Math.floor(locX);
+	                final int finalBlockZ = (int) Math.floor(locZ);
+	                final int finalBlockY = (int) Math.floor(locY);
+	                final long xzKey = xzKey(finalBlockX, finalBlockZ);
+	                final int highestY = highestBlockCache.computeIfAbsent(xzKey, 
+	                    k -> world.getHighestBlockYAt(finalBlockX, finalBlockZ));
+	                if (highestY > finalBlockY)
+	                    accuracy += 2;
+	            }
+	            if (accuracy >= accuracyThreshold)
+	                return false;
+	        }
+	    }
+	    return true;
+	}
+	private static long blockKey(int x, int y, int z) {
+	    return ((long) x & 0x7FFFFFF) | (((long) z & 0x7FFFFFF) << 27) | (((long) y & 0xFFF) << 54);
+	}
+	private static long xzKey(int x, int z) {
+	    return ((long) x & 0xFFFFFFFFL) | (((long) z & 0xFFFFFFFFL) << 32);
+	}
+	public static void clearCaches() {
+	    passableCache.clear();
+	    highestBlockCache.clear();
+	}
+	public static int isLocationExposedToOutdoorsDebug(Location location, float testRange) {
+	    final World world = location.getWorld();
+	    final float x = (float) location.getX();
+	    final float y = (float) location.getY();
+	    final float z = (float) location.getZ();
+	    final float angleStep = (float) Math.toRadians(30.0);
+	    final float invStepSize = 1f / 0.9f;
+	    final int maxSteps = (int) (testRange * invStepSize);
+	    int accuracy = 0;
+	    for (int i = 0; i < 12; i++) {
+	        final float radians = i * angleStep;
+	        final float cosR = (float) Math.cos(radians);
+	        final float sinR = (float) Math.sin(radians);
+	        for (int j = 0; j < 3; j++) {
+	            final float angleY = -0.5f + (j * 0.5f);
+	            final float dx = (cosR + angleY) * 0.9f;
+	            final float dy = angleY * 0.9f;
+	            final float dz = (sinR + angleY) * 0.9f;
+	            float locX = x + dx;
+	            float locY = y + dy;
+	            float locZ = z + dz;
+	            boolean flag = false;
+	            for (int step = 0; step < maxSteps; step++) {
+	                final int blockX = (int) Math.floor(locX);
+	                final int blockY = (int) Math.floor(locY);
+	                final int blockZ = (int) Math.floor(locZ);
+	                if (!world.getBlockAt(blockX, blockY, blockZ).isPassable()) {
+	                    if (world.getHighestBlockYAt(blockX, blockZ) != blockY)
+	                        accuracy++;
+	                    else
+	                        flag = true;
+	                    break;
+	                }
+	                locX += dx;
+	                locY += dy;
+	                locZ += dz;
+	            }
+	            if (!flag) {
+	                final int finalBlockX = (int) Math.floor(locX);
+	                final int finalBlockZ = (int) Math.floor(locZ);
+	                final int finalBlockY = (int) Math.floor(locY);
+	                if (world.getHighestBlockYAt(finalBlockX, finalBlockZ) > finalBlockY)
+	                    accuracy += 2;
+	            }
+//	            if (accuracy >= 80)
+//	                return accuracy;
+	        }
+	    }
+	    return accuracy; // accuracy < 80
+	}
+	public static int isLocationExposedToOutdoorsOptimizedDebug(Location location, float testRange, int horizontalCasts) {
+	    final World world = location.getWorld();
+	    final float x = (float) location.getX();
+	    final float y = (float) location.getY();
+	    final float z = (float) location.getZ();
+	    final float angleStep = (float) (2 * Math.PI / horizontalCasts);
+	    final float invStepSize = 1.111f;
+	    final int maxSteps = (int) (testRange * invStepSize);
+	    final int accuracyThreshold = (int) (horizontalCasts * 3 * 2.17);
+	    int accuracy = 0;
+	    for (int i = 0; i < horizontalCasts; i++) {
+	        final float radians = i * angleStep;
+	        final float cosR = (float) Math.cos(radians);
+	        final float sinR = (float) Math.sin(radians);
+	        for (int j = 0; j < 3; j++) {
+	            final float angleY = -0.5f + (j * 0.5f);
+	            final float dx = (cosR + angleY) * 0.9f;
+	            final float dy = angleY * 0.9f;
+	            final float dz = (sinR + angleY) * 0.9f;
+	            float locX = x + dx;
+	            float locY = y + dy;
+	            float locZ = z + dz;
+	            boolean flag = false;
+	            int lastBlockX = Integer.MIN_VALUE;
+	            int lastBlockY = Integer.MIN_VALUE;
+	            int lastBlockZ = Integer.MIN_VALUE;
+	            for (int step = 0; step < maxSteps; step++) {
+	                final int blockX = (int) Math.floor(locX);
+	                final int blockY = (int) Math.floor(locY);
+	                final int blockZ = (int) Math.floor(locZ);
+	                if (blockX == lastBlockX && blockY == lastBlockY && blockZ == lastBlockZ) {
+	                    locX += dx;
+	                    locY += dy;
+	                    locZ += dz;
+	                    continue;
+	                }
+	                lastBlockX = blockX;
+	                lastBlockY = blockY;
+	                lastBlockZ = blockZ;
+	                final long blockKey = blockKey(blockX, blockY, blockZ);
+	                final boolean passable = passableCache.computeIfAbsent(blockKey, 
+	                    k -> world.getBlockAt(blockX, blockY, blockZ).isPassable());
+	                if (!passable) {
+	                    long xzKey = xzKey(blockX, blockZ);
+	                    int highestY = highestBlockCache.computeIfAbsent(xzKey, 
+	                        k -> world.getHighestBlockYAt(blockX, blockZ));
+	                    if (highestY != blockY)
+	                        accuracy++;
+	                    else
+	                        flag = true;
+	                    break;
+	                }
+	                locX += dx;
+	                locY += dy;
+	                locZ += dz;
+	            }
+	            if (!flag) {
+	                final int finalBlockX = (int) Math.floor(locX);
+	                final int finalBlockZ = (int) Math.floor(locZ);
+	                final int finalBlockY = (int) Math.floor(locY);
+	                final long xzKey = xzKey(finalBlockX, finalBlockZ);
+	                final int highestY = highestBlockCache.computeIfAbsent(xzKey, 
+	                    k -> world.getHighestBlockYAt(finalBlockX, finalBlockZ));
+	                if (highestY > finalBlockY)
+	                    accuracy += 2;
+	            }
+	            if (accuracy >= accuracyThreshold)
+	                return accuracy;
+	        }
+	    }
+	    return accuracy;
 	}
 	public static boolean isLocationsWithinDistance(Location loc1, Location loc2, double distanceSquared) {
 		return loc1 != null && loc2 != null && loc1.getWorld().equals(loc2.getWorld()) && loc1.distanceSquared(loc2) <= distanceSquared;
@@ -290,12 +627,6 @@ public class Utils {
 	}
 	public static boolean isEnvironment(World world, Environment environment) {
 		return world.getEnvironment() == environment || world.getEnvironment() == Environment.CUSTOM;
-	}
-	public static Vector getRandomizedVector(double xWeight, double yWeight, double zWeight) {
-		return new Vector(xWeight == 0 ? 0.0 : random.nextDouble(-xWeight, xWeight), yWeight == 0 ? 0.0 : random.nextDouble(-yWeight, yWeight), zWeight == 0 ? 0.0 : random.nextDouble(-zWeight, zWeight)).normalize();
-	}
-	public static Vector getRandomizedVector() {
-		return new Vector(random.nextDouble(-1, 1), random.nextDouble(-1, 1), random.nextDouble(-1, 1)).normalize();
 	}
 	public static <T> String getDecimalFormatted(T num) {
 		return decimalFormat.format(num);
