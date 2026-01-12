@@ -6,9 +6,11 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
@@ -39,6 +41,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.WorldWrapper;
+import com.github.jewishbanana.deadlydisasters.disasters.weather.Monsoon;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent.DisasterStartReason;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStopEvent;
@@ -67,12 +70,13 @@ public abstract class Disaster {
 	
 	private List<BukkitTask> tasks = new ArrayList<>();
 	private WorldWrapper worldLink;
-	private List<Block> modifiedBlocks = new ArrayList<>();
+	private Set<Block> modifiedBlocks = new LinkedHashSet<>();
 	private float volume = 1f;
 	private boolean regionsProtected;
 	private boolean affectEntitiesInRegions;
 	private Set<EntityType> blacklistedEntityTypes;
 	private boolean hasEnded;
+	private final List<UUID> fallingBlocks = new ArrayList<>();
 	
 	protected List<Entity> entitiesInMonitorArea;
 	protected List<Player> playersInMonitorArea;
@@ -226,15 +230,20 @@ public abstract class Disaster {
 		return moveBlock(from, to, true);
 	}
 	public FallingBlock createFallingBlock(Location location, BlockData data) {
-		return BlockRegenHandler.createFallingBlock(location, data, this);
+		final FallingBlock entity = BlockRegenHandler.createFallingBlock(location, data, this);
+		if (entity != null)
+			fallingBlocks.add(entity.getUniqueId());
+		return entity;
 	}
 	public FallingBlock convertBlockIntoFallingBlock(Block block) {
 		if ((regionsProtected && isBlockProtected(block)) 
 				|| BlockUtils.doesBlockResist(block))
 			return null;
 		FallingBlock entity = BlockRegenHandler.convertBlockIntoFallingBlock(block, this);
-		if (entity != null)
+		if (entity != null) {
 			modifiedBlocks.add(block);
+			fallingBlocks.add(entity.getUniqueId());
+		}
 		return entity;
 	}
 	public boolean isBlockProtected(Block block) {
@@ -252,19 +261,25 @@ public abstract class Disaster {
 			return;
 		}
 		List<Block> copiedSet = new ArrayList<>(modifiedBlocks);
-		if (reverseRegenerationOrder()) {
-			List<Block> list = new ArrayList<>(copiedSet);
-			Collections.reverse(list);
-			copiedSet = new ArrayList<>(list);
-		}
+		if (reverseRegenerationOrder())
+			Collections.reverse(copiedSet);
+//		List<Block> copiedSet = new ArrayList<>(modifiedBlocks);
+//		if (reverseRegenerationOrder()) {
+//			List<Block> list = new ArrayList<>(copiedSet);
+//			Collections.reverse(list);
+//			copiedSet = new ArrayList<>(list);
+//		}
 		if (reason != DisasterStopReason.SERVER_CLOSING) {
-//			BlockRegenHandler.printMaps();
+			BlockRegenHandler.printMaps();
 			final double regenRate = getRegenTickRate() * (getConfigPath() == null ? 1.0 : getConfigOverrideDouble("regen_rate"));
 			if (regenRate > 0)
 				regeneratingDisasters.put(this, this.new RegeneratingTask(this, copiedSet, regenRate, (int) (worldLink.getConfigDouble("regeneration.regeneration_delay") * 20)));
 			modifiedBlocks.clear();
-		} else
-			modifiedBlocks = copiedSet;
+		} else {
+//			modifiedBlocks = copiedSet;
+			modifiedBlocks.clear();
+			modifiedBlocks.addAll(copiedSet);
+		}
 	}
 	public void regenerateBlocks() {
 		regenerateBlocks(DisasterStopReason.CUSTOM);
@@ -279,9 +294,18 @@ public abstract class Disaster {
 			this.task = new BukkitRunnable() {
 				private double regenTicks;
 				private Iterator<Block> iterator = blocks.iterator();
+				private boolean clearFallingBlocks;
 				
 				@Override
 				public void run() {
+					if (!clearFallingBlocks) {
+						clearFallingBlocks = true;
+						disaster.fallingBlocks.forEach(uuid -> {
+							Entity entity = Bukkit.getEntity(uuid);
+							if (entity != null)
+								entity.remove();
+						});
+					}
 					regenTicks += regenRate;
 					while (regenTicks >= 1 && iterator.hasNext()) {
 						regenTicks -= 1;
@@ -325,6 +349,34 @@ public abstract class Disaster {
 	}
 	public void playSound(Player player, Location loc, Sound sound, double vol, double pitch) {
 		playSound(player, loc, sound, SoundCategory.MASTER, vol, pitch);
+	}
+	public void playSoundInLargeArea(Location loc, Sound sound, double vol, double pitch, double range) {
+		final double rangeSquared = range * range;
+		final World world = loc.getWorld();
+		world.getPlayers().forEach(player -> {
+			final Location playerLoc = player.getLocation();
+			if (playerLoc.distanceSquared(loc) > rangeSquared)
+				return;
+			final double distance = playerLoc.distance(loc);
+			playSound(player, playerLoc.add(Utils.getVectorTowards(playerLoc, loc).multiply(7.0 / range * distance)), sound, vol - ((vol / range) * (distance - range)), pitch);
+		});
+	}
+	public void playSoundInLargeArea(Location loc, Sound sound, double vol, double pitch, double innerRange, double outerRange, Function<Location, Location> function) {
+		final double innerRangeSquared = innerRange * innerRange;
+		final double sumRange = innerRange + outerRange;
+		final double sumRangeSquared = sumRange * sumRange;
+		final World world = loc.getWorld();
+		world.getPlayers().forEach(player -> {
+			final Location playerLoc = player.getLocation();
+			final double distanceSquared = playerLoc.distanceSquared(loc);
+			if (distanceSquared > sumRangeSquared)
+				return;
+			if (distanceSquared > innerRangeSquared) {
+				final double distance = playerLoc.distance(loc);
+				playSound(player, playerLoc.add(Utils.getVectorTowards(playerLoc, loc).multiply(7.0 / outerRange * distance)), sound, vol - ((vol / outerRange) * (distance - innerRange)), pitch);
+			} else
+				playSound(player, function.apply(playerLoc), sound, vol, pitch);
+		});
 	}
 	public void addDeathWatcher(String languagePath) {
 		if (getDeathCheck() == null)
@@ -504,7 +556,7 @@ public abstract class Disaster {
 		}
 		return null;
 	}
-	public List<Block> getModifiedBlocks() {
+	public Set<Block> getModifiedBlocks() {
 		return modifiedBlocks;
 	}
 	public double getFrequency() {
@@ -528,5 +580,8 @@ public abstract class Disaster {
 	}
 	public static void stopAll() {
 		stopAll(DisasterStopReason.CUSTOM);
+	}
+	public static void cleanUpDisastersEffects() {
+		Monsoon.clearAllPuddles();
 	}
 }

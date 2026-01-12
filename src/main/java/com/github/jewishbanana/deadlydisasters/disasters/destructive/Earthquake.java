@@ -163,21 +163,9 @@ public class Earthquake extends Disaster {
 						.comparingDouble((CollapsingBlock cb) -> -cb.distance)
 						.thenComparingInt(cb -> cb.block.getY()))
 				.collect(Collectors.toCollection(ArrayList::new));
-		final double excessSoundRange = level * 7.0;
-		final double soundRange = (disasterRange + excessSoundRange) * (disasterRange + excessSoundRange);
-		final double distanceSquared = disasterRange * disasterRange;
-		location.getWorld().getPlayers().forEach(player -> {
-			Location loc = player.getLocation();
-			if (!loc.getWorld().equals(location.getWorld()))
-				return;
-			double distance = loc.distanceSquared(location);
-			if (distance > soundRange)
-				return;
-			if (distance > distanceSquared)
-				playSound(player, loc.add(Utils.getVectorTowards(loc, location).multiply(7.0)), Sound.ENTITY_ENDER_DRAGON_DEATH, (0.33 * level) * (1.0 - ((1.0 / excessSoundRange) * (loc.distance(location) - disasterRange))), 0.5);
-			else
-				playSound(player, loc.subtract(0, 7, 0), Sound.ENTITY_ENDER_DRAGON_DEATH, (0.33 * level), 0.5);
-		});
+		
+		playSoundInLargeArea(location, Sound.ENTITY_ENDER_DRAGON_DEATH, 0.33 * level, 0.5, disasterRange, level * 7.0, loc -> loc.subtract(0, 7, 0));
+		
 		scheduleTask(new BukkitRunnable() {
 			private double distance = 1.0;
 			private double increment = level / 20.0;
@@ -236,7 +224,7 @@ public class Earthquake extends Disaster {
 	public void regenerateBlocks(DisasterStopReason reason) {
 		Set<Block> transfer = new LinkedHashSet<>(getModifiedBlocks());
 		modifiedOrder.forEach(block -> transfer.remove(block));
-		List<Block> set = getModifiedBlocks();
+		Set<Block> set = getModifiedBlocks();
 		set.clear();
 		set.addAll(transfer);
 		ArrayDeque<Block> rebuilt = new ArrayDeque<>(modifiedOrder.size());

@@ -138,6 +138,7 @@ public class WorldWrapper {
 			Utils.sendExceptionLog(e);
 		}
 	}
+	@SuppressWarnings("deprecation")
 	public static void reload(WorldWrapper wrapper) {
 		if (wrapper.configFile == null || !wrapper.configFile.exists())
 			initWorld(wrapper.world);

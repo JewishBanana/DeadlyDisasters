@@ -45,8 +45,10 @@ general:
     # Debug messages will send error info to the console for some errors. Turn this off if your console is getting spammed with errors.
     debug_messages: true
 regeneration:
-    # The amount of blocks regenerated per tick for the forceRegeneration command.
-    force_regen_blocks_per_tick: 10000
+    # The amount of blocks regenerated per tick for the regeneration command.
+    regen_blocks_per_tick: 2000
+    # The amount of blocks regenerated per tick for the fast regeneration command.
+    fast_regen_blocks_per_tick: 10000
     # This controls if data is saved to a database upon server stopping to persist regen data and allow it to be loaded next time the server is started. This can take a while!
     save_regen_data: true
     # This controls how many blocks per tick are loaded from saved regeneration data after server startup. Increase this number if you want regeneration data to load faster at the cost of TPS.

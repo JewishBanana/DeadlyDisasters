@@ -184,7 +184,7 @@ public class BlockUtils {
 		} catch (IllegalArgumentException e) {}
 		return null;
 	}
-	private static Tag<Material> getMaterialTagByName(String name) {
+	public static Tag<Material> getMaterialTagByName(String name) {
 	    try {
 	        Field field = Tag.class.getField(name);
 	        Object value = field.get(null);

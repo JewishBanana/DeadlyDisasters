@@ -5,7 +5,6 @@ import org.bukkit.EntityEffect;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.LivingEntity;
@@ -96,9 +95,9 @@ public class EntityUtils {
 		}
 	}
 	private static <T extends EntityDamageEvent> boolean damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, T event) {
-		double armor = entity.getAttribute(Attribute.GENERIC_ARMOR).getValue();
-		double toughness = entity.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).getValue();
-		double actualDamage = damage * (1 - Math.min(20, Math.max(armor / 5, armor - damage / (2 + toughness / 4))) / 25);
+		final double armor = entity.getAttribute(VersionUtils.getArmorAttribute()).getValue();
+		final double toughness = entity.getAttribute(VersionUtils.getArmorToughnessAttribute()).getValue();
+		final double actualDamage = damage * (1 - Math.min(20, Math.max(armor / 5, armor - damage / (2 + toughness / 4))) / 25);
 		if (pureDamageEntity(entity, actualDamage, meta, ignoreTotem, event)) {
 			damageArmor(entity, actualDamage);
 			return true;
@@ -179,6 +178,6 @@ public class EntityUtils {
 	public static boolean isEntityUnderHealth(LivingEntity entity, double value) {
 		if (entity == null)
 			return false;
-		return entity.getHealth() < entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() * value;
+		return entity.getHealth() < entity.getAttribute(VersionUtils.getMaxHealthAttribute()).getValue() * value;
 	}
 }

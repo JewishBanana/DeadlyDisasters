@@ -1,5 +1,6 @@
 package com.github.jewishbanana.deadlydisasters.disasters;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -130,7 +131,9 @@ public class DisasterSelector {
 				return false;
 			Location loc = player.getLocation().add(new Vector(random.nextFloat(-wrapper.disasterOffset, wrapper.disasterOffset), 0, random.nextFloat(-wrapper.disasterOffset, wrapper.disasterOffset)));
 			final int level = wrapper.rollLevel(random);
-			for (DisasterRegistry registry : DisasterRegistry.getRegisteredDisasters()) {
+			final List<DisasterRegistry> registers = new ArrayList<>(DisasterRegistry.getRegisteredDisasters());
+			Collections.shuffle(registers);
+			for (DisasterRegistry registry : registers) {
 				if (wrapper.disabledDisasters.contains(registry))
 					continue;
 				Disaster disaster = registry.createDisaster(loc, player, level, false);

@@ -42,13 +42,15 @@ import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class DisastersCommand implements CommandExecutor, TabCompleter {
 	
-	private static int forceRegenBlocksPerTick;
+	private static int regenBlocksPerTick;
+	private static int fastRegenBlocksPerTick;
 	public static void reload() {
-		forceRegenBlocksPerTick = DataUtils.getMainConfigInt("regeneration.force_regen_blocks_per_tick");
+		regenBlocksPerTick = DataUtils.getMainConfigInt("regeneration.regen_blocks_per_tick");
+		fastRegenBlocksPerTick = DataUtils.getMainConfigInt("regeneration.fast_regen_blocks_per_tick");
 	}
 	
 	private final Main plugin;
-	private final String usage = Utils.convertString("&cUsage: /disasters <help|start|stop|forceRegenerate|config|blacklist|timers>");
+	private final String usage = Utils.convertString("&cUsage: /disasters <help|start|stop|regenerate|fastRegenerate|config|blacklist|timers>...");
 	private final Map<String, ConfigSettingOption> configSettings = Map.of(
 			"targeting", 
 			new ConfigSettingOption("world.", Set.of("DISABLED", "INDIVIDUAL", "GLOBAL"), container -> {
@@ -142,7 +144,8 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			switch (args[1].toLowerCase()) {
 			case "start" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.start")));
 			case "stop" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.stop")));
-			case "forceregenerate" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.forceRegenerate")));
+			case "regenerate" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.regenerate")));
+			case "fastregenerate" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.fastRegenerate")));
 			case "config" -> {
 				if (args.length < 3) {
 					sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.config.config")));
@@ -282,75 +285,11 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully stopped &a"+stopped+" &bdisaster(s)!"));
 			return true;
 		}
-		case "forceregenerate" -> {
-			World[] worlds = null;
-			if (args.length > 1) {
-				worlds = getWorldSelection(args[1], sender);
-				if (worlds == null) {
-					sender.sendMessage(Utils.convertString("&cCould not find world '"+args[1]+"'!"));
-					return true;
-				}
-			}
-			Class<?> disasterClass = null;
-			if (args.length > 2) {
-				DisasterRegistry regenRegister = DisasterRegistry.getRegistry(args[2]);
-				if (regenRegister == null) {
-					sender.sendMessage(Utils.convertString("&cThere is no such disaster with the name '"+args[2]+"'!"));
-					return true;
-				}
-				disasterClass = regenRegister.getRegisteredClass();
-			}
-			sender.sendMessage(Utils.convertString(Utils.prefix+"&eStarting regeneration task..."));
-			final long startTime = System.currentTimeMillis();
-			final Set<Block> blocks = new LinkedHashSet<>();
-			Iterator<Entry<Disaster, RegeneratingTask>> regenIterator = Disaster.regeneratingDisasters.entrySet().iterator();
-			while (regenIterator.hasNext()) {
-				Entry<Disaster, RegeneratingTask> entry = regenIterator.next();
-				Disaster temp = entry.getKey();
-				if (worlds != null && !Stream.of(worlds).anyMatch(w -> w.equals(temp.getLocation().getWorld())))
-					continue;
-				if (disasterClass != null && !temp.getClass().equals(disasterClass))
-					continue;
-				entry.getValue().task.cancel();
-				blocks.addAll(entry.getValue().blocks);
-				blocks.addAll(temp.getModifiedBlocks());
-				regenIterator.remove();
-			}
-			final World[] finalWorlds = worlds;
-			new BukkitRunnable() {
-				private final Iterator<Block> iterator = blocks.iterator();
-				private int exceptions;
-				
-				@Override
-				public void run() {
-					int tick = 0;
-					while (++tick < forceRegenBlocksPerTick && iterator.hasNext())
-						try {
-							BlockRegenHandler.restoreBlock(iterator.next(), false);
-						} catch (Exception e) {
-							Utils.sendExceptionLog(e);
-							++exceptions;
-						}
-					if (!iterator.hasNext()) {
-						this.cancel();
-						final long elapsedTime = System.currentTimeMillis() - startTime;
-						final long gameTicks = (elapsedTime * 20) / 1000;
-						final long average = blocks.size() / Math.max(gameTicks, 1);
-						String completionMessage = Utils.convertString(Utils.prefix+"&aRegenerated all &d"+blocks.size()+" &adamaged blocks!"
-								+ "\n&3- &7&oTime: " + String.format("%02d", (int) (Math.round(elapsedTime / 1000 / 60)))+":"+String.format("%02d", (int) (Math.round(elapsedTime / 1000 % 60)))+":"+String.format("%02d", (int) (Math.round(elapsedTime / 10 % 100)))
-								+ "\n&3- World: " + (finalWorlds == null || finalWorlds.length > 1 ? "&a&lALL" : "&b" + finalWorlds[0].getName())
-								+ (args.length > 2 ? "\n&3- Disaster Type: &e" + args[2] : "")
-								+ (exceptions > 0 ? "\n&3- &cExceptions: " + exceptions + " &7(These are blocks that failed to regenerate. Check server console for errors!)" : "")
-								+ "\n&3- Stability: " + (gameTicks <= 1 || average >= forceRegenBlocksPerTick * 0.7 ? "&a" + average + '/' + forceRegenBlocksPerTick + " per tick (Good)" :
-									(average >= forceRegenBlocksPerTick * 0.3 ? "&e" + average + '/' + forceRegenBlocksPerTick + " per tick (Moderate)" :
-										"&c" + average + '/' + forceRegenBlocksPerTick + " per tick (Poor, consider lowering the force regen blocks per tick setting in the main config!)")));
-						sender.sendMessage(completionMessage);
-						if (!(sender instanceof ConsoleCommandSender))
-							Main.consoleSender.sendMessage(Utils.convertString(Utils.prefix+"&7&oLogged regeneration task completion. Details of task:\n") + completionMessage);
-					}
-				}
-			}.runTaskTimer(Main.getInstance(), 0, 1);
-			return true;
+		case "regenerate" -> {
+			return regenerationTask(args, sender, true);
+		}
+		case "fastregenerate" -> {
+			return regenerationTask(args, sender, false);
 		}
 		case "config" -> {
 			if (args.length == 1) {
@@ -733,6 +672,82 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 		sender.sendMessage(usage);
 		return true;
 	}
+	private boolean regenerationTask(String[] args, CommandSender sender, boolean force) {
+		World[] worlds = null;
+		if (args.length > 1) {
+			worlds = getWorldSelection(args[1], sender);
+			if (worlds == null) {
+				sender.sendMessage(Utils.convertString("&cCould not find world '"+args[1]+"'!"));
+				return true;
+			}
+		}
+		Class<?> disasterClass = null;
+		if (args.length > 2) {
+			DisasterRegistry regenRegister = DisasterRegistry.getRegistry(args[2]);
+			if (regenRegister == null) {
+				sender.sendMessage(Utils.convertString("&cThere is no such disaster with the name '"+args[2]+"'!"));
+				return true;
+			}
+			disasterClass = regenRegister.getRegisteredClass();
+		}
+		sender.sendMessage(Utils.convertString(Utils.prefix+"&eStarting regeneration task..."));
+		final long startTime = System.currentTimeMillis();
+		final Set<Block> blocks = new LinkedHashSet<>();
+		Iterator<Entry<Disaster, RegeneratingTask>> regenIterator = Disaster.regeneratingDisasters.entrySet().iterator();
+		while (regenIterator.hasNext()) {
+			Entry<Disaster, RegeneratingTask> entry = regenIterator.next();
+			Disaster temp = entry.getKey();
+			if (worlds != null && !Stream.of(worlds).anyMatch(w -> w.equals(temp.getLocation().getWorld())))
+				continue;
+			if (disasterClass != null && !temp.getClass().equals(disasterClass))
+				continue;
+			entry.getValue().task.cancel();
+			blocks.addAll(entry.getValue().blocks);
+			blocks.addAll(temp.getModifiedBlocks());
+			regenIterator.remove();
+		}
+		final World[] finalWorlds = worlds;
+		new BukkitRunnable() {
+			private final Iterator<Block> iterator = blocks.iterator();
+			private int exceptions;
+			private final int blocksPerTick = force ? regenBlocksPerTick : fastRegenBlocksPerTick;
+			
+			@Override
+			public void run() {
+				int tick = 0;
+				while (++tick < blocksPerTick && iterator.hasNext())
+					try {
+						do {
+							if (BlockRegenHandler.restoreBlock(iterator.next(), force))
+								break;
+						} while (iterator.hasNext());
+					} catch (Exception e) {
+						Utils.sendExceptionLog(e);
+						++exceptions;
+					}
+				if (!iterator.hasNext()) {
+					BlockRegenHandler.printMaps();
+					this.cancel();
+					final long elapsedTime = System.currentTimeMillis() - startTime;
+					final long gameTicks = (elapsedTime * 20) / 1000;
+					final long average = blocks.size() / Math.max(gameTicks, 1);
+					String completionMessage = Utils.convertString(Utils.prefix+"&aRegenerated all &d"+blocks.size()+" &adamaged blocks!"
+							+ (force ? "" : "\n&4&lNOTE: &eFast regeneration task may have left some small bugged spots in the world where physics did not update!")
+							+ "\n&3- &7&oTime: " + String.format("%02d", (int) (Math.round(elapsedTime / 1000 / 60)))+":"+String.format("%02d", (int) (Math.round(elapsedTime / 1000 % 60)))+":"+String.format("%02d", (int) (Math.round(elapsedTime / 10 % 100)))
+							+ "\n&3- World: " + (finalWorlds == null || finalWorlds.length > 1 ? "&a&lALL" : "&b" + finalWorlds[0].getName())
+							+ (args.length > 2 ? "\n&3- Disaster Type: &e" + args[2] : "")
+							+ (exceptions > 0 ? "\n&3- &cExceptions: " + exceptions + " &7(These are blocks that failed to regenerate. Check server console for errors!)" : "")
+							+ "\n&3- Stability: " + (gameTicks <= 1 || average >= blocksPerTick * 0.7 ? "&a" + average + '/' + blocksPerTick + " per tick (Good)" :
+								(average >= blocksPerTick * 0.3 ? "&e" + average + '/' + blocksPerTick + " per tick (Moderate)" :
+									"&c" + average + '/' + blocksPerTick + " per tick (Poor, consider lowering the force regen blocks per tick setting in the main config!)")));
+					sender.sendMessage(completionMessage);
+					if (!(sender instanceof ConsoleCommandSender))
+						Main.consoleSender.sendMessage(Utils.convertString(Utils.prefix+"&7&oLogged "+(force ? "" : "fast ")+"regeneration task completion. Details of task:\n") + completionMessage);
+				}
+			}
+		}.runTaskTimer(Main.getInstance(), 0, 1);
+		return true;
+	}
 	private Player getOnlinePlayer(String name) {
 		for (Player temp : Bukkit.getServer().getOnlinePlayers())
 			if (temp.getName().equalsIgnoreCase(name))
@@ -771,8 +786,10 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				list.add("start");
 			if (sender.hasPermission("deadlydisasters.stop"))
 				list.add("stop");
-			if (sender.hasPermission("deadlydisasters.forceRegenerate"))
-				list.add("forceRegenerate");
+			if (sender.hasPermission("deadlydisasters.regenerate"))
+				list.add("regenerate");
+			if (sender.hasPermission("deadlydisasters.fastRegenerate"))
+				list.add("fastRegenerate");
 			if (sender.hasPermission("deadlydisasters.config"))
 				list.add("config");
 			if (sender.hasPermission("deadlydisasters.blacklist"))
@@ -788,8 +805,10 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					list.add("start");
 				if (sender.hasPermission("deadlydisasters.stop"))
 					list.add("stop");
-				if (sender.hasPermission("deadlydisasters.forceRegenerate"))
-					list.add("forceRegenerate");
+				if (sender.hasPermission("deadlydisasters.regenerate"))
+					list.add("regenerate");
+				if (sender.hasPermission("deadlydisasters.fastRegenerate"))
+					list.add("fastRegenerate");
 				if (sender.hasPermission("deadlydisasters.config"))
 					list.add("config");
 				if (sender.hasPermission("deadlydisasters.blacklist"))
@@ -799,7 +818,8 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			} else if ((args[0].equalsIgnoreCase("start") && sender.hasPermission("deadlydisasters.start"))
 					|| (args[0].equalsIgnoreCase("stop") && sender.hasPermission("deadlydisasters.stop")))
 				list.addAll(DisasterRegistry.getRegisteredNames());
-			else if (args[0].equalsIgnoreCase("forceRegenerate") && sender.hasPermission("deadlydisasters.forceRegenerate"))
+			else if ((args[0].equalsIgnoreCase("regenerate") && sender.hasPermission("deadlydisasters.regenerate")) 
+					|| args[0].equalsIgnoreCase("fastRegenerate") && sender.hasPermission("deadlydisasters.fastRegenerate"))
 				list.addAll(Bukkit.getServer().getWorlds().stream().map(world -> world.getName()).collect(Collectors.toList()));
 			else if (args[0].equalsIgnoreCase("config") && sender.hasPermission("deadlydisasters.config"))
 				list.addAll(Arrays.asList("reload", "set", "enable", "disable", "setting", "list"));
@@ -818,7 +838,8 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				list.addAll(Arrays.asList("1", "2", "3", "4", "5", "6"));
 			else if (args[0].equalsIgnoreCase("stop") && sender.hasPermission("deadlydisasters.stop"))
 				list.addAll(Bukkit.getServer().getWorlds().stream().map(world -> world.getName()).collect(Collectors.toList()));
-			else if (args[0].equalsIgnoreCase("forceRegenerate") && sender.hasPermission("deadlydisasters.forceRegenerate"))
+			else if ((args[0].equalsIgnoreCase("regenerate") && sender.hasPermission("deadlydisasters.regenerate")) 
+					|| args[0].equalsIgnoreCase("fastRegenerate") && sender.hasPermission("deadlydisasters.fastRegenerate"))
 				list.addAll(DisasterRegistry.getRegisteredNames());
 			else if (args[0].equalsIgnoreCase("config") && sender.hasPermission("deadlydisasters.config")) {
 				if (args[1].equalsIgnoreCase("set")) {

@@ -13,6 +13,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.github.jewishbanana.deadlydisasters.commands.DisastersCommand;
+import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.disasters.DisasterRegistry;
 import com.github.jewishbanana.deadlydisasters.disasters.DisasterSelector;
 import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
@@ -55,7 +56,8 @@ public class Main extends JavaPlugin {
 	 * - Acid rain stop crop growth, melons and pumpkins, sugar cane, etc.
 	 * - Force regen does not account for fire spread after starting
 	 * - Regen bug, if block is broken and player places new block on spot, if that next block gets broken it does not regen as first block occupies map. Create second map to store excess blocks and drop them according after regen.
-	 * - Regen bug, if sand is top layer of sinkhole and sand falls midway, it remains at the bottom layer and does not regen to top.
+	 * - Regen bug, potential dupe block drops when regenerating. Actual block items dropping.
+	 * - Monsoon, dripping water is floating when on blocks like upside down vines.
 	 * 
 	 * Before Update:
 	 * - Verify disaster categories in WorldWrapper.java
@@ -120,6 +122,8 @@ public class Main extends JavaPlugin {
 	}
 	public void init() {
 		DataUtils.reload();
+		selector = new DisasterSelector(this);
+		
 		WorldWrapper.init();
 		DependencyUtils.init(this);
 		
@@ -132,11 +136,13 @@ public class Main extends JavaPlugin {
 		new PlayerListener(this);
 		new DeathMessageHandler(this);
 		new DisasterFeaturesListener(this);
-		selector = new DisasterSelector(this);
 	}
 	public void onDisable() {
 		isDisablingPlugin = true;
+		
 		MobDisaster.cleanAllEntities();
+		Disaster.cleanUpDisastersEffects();
+		
 		BlockRegenHandler.saveAll(this);
 		selector.saveData();
 	}

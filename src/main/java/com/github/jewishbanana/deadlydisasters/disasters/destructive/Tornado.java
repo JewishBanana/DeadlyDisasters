@@ -13,6 +13,7 @@ import java.util.function.Function;
 
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
@@ -112,11 +113,13 @@ public class Tornado extends Disaster {
 			private final Vector movement = Utils.getRandomizedVector().setY(0).normalize().multiply(0.1 * speed);
 			private int heightIteration = 1;
 			private final Map<Entity, Integer> heightMap = new HashMap<>();
+			private final float noise = level * 0.02f;
 			
 			@Override
 			public void run() {
 				height = Math.max(200 - location.getY(), 100);
 				location.add(movement);
+				location.add(new Vector(random.nextFloat(-noise, noise), 0, random.nextFloat(-noise, noise)));
 				if (location.getBlock().isPassable())
 					location.setY(location.getY() - 0.05);
 				else if (!location.getBlock().getRelative(BlockFace.UP).isPassable())
@@ -204,28 +207,37 @@ public class Tornado extends Disaster {
 						}
 					}
 				}
-				Location temp = location.clone().add(0, heightIteration, 0);
 				Vector right = new Vector(movement.getZ(), 0, -movement.getX()).normalize();
-				for (int i=0; i < 4; i++) {
-					if (heightIteration > height) {
-						heightIteration = 1;
-						temp = location.clone().add(0, heightIteration, 0);
-					}
-					final double length = heightIncrement * heightIteration;
-					for (double x = -length; x <= length; x++) {
-						Block b = temp.clone().add(right.clone().multiply(x)).getBlock();
-//						b.getWorld().spawnParticle(Particle.FLAME, BlockUtils.getCenterOfBlock(b), 1, 0, 0, 0, 0.001);
-						if (!b.isPassable()) {
-							FallingBlock fb = convertBlockIntoFallingBlock(b);
-							if (fb == null)
-								return;
-							fb.setVelocity(new Vector(0, 0.3, 0));
-							entitiesInMonitorArea.add(fb);
-							interruptEntities.add(fb);
-						}
-					}
-					temp.add(0, 1, 0);
-					heightIteration++;
+				Location temp = location.clone().add(0, heightIteration, 0);
+				for (int i = 0; i < 4; i++) {
+				    if (heightIteration > height) {
+				        heightIteration = 1;
+				        temp.setY(location.getY() + heightIteration);
+				    }
+				    final double length = heightIncrement * heightIteration;
+				    final double rightX = right.getX();
+				    final double rightY = right.getY();
+				    final double rightZ = right.getZ();
+				    final double baseX = temp.getX();
+				    final double baseY = temp.getY();
+				    final double baseZ = temp.getZ();
+				    final World world = temp.getWorld();
+				    for (double x = -length; x <= length; x++) {
+				        int blockX = (int) Math.floor(baseX + rightX * x);
+				        int blockY = (int) Math.floor(baseY + rightY * x);
+				        int blockZ = (int) Math.floor(baseZ + rightZ * x);
+				        Block b = world.getBlockAt(blockX, blockY, blockZ);
+				        if (b != null && !b.isPassable()) {
+				            FallingBlock fb = convertBlockIntoFallingBlock(b);
+				            if (fb == null)
+				                return;
+				            fb.setVelocity(new Vector(0, 0.3, 0));
+				            entitiesInMonitorArea.add(fb);
+				            interruptEntities.add(fb);
+				        }
+				    }
+				    temp.add(0, 1, 0);
+				    heightIteration++;
 				}
 				for (int i=0; i < (0.4 * level + 3); i++)
 					if (entitiesInMonitorArea.size() < maxEntities && random.nextFloat() < blockPickupRate) {
@@ -246,7 +258,7 @@ public class Tornado extends Disaster {
 						fb.setDropItem(false);
 //						Location loc = fb.getLocation();
 //						fb.setVelocity(Utils.getVectorTowards(loc, centerTornado).multiply(0.04 * level * forceMultiplier).setY(level / 20));
-						fb.setVelocity(new Vector(0, 0.3, 0));
+						fb.setVelocity(new Vector(0, 0.325, 0));
 						entitiesInMonitorArea.add(fb);
 						interruptEntities.add(fb);
 					}
@@ -254,6 +266,15 @@ public class Tornado extends Disaster {
 					stop();
 			}
 		}.runTaskTimer(plugin, 1, 1));
+		scheduleTask(new BukkitRunnable() {
+			private float amplifier = 0.1f;
+			
+			@Override
+			public void run() {
+				playSoundInLargeArea(location, Sound.WEATHER_RAIN_ABOVE, 0.33 * level * amplifier, 0.5, disasterRange + (level * 7));
+				amplifier = Utils.clamp(amplifier + 0.045f, 0f, 1f);
+			}
+		}.runTaskTimer(plugin, 0, 10));
 		
 		final double distanceSquared = disasterRange * disasterRange;
 		final Map<UUID, Integer> timeInStorm = new HashMap<>();

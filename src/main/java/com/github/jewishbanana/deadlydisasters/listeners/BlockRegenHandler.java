@@ -103,21 +103,21 @@ public class BlockRegenHandler implements Listener {
 			if (damagedBlocks.get(other) instanceof InventoryHolder otherHolder)
 				otherHolder.getInventory().setContents(holder.getInventory().getContents());
 		}
-		List<Pair<BlockState, BlockFace>> capturedPhyicBlocks = null;
+		List<Pair<BlockState, BlockFace>> capturedPhysicBlocks = null;
 		if (damagedBlocks.putIfAbsent(block, state) == null) {
 			damageTracker.put(block, disaster);
 			if (withPhysics) {
-				capturedPhyicBlocks = capturePhysicBlocks(block, disaster);
+				capturedPhysicBlocks = capturePhysicBlocks(block, disaster);
 				cancelItemSpawns = true;
 			}
 		}
 		DependencyUtils.logCoreProtectRemoval(state);
 		block.setType(Material.AIR, withPhysics);
 		cancelItemSpawns = false;
-		if (capturedPhyicBlocks != null) {
-			prunePhysicsList(capturedPhyicBlocks);
-			if (!capturedPhyicBlocks.isEmpty())
-				physicBlocks.putIfAbsent(block, capturedPhyicBlocks.stream().map(p -> p.getFirst()).collect(Collectors.toList()));
+		if (capturedPhysicBlocks != null) {
+			prunePhysicsList(capturedPhysicBlocks);
+			if (!capturedPhysicBlocks.isEmpty())
+				physicBlocks.putIfAbsent(block, capturedPhysicBlocks.stream().map(p -> p.getFirst()).collect(Collectors.toList()));
 		}
 		return state;
 	}
@@ -189,9 +189,9 @@ public class BlockRegenHandler implements Listener {
 			purgeBlockFromRegenData(block);
 			return false;
 		}
-		Material placed = placedBlocks.get(block);
-		List<BlockState> affectedBlocks = physicBlocks.get(block);
-		Block from = blockToBlock.remove(block);
+		final Block from = blockToBlock.remove(block);
+		final List<BlockState> physicsBlocks = physicBlocks.get(block);
+		final Material placeType = placedBlocks.get(block);
 		if (from != null) {
 			blockOrigin.remove(from);
 			if (block.getType() == Material.AIR || (block.isLiquid() && !isLiquidSourceBlock(block))) {
@@ -199,11 +199,11 @@ public class BlockRegenHandler implements Listener {
 				purgeBlockFromRegenData(block);
 				state.update(true);
 				DependencyUtils.logCoreProtectPlacement(state);
-				updatePhysicBlocks(affectedBlocks, withPhysics);
+				updatePhysicBlocks(physicsBlocks, withPhysics);
 				return true;
 			}
-			if (from.getType() != Material.AIR && !from.isLiquid()) {
-				damagedBlocks.remove(from);
+			if (from.getType() != Material.AIR && !from.isLiquid() && !blockToBlock.containsKey(from)) {
+				purgeBlockFromRegenData(from);
 				if (!blockOrigin.containsKey(block)) {
 					purgeBlockFromRegenData(block);
 					BlockState current = block.getState();
@@ -217,7 +217,7 @@ public class BlockRegenHandler implements Listener {
 							if (temp != null)
 								center.getWorld().dropItemNaturally(center, temp);
 				}
-				updatePhysicBlocks(affectedBlocks, withPhysics);
+				updatePhysicBlocks(physicsBlocks, withPhysics);
 				return false;
 			}
 			restoreBlock(from, withPhysics);
@@ -228,20 +228,23 @@ public class BlockRegenHandler implements Listener {
 				return true;
 			}
 		}
+		final Block displaced = blockOrigin.get(block);
+		if (displaced != null)
+			return restoreBlock(displaced, withPhysics);
 		purgeBlockFromRegenData(block);
 		Material type = block.getType();
 		if (block.getType() == Material.AIR && state.getType() == Material.AIR) {
-			updatePhysicBlocks(affectedBlocks, withPhysics);
+			updatePhysicBlocks(physicsBlocks, withPhysics);
 			return false;
 		}
 		WorldWrapper link = WorldWrapper.getWorldWrapper(block.getWorld());
 		if (link.blackListedBlocks == null || !link.blackListedBlocks.contains(state.getType())) {
-			if (from != null || type == placed || type == Material.AIR || (block.isLiquid() && !isLiquidSourceBlock(block))) {
+			if (from != null || type == Material.AIR || type == placeType || (block.isLiquid() && !isLiquidSourceBlock(block))) {
 				state.update(true, regenGravityBlocks.remove(block) ? false : withPhysics);
 				DependencyUtils.logCoreProtectPlacement(state);
 			} else {
 				if (state.getType() == Material.AIR) {
-					updatePhysicBlocks(affectedBlocks, withPhysics);
+					updatePhysicBlocks(physicsBlocks, withPhysics);
 					return false;
 				}
 				BlockState current = block.getState();
@@ -255,7 +258,7 @@ public class BlockRegenHandler implements Listener {
 						if (temp != null)
 							center.getWorld().dropItemNaturally(center, temp);
 			}
-			updatePhysicBlocks(affectedBlocks, withPhysics);
+			updatePhysicBlocks(physicsBlocks, withPhysics);
 			return true;
 		}
 		block.setType(Material.AIR);
@@ -308,7 +311,6 @@ public class BlockRegenHandler implements Listener {
 		upwardPhysicBlocks.addAll(Tag.BUTTONS.getValues());
 		upwardPhysicBlocks.addAll(Tag.CANDLES.getValues());
 		upwardPhysicBlocks.addAll(Tag.CANDLE_CAKES.getValues());
-		upwardPhysicBlocks.addAll(VersionUtils.isMCVersionOrAbove("1.19") ? Tag.WOOL_CARPETS.getValues() : Tag.CARPETS.getValues());
 		upwardPhysicBlocks.addAll(Tag.CORAL_PLANTS.getValues());
 		upwardPhysicBlocks.addAll(Tag.CROPS.getValues());
 		upwardPhysicBlocks.addAll(Tag.DOORS.getValues());
@@ -331,9 +333,12 @@ public class BlockRegenHandler implements Listener {
 		adjacentPhysicsBlocks.addAll(Tag.WALL_SIGNS.getValues());
 		
 		if (VersionUtils.isMCVersionOrAbove("1.19")) {
+			upwardPhysicBlocks.addAll(Tag.WOOL_CARPETS.getValues());
 			upwardPhysicBlocks.add(Material.SCULK_VEIN);
 			downwardPhysicBlocks.add(Material.SCULK_VEIN);
 			adjacentPhysicsBlocks.add(Material.SCULK_VEIN);
+		} else {
+			upwardPhysicBlocks.addAll(Tag.CARPETS.getValues());
 		}
 		if (VersionUtils.isMCVersionOrAbove("1.20")) {
 			upwardPhysicBlocks.addAll(Tag.ALL_SIGNS.getValues());
@@ -344,7 +349,11 @@ public class BlockRegenHandler implements Listener {
 			upwardPhysicBlocks.addAll(Tag.SIGNS.getValues());
 		}
 		if (!VersionUtils.isMCVersionOrAbove("1.21.4")) {
-			upwardPhysicBlocks.addAll(Tag.TALL_FLOWERS.getValues());
+			upwardPhysicBlocks.addAll(BlockUtils.getMaterialTagByName("TALL_FLOWERS").getValues());
+		}
+		if (VersionUtils.isMCVersionOrAbove("1.21.9")) {
+			upwardPhysicBlocks.add(Material.COPPER_TORCH);
+			adjacentPhysicsBlocks.add(Material.COPPER_WALL_TORCH);
 		}
 		
 		physicBlockTypes = new EnumMap<>(BlockFace.class);
@@ -568,9 +577,22 @@ public class BlockRegenHandler implements Listener {
     			pair.getSecond().getModifiedBlocks().add(block);
     			placeBlock(block, event.getBlockData(), pair.getSecond(), true);
     			return;
+//    			pair.getSecond().getModifiedBlocks().add(block);
+//    			new BukkitRunnable() {
+//    				@Override
+//    				public void run() {
+//    					if (event.isCancelled())
+//    						return;
+//    					BlockState currentState = block.getState();
+//    					if (damagedBlocks.putIfAbsent(block, currentState) == null)
+//    						damageTracker.put(block, pair.getSecond());
+//    				}
+//    			}.runTask(Main.getInstance());
+//    			return;
     		}
     		if (origin.equals(block)) {
-    			BlockState fromState = damagedBlocks.get(origin);
+    			BlockState fromState = damagedBlocks.get(block);
+    			purgeBlockFromRegenData(block);
     			if (fromState != null && fromState instanceof InventoryHolder fromHolder)
     				new BukkitRunnable() {
     				@Override

@@ -9,6 +9,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Registry;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -52,6 +53,13 @@ public class VersionUtils {
 	
 	private static final boolean legacyDragonParticles;
 	private static final boolean legacyFlashParticles;
+	
+	private static final Attribute maxHealthAttribute;
+	private static final Attribute attackDamageAttribute;
+	private static final Attribute movementSpeedAttribute;
+	private static final Attribute followRangeAttribute;
+	private static final Attribute armorAttribute;
+	private static final Attribute armorToughnessAttribute;
 	
 	static {
 		serverVersion = Arrays.stream(Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf('-')).split("\\.")).map(e -> Integer.parseInt(e)).toArray(Integer[]::new);
@@ -123,6 +131,22 @@ public class VersionUtils {
 		
 		legacyDragonParticles = !isMCVersionOrAbove("1.21.9");
 		legacyFlashParticles = legacyDragonParticles;
+		
+		if (isMCVersionOrAbove("1.21.3")) {
+			maxHealthAttribute = Attribute.MAX_HEALTH;
+			attackDamageAttribute = Attribute.ATTACK_DAMAGE;
+			movementSpeedAttribute = Attribute.MOVEMENT_SPEED;
+			followRangeAttribute = Attribute.FOLLOW_RANGE;
+			armorAttribute = Attribute.ARMOR;
+			armorToughnessAttribute = Attribute.ARMOR_TOUGHNESS;
+		} else {
+			maxHealthAttribute = Attribute.valueOf("GENERIC_MAX_HEALTH");
+			attackDamageAttribute = Attribute.valueOf("GENERIC_ATTACK_DAMAGE");
+			movementSpeedAttribute = Attribute.valueOf("GENERIC_MOVEMENT_SPEED");
+			followRangeAttribute = Attribute.valueOf("GENERIC_FOLLOW_RANGE");
+			armorAttribute = Attribute.valueOf("GENERIC_ARMOR");
+			armorToughnessAttribute = Attribute.valueOf("GENERIC_ARMOR_TOUGHNESS");
+		}
 	}
 	public static boolean isMCVersionOrAbove(String version) {
 		try {
@@ -220,5 +244,23 @@ public class VersionUtils {
 	}
 	public static Material getShortGrass() {
 		return short_grass;
+	}
+	public static Attribute getMaxHealthAttribute() {
+		return maxHealthAttribute;
+	}
+	public static Attribute getAttackDamageAttribute() {
+		return attackDamageAttribute;
+	}
+	public static Attribute getMovementSpeedAttribute() {
+		return movementSpeedAttribute;
+	}
+	public static Attribute getFollowRangeAttribute() {
+		return followRangeAttribute;
+	}
+	public static Attribute getArmorAttribute() {
+		return armorAttribute;
+	}
+	public static Attribute getArmorToughnessAttribute() {
+		return armorToughnessAttribute;
 	}
 }

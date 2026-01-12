@@ -17,7 +17,6 @@ import org.bukkit.SoundCategory;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
@@ -39,6 +38,7 @@ import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class AcidStorm extends WeatherDisaster implements MobDisaster {
 	
@@ -165,7 +165,7 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 						if (spawn != null)
 							world.spawn(spawn, Slime.class, slime -> {
 								slime.setSize(random.nextInt(3));
-								slime.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.3);
+								slime.getAttribute(VersionUtils.getMovementSpeedAttribute()).setBaseValue(0.3);
 								addEntityToDisasterList(slime, player);
 							});
 					}

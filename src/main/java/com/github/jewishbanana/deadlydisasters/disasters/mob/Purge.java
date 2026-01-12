@@ -13,7 +13,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
@@ -38,6 +37,7 @@ import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Purge extends Disaster implements MobDisaster {
 	
@@ -248,13 +248,13 @@ public class Purge extends Disaster implements MobDisaster {
 				entity = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(location, (Class<? extends com.github.jewishbanana.uiframework.entities.CustomEntity<?>>) entityClass).getEntity();
 				if (entity instanceof LivingEntity living) {
 					if (health != 0) {
-						living.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(health);
+						living.getAttribute(VersionUtils.getMaxHealthAttribute()).setBaseValue(health);
 						living.setHealth(health);
 					}
 					if (damage != 0)
-						living.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(damage);
+						living.getAttribute(VersionUtils.getAttackDamageAttribute()).setBaseValue(damage);
 					if (speed != 0)
-						living.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(speed);
+						living.getAttribute(VersionUtils.getMovementSpeedAttribute()).setBaseValue(speed);
 					if (armor != null)
 						living.getEquipment().setArmorContents(armor);
 					if (mainHand != null)
@@ -264,19 +264,19 @@ public class Purge extends Disaster implements MobDisaster {
 					if (living instanceof Creeper creeper)
 						creeper.setPowered(chargedCreeper);
 					
-					living.getAttribute(Attribute.GENERIC_FOLLOW_RANGE).setBaseValue(50.0);
+					living.getAttribute(VersionUtils.getFollowRangeAttribute()).setBaseValue(50.0);
 				}
 			} else
 				entity = location.getWorld().spawn(location, (Class<? extends Entity>) entityClass, randomize, temp -> {
 					if (temp instanceof LivingEntity living) {
 						if (health != 0) {
-							living.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(health);
+							living.getAttribute(VersionUtils.getMaxHealthAttribute()).setBaseValue(health);
 							living.setHealth(health);
 						}
 						if (damage != 0)
-							living.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(damage);
+							living.getAttribute(VersionUtils.getAttackDamageAttribute()).setBaseValue(damage);
 						if (speed != 0)
-							living.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(speed);
+							living.getAttribute(VersionUtils.getMovementSpeedAttribute()).setBaseValue(speed);
 						if (armor != null)
 							living.getEquipment().setArmorContents(armor);
 						if (mainHand != null)
@@ -288,7 +288,7 @@ public class Purge extends Disaster implements MobDisaster {
 						if (temp instanceof Ravager)
 							temp.addPassenger(temp.getWorld().spawn(location, Pillager.class));
 						
-						living.getAttribute(Attribute.GENERIC_FOLLOW_RANGE).setBaseValue(50.0);
+						living.getAttribute(VersionUtils.getFollowRangeAttribute()).setBaseValue(50.0);
 					}
 				});
 			return entity;
