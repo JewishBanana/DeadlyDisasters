@@ -69,7 +69,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 	public void init() {
 		super.init();
 		this.setNight = getConfigBoolean("set_to_night");
-		this.meteorSpawnRate = (float) (0.017 * getConfigDouble("meteor_spawn_multiplier") * (scale / 2.0));
+		this.meteorSpawnRate = (float) (0.034 * getConfigDouble("meteor_spawn_multiplier") * (scale / 2.0));
 		this.meteorSizeMultiplier = (float) (1.0 * getConfigDouble("meteor_size_multiplier") * (scale / 2.0));
 		this.meteorSpeedMultiplier = (float) (1.0 * getConfigDouble("meteor_speed_multiplier"));
 		this.maxMeteors = getConfigInt("maximum_meteors");
@@ -95,13 +95,14 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 		super.start();
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 		location.setY(128);
-		final World world = location.getWorld();
 		this.currentTime = world.getTime();
 		scheduleTask(new BukkitRunnable() {
 			@Override
 			public void run() {
 				if (activeMeteors.size() < maxMeteors)
 					for (Entity entity : entitiesInMonitorArea) {
+						if (!entity.isValid())
+							continue;
 						if (entity instanceof Player player) {
 							if (EntityUtils.isPlayerImmune(player))
 								continue;
@@ -118,17 +119,13 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 					currentTime += 500;
 				else if (currentTime > 20500)
 					currentTime -= 500;
-				time -= 5;
-				if (time <= 0)
-					stop();
 			}
-		}.runTaskTimer(plugin, 0, 5));
+		}.runTaskTimer(plugin, 60, 10));
 		
-		final double distanceSquared = disasterRange * disasterRange;
 		createAsyncEntityMonitor(e -> e instanceof LivingEntity && e.isValid(), 
 				(found, entities, players) -> {
 					found.forEach((entity, loc) -> {
-						if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+						if (!isWithinStorm(loc))
 							return;
 						if (isEntityProtected(entity))
 							return;
@@ -146,15 +143,15 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 				return;
 			final Player player = pair.getFirst();
 			final Location loc = player.getLocation();
-			final double actualDistance = new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()).distance(location);
+			final double actualDistance = new Location(world, loc.getX(), location.getY(), loc.getZ()).distance(location);
 			long diff = (long) (((smoothingRange - (actualDistance - disasterRange)) * ((currentTime - world.getTime()) / smoothingRange)));
 			player.setPlayerTime(world.getTime() + diff, false);
 		});
 	}
 	public void clean() {
 		super.clean();
-		activeMeteors.forEach(meteor -> meteor.markForDead = true);
 		HandlerList.unregisterAll(this);
+		activeMeteors.forEach(meteor -> meteor.markForDead = true);
 		weatherPlayers.forEach(uuid -> {
 			Player player = Bukkit.getPlayer(uuid);
 			if (player == null || !player.isOnline())
@@ -224,7 +221,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 			this.sizeSquared = size * size;
 			
 			this.materials = getMaterials();
-			centerBlock = loc.getWorld().spawnFallingBlock(loc, materials[random.nextInt(materials.length)].createBlockData());
+			centerBlock = world.spawnFallingBlock(loc, materials[random.nextInt(materials.length)].createBlockData());
 			generateMeteor();
 			
 			final Meteor reference = this;
@@ -252,8 +249,8 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 						final double distance = vec.distanceSquared(temp);
 						if (distance > sizeSquared || distance < squaredInner)
 							continue;
-						Location spawnLoc = temp.toLocation(loc.getWorld());
-						blocks.put(loc.getWorld().spawnFallingBlock(spawnLoc, materials[random.nextInt(materials.length)].createBlockData()).getUniqueId(), spawnLoc);
+						Location spawnLoc = temp.toLocation(world);
+						blocks.put(world.spawnFallingBlock(spawnLoc, materials[random.nextInt(materials.length)].createBlockData()).getUniqueId(), spawnLoc);
 					}
 			for (UUID uuid : blocks.keySet()) {
 				Entity fb = Bukkit.getEntity(uuid);
@@ -316,14 +313,16 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 				}
 			}
 			blocks.putAll(replaceMap);
-			for (Entity entity : centerBlock.getNearbyEntities(size, size, size))
+			for (Entity entity : centerBlock.getNearbyEntities(size, size, size)) {
+				Location loc = entity.getLocation();
 				if (entity instanceof LivingEntity living 
 						&& entity.isValid() 
-						&& entity.getLocation().distanceSquared(center) <= sizeSquared 
+						&& loc.distanceSquared(center) <= sizeSquared 
 						&& !isEntityProtected(entity) 
 						&& !EntityUtils.isEntityImmunePlayer(entity) 
-						&& BlockUtils.rayTraceForBlock(center, entity.getLocation().add(0, entity.getHeight(), 0), size) == null)
+						&& BlockUtils.rayTraceForBlock(center, loc.add(0, entity.getHeight(), 0), size) == null)
 					EntityUtils.damageEntity(living, 20.0, "deaths.meteor", DamageCause.FALLING_BLOCK);
+			}
 			if (random.nextInt(7) == 0)
 				for (Entity entity : centerBlock.getNearbyEntities(size * 5, size * 5, size * 5))
 					if (entity instanceof Player player) {
@@ -365,10 +364,11 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 		public void createSmokeField(Location loc, int amount, float area) {
 			scheduleTask(new BukkitRunnable() {
 				private int time = smokeTime;
+				private final World world = loc.getWorld();
 				
 				@Override
 				public void run() {
-					loc.getWorld().spawnParticle(VersionUtils.getLargeSmoke(), loc, amount, area, area, area, .001);
+					world.spawnParticle(VersionUtils.getLargeSmoke(), loc, amount, area, area, area, .001);
 					if (--time <= 0)
 						this.cancel();
 				}
@@ -408,7 +408,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 						final double distance = vec.distanceSquared(temp);
 						if (distance > sizeSquared)
 							continue;
-						Block b = temp.toLocation(loc.getWorld()).getBlock();
+						Block b = temp.toLocation(world).getBlock();
 						if (b == null || !b.isPassable())
 							continue;
 						if (distance < squaredInner) {
@@ -481,12 +481,14 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 					playSound(player, playerLoc.clone().add(Utils.getVectorTowards(playerLoc, first).multiply(5.0)), Sound.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 1.0 / (size * 6.0) * playerLoc.distance(first), 0.5);
 				}
 			final double explosionRadiusSquared = explosionRadius * explosionRadius;
-			for (Entity entity : first.getWorld().getNearbyEntities(first, explosionRadius, explosionRadius, explosionRadius, temp -> temp.isValid()))
+			for (Entity entity : first.getWorld().getNearbyEntities(first, explosionRadius, explosionRadius, explosionRadius, temp -> temp.isValid())) {
+				Location loc = entity.getLocation();
 				if (entity instanceof LivingEntity living 
 						&& !EntityUtils.isEntityImmunePlayer(entity) 
-						&& entity.getLocation().distanceSquared(first) <= explosionRadiusSquared 
-						&& BlockUtils.rayTraceForBlock(first, entity.getLocation().add(0, entity.getHeight(), 0), explosionRadius) == null)
-					EntityUtils.damageEntity(living, 40.0 / explosionRadius * (explosionRadius - entity.getLocation().add(0, entity.getHeight(), 0).distance(first)), "deaths.exploding_meteor", DamageCause.BLOCK_EXPLOSION);
+						&& loc.distanceSquared(first) <= explosionRadiusSquared 
+						&& BlockUtils.rayTraceForBlock(first, loc.add(0, entity.getHeight(), 0), explosionRadius) == null)
+					EntityUtils.damageEntity(living, 40.0 / explosionRadius * (explosionRadius - loc.distance(first)), "deaths.exploding_meteor", DamageCause.BLOCK_EXPLOSION);
+			}
 			createSmokeField(first.clone().subtract(0, explosionRadius, 0), (int) (size * 5), (float) explosionRadius);
 		}
 		public Material[] getMaterials() {
@@ -534,7 +536,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 							continue;
 						}
 						for (Entity entity : fb.getNearbyEntities(.5, .5, .5))
-							if (entity instanceof LivingEntity living && entity.isValid() && !EntityUtils.isEntityImmunePlayer(entity))
+							if (entity instanceof LivingEntity living && !EntityUtils.isEntityImmunePlayer(entity))
 								EntityUtils.damageEntity(living, 6.0, "deaths.meteor", DamageCause.FALLING_BLOCK);
 					}
 					if (--timeout == 0)

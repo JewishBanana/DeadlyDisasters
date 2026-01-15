@@ -54,7 +54,6 @@ public class Utils {
 	public static final String prefix;
 	private static final boolean sendErrors;
 	private static final DecimalFormat decimalFormat;
-	private static boolean usingSpigot;
 	private static final Pattern hexPattern;
 	private static final Map<DyeColor, ChatColor> dyeChatMap;
 	static {
@@ -82,13 +81,6 @@ public class Utils {
 		dyeChatMap.put(DyeColor.RED, ChatColor.DARK_RED);
 		dyeChatMap.put(DyeColor.WHITE, ChatColor.WHITE);
 		dyeChatMap.put(DyeColor.YELLOW, ChatColor.YELLOW);
-		
-		try {
-	        Class.forName("org.bukkit.entity.Player$Spigot");
-	        usingSpigot = true;
-	    } catch (Throwable tr) {
-	    	usingSpigot = false;
-	    }
 	}
 	
 	public static String convertString(String text) {
@@ -96,7 +88,7 @@ public class Utils {
 			return null;
 		String s = text;
 		Matcher match = hexPattern.matcher(s);
-		if (usingSpigot) {
+		if (DependencyUtils.isSpigotServer()) {
 		    while (match.find()) {
 		        String color = s.substring(match.start(), match.end());
 		        s = s.replace(color, net.md_5.bungee.api.ChatColor.of(color.substring(5, color.length()-1))+"");
@@ -654,9 +646,6 @@ public class Utils {
 	}
 	public static void sendConsoleMessage(String message) {
 		Main.consoleSender.sendMessage(Utils.prefix + convertString(message));
-	}
-	public static boolean isSpigot() {
-		return usingSpigot;
 	}
 	public static RandomGenerator getRandomGenerator() {
 		return random;

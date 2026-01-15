@@ -14,7 +14,6 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
-import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -81,7 +80,7 @@ public class ExtremeWinds extends WeatherDisaster {
 				if (currentForce > 0) {
 					if (currentForce >= windBreakThreshold)
 						for (Player player : playersInMonitorArea) {
-							if (EntityUtils.isPlayerImmune(player))
+							if (!player.isValid() || EntityUtils.isPlayerImmune(player))
 								continue;
 							if (random.nextFloat() < blockChangeRate) {
 								for (int i=0; i < 3; i++) {
@@ -100,6 +99,8 @@ public class ExtremeWinds extends WeatherDisaster {
 							}
 						}
 					for (Entity entity : entitiesInMonitorArea) {
+						if (!entity.isValid())
+							continue;
 						if (entity instanceof Player player && player.isFlying() && EntityUtils.isPlayerImmune(player))
 							continue;
 						entity.setVelocity(entity.getVelocity().add(currentVelocity));
@@ -119,12 +120,9 @@ public class ExtremeWinds extends WeatherDisaster {
 						increasing = true;
 					}
 				}
-				if (time-- <= 0)
-					stop();
 			}
 		}.runTaskTimer(plugin, 0, 1));
 		
-		final double distanceSquared = disasterRange * disasterRange;
 		final Set<UUID> playersInStorm = ConcurrentHashMap.newKeySet();
 		final List<UUID> playersIteratedOver = new ArrayList<>();
 		final Map<UUID, Integer> timeInStorm = new HashMap<>();
@@ -134,8 +132,7 @@ public class ExtremeWinds extends WeatherDisaster {
 					playersInStorm.addAll(playersIteratedOver);
 					playersIteratedOver.clear();
 					found.forEach((entity, loc) -> {
-						final World world = loc.getWorld();
-						if (loc.getY() < minimumYLevel || !Utils.isLocationsWithinDistance(new Location(world, loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+						if (loc.getY() < minimumYLevel || !isWithinStorm(loc))
 							return;
 						if (isEntityProtected(entity))
 							return;
@@ -171,26 +168,30 @@ public class ExtremeWinds extends WeatherDisaster {
 			final boolean flag = playersInStorm.contains(player.getUniqueId());
 			final double currentSoundLevel = Utils.clamp(soundIncrement * currentForce, 0.0, 1.0);
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
-				if (new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location) > distanceSquared 
-						|| random.nextFloat() > particleRate * currentStrength * currentSoundLevel)
+				if (random.nextFloat() >= particleRate * currentStrength * currentSoundLevel || !isWithinStorm(block))
 					continue;
-				Block highest = new Location(block.getWorld(), block.getX(), block.getWorld().getHighestBlockYAt(block.getX(), block.getZ()), block.getZ()).getBlock();
-				if (highest == null 
-						|| highest.getY() - loc.getBlockY() > 10)
+				final Block highest = world.getHighestBlockAt(block.getX(), block.getZ());
+				if (highest == null || highest.getY() - loc.getBlockY() > 10)
 					continue;
-				final Location particleLoc = new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 3, block.getZ() + 0.5);
-				player.spawnParticle(Particle.CLOUD, particleLoc.clone().add(random.nextFloat()-.5, random.nextFloat(10f) - 5, random.nextFloat()-.5), 0, direction.getX(), .001, direction.getZ(), currentForce * 15.0);
-				double dist = highest.getLocation().distanceSquared(loc);
+				final double particleY = (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 3;
+				player.spawnParticle(Particle.CLOUD, block.getX() + 0.5 + random.nextFloat(-.5f, .5f), particleY + random.nextFloat(-5f, 5f), block.getZ() + 0.5 + random.nextFloat(-.5f, .5f), 0, direction.getX(), .001, direction.getZ(), currentForce * 15.0);
+				final double dx = highest.getX() - loc.getX();
+				final double dz = highest.getZ() - loc.getZ();
+				final double dist = dx * dx + dz * dz;
 				if (closest == null || dist < closestDistance) {
 					closest = highest;
 					closestDistance = dist;
 				}
 			}
-			if (flag)
+			if (flag) {
+				final double x = loc.getX();
+				final double y = loc.getY();
+				final double z = loc.getZ();
 				for (int i=0; i < particleRate * 100 * currentSoundLevel; i++)
-					player.spawnParticle(Particle.CLOUD, loc.clone().add(random.nextFloat(-10f, 10f), random.nextFloat(10f) - 3, random.nextFloat(-10f, 10f)), 0, direction.getX(), .001, direction.getZ(), currentForce * 15.0);
+					player.spawnParticle(Particle.CLOUD, x + random.nextFloat(-10f, 10f), y + random.nextFloat(-3f, 7f), z + random.nextFloat(-10f, 10f), 0, direction.getX(), .001, direction.getZ(), currentForce * 15.0);
+			}
 			if (closest != null) {
-				playSound(player, loc.clone().add(0, 5, 0), flag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentSoundLevel * currentStrength * (flag ? 1.0 : 0.2), .5);
+				playSound(player, loc.add(0, 5, 0), flag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentSoundLevel * currentStrength * (flag ? 1.0 : 0.2), .5);
 			}
 		}, pair -> {
 			if (currentForce <= 0)
@@ -203,26 +204,31 @@ public class ExtremeWinds extends WeatherDisaster {
 			boolean aboveFlag = false;
 			final double currentSoundLevel = Utils.clamp(soundIncrement * currentForce, 0.0, 1.0);
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
-				final double actualDistance = new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location);
-				if (actualDistance > trueSmoothingRange || random.nextFloat() > intensity * 2.0 * particleRate * currentStrength * currentSoundLevel)
+				if (random.nextFloat() >= intensity * 2.0 * particleRate * currentStrength * currentSoundLevel || !isWithinStorm(block))
 					continue;
-				Block highest = new Location(block.getWorld(), block.getX(), block.getWorld().getHighestBlockYAt(block.getX(), block.getZ()), block.getZ()).getBlock();
-				if (highest == null 
-						|| highest.getY() - loc.getBlockY() > 10)
+				final Block highest = world.getHighestBlockAt(block.getX(), block.getZ());
+				if (highest == null || highest.getY() - loc.getBlockY() > 10)
 					continue;
 				aboveFlag = true;
-				final Location particleLoc = new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 5, block.getZ() + 0.5);
-				player.spawnParticle(Particle.CLOUD, particleLoc.clone().add(random.nextFloat()-.5, random.nextFloat(6f) - 3, random.nextFloat()-.5), 0, direction.getX(), .001, direction.getZ(), currentForce * 15.0);
-				if (!soundFlag && loc.distanceSquared(BlockUtils.getCenterOfBlock(highest)) <= 25
-						|| (loc.getY() > highest.getY() && loc.distanceSquared(new Location(loc.getWorld(), highest.getX() + 0.5, loc.getY(), highest.getZ() + 0.5)) <= 25))
-					soundFlag = true;
+				final double particleY = (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 5;
+				player.spawnParticle(Particle.CLOUD, block.getX() + 0.5 + random.nextFloat(-.5f, .5f), particleY + random.nextFloat(-3f, 3f), block.getZ() + 0.5 + random.nextFloat(-.5f, .5f), 0, direction.getX(), .001, direction.getZ(), currentForce * 15.0);
+				if (!soundFlag) {
+					if (loc.distanceSquared(BlockUtils.getCenterOfBlock(highest)) <= 25)
+						soundFlag = true;
+					else if (loc.getY() > highest.getY()) {
+						final double bx = highest.getX() + 0.5 - loc.getX();
+						final double bz = highest.getZ() + 0.5 - loc.getZ();
+						if (bx * bx + bz * bz <= 25)
+							soundFlag = true;
+					}
+				}
 			}
 			if (aboveFlag) {
-				Location fixed = new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ());
+				final Location fixed = new Location(world, loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
 					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, ((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * currentSoundLevel * smoothingIntensity * currentStrength, .5);
 				else
-					playSound(player, loc.clone().add(0, 7, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentSoundLevel * currentStrength, .5);
+					playSound(player, loc.add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentSoundLevel * currentStrength, .5);
 			}
 		});
 	}

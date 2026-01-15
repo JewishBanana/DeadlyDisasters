@@ -30,8 +30,8 @@ import org.bukkit.util.Vector;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
+import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
-import com.github.jewishbanana.ultimatecontent.utils.EntityUtils;
 
 public class Tornado extends Disaster {
 	
@@ -105,7 +105,6 @@ public class Tornado extends Disaster {
 	public void start() {
 		super.start();
 		addDeathWatcher("deaths.tornado");
-		final World world = getLocation().getWorld();
 		final Set<Entity> interruptEntities = ConcurrentHashMap.newKeySet();
 		final Map<Entity, Integer> cooldowns = new ConcurrentHashMap<>();
 		scheduleTask(new BukkitRunnable() {
@@ -129,7 +128,7 @@ public class Tornado extends Disaster {
 //					location.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, location.clone().add(new Vector(0, i, 0)), 1, 0, 0, 0, 0.0001);
 				
 				for (Player player : playersInMonitorArea)
-					if (!EntityUtils.isPlayerImmune(player) && random.nextFloat() < blockPickupRate)
+					if (player.isValid() && !EntityUtils.isPlayerImmune(player) && random.nextFloat() < blockPickupRate)
 						for (int i=0; i < 3; i++)
 							for (int j=0; j < 3; j++) {
 								final Location loc = player.getLocation();
@@ -150,6 +149,10 @@ public class Tornado extends Disaster {
 				final double heightIncrement = width / height;
 				for (int i = entitiesInMonitorArea.size() - 1; i >= 0; i--) {
 					Entity entity = entitiesInMonitorArea.get(i);
+					if (!entity.isValid()) {
+						entitiesInMonitorArea.remove(i);
+						continue;
+					}
 					Location loc = entity.getLocation();
 					if (entity instanceof Player player) {
 						if (player.isFlying())
@@ -173,7 +176,7 @@ public class Tornado extends Disaster {
 							double particleSpeed = (level * 0.1) - (new Location(world, loc.getX(), location.getY(), loc.getZ()).distance(loc) * (0.07 * forceMultiplier));
 							vec.normalize();
 							for (int j=0; j < 2; j++)
-								world.spawnParticle(particleType, loc.clone().add(random.nextFloat() * 3 - 1.5, random.nextFloat() * 3 - 1.5, random.nextFloat() * 3 - 1.5), 0, vec.getX() * particleSpeed, (random.nextFloat(0, 0.8f) / 1.5) * particleSpeed, vec.getZ() * particleSpeed, 1, null, true);
+								world.spawnParticle(particleType, loc.getX() + random.nextFloat() * 3 - 1.5, loc.getY() + random.nextFloat() * 3 - 1.5, loc.getZ() + random.nextFloat() * 3 - 1.5, 0, vec.getX() * particleSpeed, (random.nextFloat(0, 0.8f) / 1.5) * particleSpeed, vec.getZ() * particleSpeed, 1, null, true);
 						}
 						if (random.nextInt(level * 10 + 70) == 0) {
 							cooldowns.put(entity, random.nextInt(3, 12));
@@ -276,7 +279,7 @@ public class Tornado extends Disaster {
 			}
 		}.runTaskTimer(plugin, 0, 10));
 		
-		final double distanceSquared = disasterRange * disasterRange;
+		final double disasterRangeSquared = disasterRange * disasterRange;
 		final Map<UUID, Integer> timeInStorm = new HashMap<>();
 		createAsyncEntityMonitor(Entity::isValid, 
 				(found, entities, players) -> {
@@ -295,7 +298,9 @@ public class Tornado extends Disaster {
 							return;
 						if (entities.size() >= maxEntities && !(entity instanceof LivingEntity))
 							return;
-						if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+						final double dx = loc.getX() - location.getX();
+						final double dz = loc.getZ() - location.getZ();
+						if (dx * dx + dz * dz > disasterRangeSquared)
 							return;
 						if (isEntityProtected(entity))
 							return;

@@ -726,7 +726,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 						++exceptions;
 					}
 				if (!iterator.hasNext()) {
-					BlockRegenHandler.printMaps();
+//					BlockRegenHandler.printMaps();
 					this.cancel();
 					final long elapsedTime = System.currentTimeMillis() - startTime;
 					final long gameTicks = (elapsedTime * 20) / 1000;

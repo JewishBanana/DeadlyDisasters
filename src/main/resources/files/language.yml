@@ -7,7 +7,8 @@
 #
 # This is the language file for the plugin. Here you can modify many different messages from the plugin, you can also modify the names of disasters, custom items, etc. 
 # There are many different place holders that can be added or removed in various messages, they are encapsulated with '%' signs and fairly self explanatory to understand. 
-# Place holders are typically unique to their specific message so don't use them in messages they are not already present in! You can also remove them from any message you wish. 
+# Place holders are typically unique to their specific message so don't use them in messages they are not already present in! You can also remove them from any message you wish.
+#
 # You can also translate to a different language the plugins messages. All characters must be in standard UTF-8 encoding! You may also find translations of this file in other 
 # languages on the discord server in the translations chat. If you are translating this file into another language and are willing to share please let me know on the discord!
 # Remember, if translating only translate the actual values and not the keys! So only translate what is in quotations ("") and on the right side of the colon (:).

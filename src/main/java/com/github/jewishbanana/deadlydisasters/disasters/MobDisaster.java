@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -28,7 +29,7 @@ public interface MobDisaster {
 		MobDisaster.entitiesMap.computeIfAbsent(this, k -> new HashSet<>()).add(entity.getUniqueId());
 		EntitiesListener.attachRemoveKey(entity);
 	}
-	default void addEntityToDisasterList(@NotNull Entity entity, Entity target) {
+	default void addEntityToDisasterList(@NotNull Mob entity, LivingEntity target) {
 		UUID uuid = entity.getUniqueId();
 		MobDisaster.entitiesMap.computeIfAbsent(this, k -> new HashSet<>()).add(uuid);
 		MobDisaster.entitiyTargets.put(uuid, target.getUniqueId());
@@ -42,10 +43,10 @@ public interface MobDisaster {
 		if (set == null)
 			return;
 		set.forEach(uuid -> {
-			Mob entity = (Mob) Bukkit.getEntity(uuid);
-			if (entity == null || entity.getTarget() != null)
+			Entity entity = Bukkit.getEntity(uuid);
+			if (entity == null || !(entity instanceof Mob mob) || mob.getTarget() != null)
 				return;
-			entity.setTarget(Bukkit.getPlayer(entitiyTargets.get(entity.getUniqueId())));
+			mob.setTarget((LivingEntity) Bukkit.getEntity(entitiyTargets.get(entity.getUniqueId())));
 		});
 	}
 	default void cleanEntities() {

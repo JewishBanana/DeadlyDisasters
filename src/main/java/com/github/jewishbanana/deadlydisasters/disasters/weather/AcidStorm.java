@@ -1,6 +1,8 @@
 package com.github.jewishbanana.deadlydisasters.disasters.weather;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +17,6 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.Tag;
-import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -25,6 +26,13 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Slime;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockSpreadEvent;
+import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -40,7 +48,7 @@ import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
-public class AcidStorm extends WeatherDisaster implements MobDisaster {
+public class AcidStorm extends WeatherDisaster implements Listener, MobDisaster {
 	
 	public static final Map<Block, Integer> poisonedCrops;
 	static {
@@ -125,8 +133,8 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 	public void init() {
 		super.init();
 		this.damage = getConfigDouble("damage_per_storm_tick") * scale;
-		this.blockChangeRate = (float) (0.0025 * getConfigDouble("block_damage_rate") * scale);
-		this.mobSpawnRate = (float) (0.02 * getConfigDouble("mob_spawn_multiplier") * (scale / 2.0));
+		this.blockChangeRate = (float) (0.0005 * getConfigDouble("block_damage_rate") * scale);
+		this.mobSpawnRate = (float) (0.02 * getConfigDouble("mob_spawn_multiplier") * (scale / 1.5));
 		this.poisonCrops = getConfigBoolean("poison_crops");
 		this.dissolveEntityArmor = getConfigBoolean("dissolve_entity_armor");
 		this.dissolveDroppedItems = getConfigBoolean("dissolve_dropped_items");
@@ -148,17 +156,18 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 	}
 	public void start() {
 		super.start();
+		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 		location.setY(128);
-		final World world = location.getWorld();
+		final Set<Entity> protectedEntities = new HashSet<>();
 		scheduleTask(new BukkitRunnable() {
-			private final float itemDissolveChance = (float) (0.02 * (scale / 2.0));
-			private final int toolDamage = (int) Math.ceil(damage * 2.0 * (scale / 2.0));
-			private final int armorDamage = (int) Math.ceil(damage * (scale / 2.0));
+			private final float itemDissolveChance = (float) (0.04 * (scale / 2.0));
+			private final int toolDamage = (int) Math.ceil(damage * 4.0 * (scale / 2.0));
+			private final int armorDamage = (int) Math.ceil(damage * 2.0 * (scale / 2.0));
 			
 			@Override
 			public void run() {
 				for (Player player : playersInMonitorArea) {
-					if (EntityUtils.isPlayerImmune(player))
+					if (!player.isValid() || EntityUtils.isPlayerImmune(player))
 						continue;
 					if (random.nextFloat() < mobSpawnRate) {
 						Location spawn = SpawnUtils.findMonsterSpawnLocation(player.getLocation(), 1, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
@@ -167,18 +176,22 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 								slime.setSize(random.nextInt(3));
 								slime.getAttribute(VersionUtils.getMovementSpeedAttribute()).setBaseValue(0.3);
 								addEntityToDisasterList(slime, player);
+								entitiesInMonitorArea.add(slime);
 							});
 					}
 				}
 				for (Entity entity : entitiesInMonitorArea) {
-					if (EntityUtils.isEntityImmunePlayer(entity))
+					if (!entity.isValid())
 						continue;
-					if (entity instanceof LivingEntity alive) {
-						ItemStack[] armor = alive.getEquipment().getArmorContents();
+					entity.setFireTicks(-20);
+					if (protectedEntities.contains(entity))
+						continue;
+					if (entity instanceof LivingEntity living) {
+						if (EntityUtils.isEntityImmunePlayer(entity))
+							continue;
+						ItemStack[] armor = living.getEquipment().getArmorContents();
 						if (armor[3] != null && DependencyUtils.getBasicCoatingLevel(armor[3]) != 0)
 							continue;
-						if (entity instanceof Player player)
-							playSound(player, player.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.WEATHER, soundVolume, 2);
 						if (dissolveEntityArmor)
 							for (ItemStack item : armor)
 								if (item != null)
@@ -200,8 +213,9 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 									default:
 										break;
 									}
-						alive.addPotionEffects(effects);
-						EntityUtils.damageEntity(alive, damage * currentStrength, "deaths.acid_storm", DamageCause.POISON);
+						living.addPotionEffects(effects);
+						if (EntityUtils.damageEntity(living, damage * currentStrength, "deaths.acid_storm", DamageCause.POISON) && !living.isSilent())
+							playSound(living.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.WEATHER, soundVolume, 2);
 					} else if (dissolveDroppedItems && entity instanceof Item item) {
 						ItemStack stack = item.getItemStack();
 						switch (stack.getType()) {
@@ -269,25 +283,22 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 						}
 					}
 				}
-				
 				updateEntityTargets();
-				
-				time -= 5;
-				if (time <= 0)
-					stop();
 			}
-		}.runTaskTimer(plugin, 0, 5));
+		}.runTaskTimer(plugin, 0, 10));
 
-		final double distanceSquared = disasterRange * disasterRange;
 		createAsyncEntityMonitor(Entity::isValid, 
 				(found, entities, players) -> {
+					final List<Entity> protectedFound = new ArrayList<>();
 					found.forEach((entity, loc) -> {
-						if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+						if (!isWithinStorm(loc))
 							return;
-						if (isEntityProtected(entity) || !isBlockInClimate(loc.getBlock()))
+						if (!isBlockInClimate(loc.getBlock()))
 							return;
-						if (world.getHighestBlockYAt(loc) <= loc.getY() + (entity.getHeight() / 2.0)) {
+						if (world.getBlockAt(loc.getBlockX(), (int) Math.ceil(loc.getY() + entity.getHeight()), loc.getBlockZ()).getLightFromSky() == 15) {
 							entities.add(entity);
+							if (isEntityProtected(entity))
+								protectedFound.add(entity);
 							if (entity instanceof Player p)
 								players.add(p);
 							return;
@@ -295,6 +306,13 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 						if (entity instanceof Player p && loc.getY() > minHeight - 5)
 							players.add(p);
 					});
+					new BukkitRunnable() {
+						@Override
+						public void run() {
+							protectedEntities.clear();
+							protectedEntities.addAll(protectedFound);
+						}
+					}.runTask(plugin);
 				});
 
 		final double trueSmoothingRange = (disasterRange + smoothingRange) * (disasterRange + smoothingRange);
@@ -302,15 +320,14 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 			final ThreadLocalRandom random = ThreadLocalRandom.current();
 			final Location loc = player.getLocation();
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
-				if (new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location) > distanceSquared 
-						|| random.nextFloat() > particleRate * currentStrength)
+//				Block highest = world.getHighestBlockAt(block.getX(), block.getZ());
+//				player.spawnParticle(Particle.FLAME, BlockUtils.getCenterOfBlock(highest).add(0, 1, 0), 1, 0, 0, 0, 0.001);
+				if (random.nextFloat() >= particleRate * currentStrength || !isWithinStorm(block))
 					continue;
-				Block highest = new Location(block.getWorld(), block.getX(), block.getWorld().getHighestBlockYAt(block.getX(), block.getZ()), block.getZ()).getBlock();
-				if (highest == null 
-						|| !isBlockInClimate(highest)
-						|| highest.getY() - loc.getBlockY() > 10)
+				Block highest = world.getHighestBlockAt(block.getX(), block.getZ());
+				if (highest == null || highest.getY() - loc.getBlockY() > 10 || !isBlockInClimate(highest))
 					continue;
-				player.spawnParticle(Particle.FALLING_SPORE_BLOSSOM, new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 8, block.getZ() + 0.5), 1, .5, 6.0, .5, 1);
+				player.spawnParticle(Particle.FALLING_SPORE_BLOSSOM, block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 8, block.getZ() + 0.5, 1, .5, 6.0, .5, 1);
 			}
 		}, pair -> {
 			final ThreadLocalRandom random = ThreadLocalRandom.current();
@@ -320,34 +337,45 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 			boolean soundFlag = false;
 			boolean aboveFlag = false;
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
-				final double actualDistance = new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location);
-				if (actualDistance > trueSmoothingRange || random.nextFloat() > intensity * 2.0 * particleRate * currentStrength)
+				if (random.nextFloat() >= intensity * 2.0 * particleRate * currentStrength)
 					continue;
-				Block highest = new Location(block.getWorld(), block.getX(), block.getWorld().getHighestBlockYAt(block.getX(), block.getZ()), block.getZ()).getBlock();
-				if (highest == null 
-						|| !isBlockInClimate(highest)
-						|| highest.getY() - loc.getBlockY() > 10)
+				final double centerX = block.getX() + 0.5;
+				final double centerZ = block.getZ() + 0.5;
+				final double dx = centerX - location.getX();
+				final double dz = centerZ - location.getZ();
+				final double distanceSquared = dx * dx + dz * dz;
+				if (distanceSquared > trueSmoothingRange)
+					continue;
+				Block highest = world.getHighestBlockAt(block.getX(), block.getZ());
+				if (highest == null || highest.getY() - loc.getBlockY() > 10 || !isBlockInClimate(highest))
 					continue;
 				aboveFlag = true;
-				player.spawnParticle(Particle.FALLING_WATER, new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY()) + 16, block.getZ() + 0.5), 1, .5, 6.0, .5, 1);
-				if (actualDistance <= distanceSquared)
-					player.spawnParticle(Particle.FALLING_SPORE_BLOSSOM, new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 8, block.getZ() + 0.5), 1, .5, 6.0, .5, 1);
-				if (!soundFlag && loc.distanceSquared(BlockUtils.getCenterOfBlock(highest)) <= 25
-						|| (loc.getY() > highest.getY() && loc.distanceSquared(new Location(loc.getWorld(), highest.getX() + 0.5, loc.getY(), highest.getZ() + 0.5)) <= 25))
-					soundFlag = true;
+				player.spawnParticle(Particle.FALLING_WATER, centerX, (loc.getY() > highest.getY() ? loc.getY() : highest.getY()) + 16, centerZ, 1, .5, 6.0, .5, 1);
+				if (distanceSquared <= disasterRangeSquared)
+					player.spawnParticle(Particle.FALLING_SPORE_BLOSSOM, centerX, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 8, centerZ, 1, .5, 6.0, .5, 1);
+				if (!soundFlag) {
+					if (loc.distanceSquared(BlockUtils.getCenterOfBlock(highest)) <= 25)
+						soundFlag = true;
+					else if (loc.getY() > highest.getY()) {
+						final double bx = highest.getX() + 0.5 - loc.getX();
+						final double bz = highest.getZ() + 0.5 - loc.getZ();
+						if (bx * bx + bz * bz <= 25)
+							soundFlag = true;
+					}
+				}
 			}
 			if (aboveFlag && soundTick == 0) {
-				Location fixed = new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ());
+				final Location fixed = new Location(world, loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
 					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, ((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength, 1);
 				else
-					playSound(player, loc.clone().add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength, 1);
+					playSound(player, loc.add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength, 1);
 			}
 		});
 		
 		getChunksInvolvedSafelyAndThen(() -> {
 			scheduleTask(new BukkitRunnable() {
-				private final float poisonCropRate = (float) (0.5 * scale);
+				private final float poisonCropRate = (float) (0.1 * scale);
 				
 				@Override
 				public void run() {
@@ -357,32 +385,50 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 					involvedChunks.forEach(chunk -> {
 						if (!chunk.isLoaded())
 							return;
-						Block block = BlockUtils.getHighestExposedBlock(location.getWorld().getHighestBlockAt(chunk.getBlock(random.nextInt(16), 0, random.nextInt(16)).getLocation()), 10);
-						if (block == null 
-								|| !isBlockInClimate(block)
-								|| new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location) > distanceSquared)
+						final Block block = world.getHighestBlockAt((chunk.getX() << 4) + random.nextInt(16), (chunk.getZ() << 4) + random.nextInt(16));
+						if (block == null || !isBlockInClimate(block) || !isWithinStorm(block))
 							return;
-						if (poisonCrops && random.nextFloat() < poisonCropRate) {
-							Block crop = block.getRelative(BlockFace.UP);
-							if (crop != null && Tag.CROPS.isTagged(crop.getType()) && !poisonedCrops.containsKey(crop))
-								poisonedCrops.put(crop, random.nextInt(180, 1800));
+						final Block above = block.getRelative(BlockFace.UP);
+						if (above != null) {
+							if (Tag.FIRE.isTagged(above.getType()) && !isBlockProtected(above)) {
+								new BukkitRunnable() {
+									@Override
+									public void run() {
+										if (!Tag.FIRE.isTagged(above.getType()))
+											return;
+										above.setType(Material.AIR);
+										world.playSound(BlockUtils.getCenterOfBlock(above), Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 1f, 1f);
+									}
+								}.runTask(plugin);
+							} else if (poisonCrops && Tag.CROPS.isTagged(above.getType()) && !poisonedCrops.containsKey(above) && random.nextFloat() < poisonCropRate && !isBlockProtected(above))
+								poisonedCrops.put(above, random.nextInt(180, 1800));
 						}
-						if (random.nextFloat() > blockChangeRate)
+						if (random.nextFloat() >= blockChangeRate)
 							return;
-						Material[] materials = blockChanges.get(block.getType());
+						final Material type = block.getType();
+						final Material[] materials = blockChanges.get(type);
 						if (materials != null && materials.length != 0) {
-							Material change = materials[random.nextInt(materials.length)];
-							Location top = block.getLocation().add(.5, 1.1, .5);
-							plugin.getServer().getScheduler().runTask(plugin, () -> {
-								replaceBlockWithProperties(block, change);
-								playSound(top, Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, .1, 2);
-								location.getWorld().spawnParticle(Particle.CLOUD, change == Material.AIR ? top.subtract(0, 1, 0) : top, 3, .5, .05, .5, 0.001);
-							});
+							final Material change = materials[random.nextInt(materials.length)];
+							final Location top = block.getLocation().add(.5, 1.1, .5);
+							new BukkitRunnable() {
+								@Override
+								public void run() {
+									if (block.getType() != type)
+										return;
+									replaceBlockWithProperties(block, change);
+									playSound(top, Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, .1, 2);
+									world.spawnParticle(Particle.CLOUD, change == Material.AIR ? top.subtract(0, 1, 0) : top, 3, .5, .05, .5, 0.001);
+								}
+							}.runTask(plugin);
 						}
 					});
 				}
-			}.runTaskTimerAsynchronously(plugin, 0, 5));
+			}.runTaskTimerAsynchronously(plugin, 0, 1));
 		});
+	}
+	public void clean() {
+		super.clean();
+		HandlerList.unregisterAll(this);
 	}
 	public boolean isBlockInClimate(Block block) {
 		final double temp = block.getTemperature();
@@ -393,5 +439,41 @@ public class AcidStorm extends WeatherDisaster implements MobDisaster {
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return EnumSet.of(Environment.NETHER, Environment.THE_END);
+	}
+	
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	public void onEntityCombust(EntityCombustEvent event) {
+		final Location loc = event.getEntity() instanceof LivingEntity living ? living.getEyeLocation() : event.getEntity().getLocation();
+		if (loc.getWorld().equals(world) && loc.getBlock().getLightFromSky() == 15 && isWithinStorm(loc))
+			event.setCancelled(true);
+	}
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	public void onFireSpread(BlockSpreadEvent event) {
+		if (!Tag.FIRE.isTagged(event.getNewState().getType()))
+			return;
+		Block block = event.getBlock();
+		if (!block.getWorld().equals(world) || block.getLightFromSky() != 15 || !isWithinStorm(block))
+			return;
+		event.setCancelled(true);
+		Block source = event.getSource();
+		if (source.getLightFromSky() != 15)
+			return;
+		Location center = BlockUtils.getCenterOfBlock(source);
+		if (!Tag.FIRE.isTagged(source.getType()) || source.getLightFromSky() != 15 || DependencyUtils.isRegionProtected(center))
+			return;
+		source.setType(Material.AIR);
+		world.playSound(center, Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 1f, 1f);
+	}
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	public void onBlockBurn(BlockBurnEvent event) {
+		Block fire = event.getIgnitingBlock();
+		if (!fire.getWorld().equals(world) || fire.getLightFromSky() != 15 || !isWithinStorm(fire))
+			return;
+		event.setCancelled(true);
+		Location center = BlockUtils.getCenterOfBlock(fire);
+		if (DependencyUtils.isRegionProtected(center))
+			return;
+		fire.setType(Material.AIR);
+		world.playSound(center, Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 1f, 1f);
 	}
 }

@@ -29,8 +29,8 @@ import org.bukkit.util.Vector;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
+import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
-import com.github.jewishbanana.ultimatecontent.utils.EntityUtils;
 
 public class CaveIn extends Disaster {
 	

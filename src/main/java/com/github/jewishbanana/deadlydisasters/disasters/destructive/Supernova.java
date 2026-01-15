@@ -15,7 +15,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -115,7 +114,6 @@ public class Supernova extends Disaster {
 		super.start();
 		Location top = location.clone();
 		top.setY(320);
-		final World world = location.getWorld();
 		final Location crystalLoc = top.clone();
 		final AtomicBoolean isThreadReady = new AtomicBoolean();
 		scheduleTask(new BukkitRunnable() {
@@ -206,7 +204,7 @@ public class Supernova extends Disaster {
 										|| isEntityProtected(entity))
 									return;
 								if (entity instanceof LivingEntity alive)
-									EntityUtils.pureDamageEntity(alive, 1000.0, "deaths.supernova", DamageCause.BLOCK_EXPLOSION, true);
+									EntityUtils.pureDamageEntity(alive, 1000, "deaths.supernova", DamageCause.BLOCK_EXPLOSION, true, false);
 								else {
 									if (!destroyItems && entity instanceof Item)
 										return;
@@ -250,7 +248,7 @@ public class Supernova extends Disaster {
 							return;
 						path.add(direction);
 					}
-					VersionUtils.spawnFlashParticle(player, loc.clone().add(direction.clone().multiply(3.0)), 1, 1, 1, 1, .001, flashColor);
+					VersionUtils.spawnFlashParticle(player, loc.add(direction.multiply(3.0)), 1, 1, 1, 1, .001, flashColor);
 				});
 			}
 		}.runTaskTimerAsynchronously(plugin, 0, 1));

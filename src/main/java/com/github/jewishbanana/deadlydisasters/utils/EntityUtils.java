@@ -34,7 +34,7 @@ public class EntityUtils {
 	}
 	
 	@SuppressWarnings("removal")
-	private static <T extends EntityDamageEvent> boolean pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, T event) {
+	private static <T extends EntityDamageEvent> boolean pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, boolean silent, T event) {
 		if (entity == null || entity.isDead())
 			return false;
 		Bukkit.getPluginManager().callEvent(event);
@@ -53,35 +53,39 @@ public class EntityUtils {
 				entity.setMetadata(meta, plugin.getFixedMetadata());
 			entity.setHealth(0);
 			playDamageEffect(entity);
+			if (!silent && !entity.isSilent())
+				VersionUtils.playEntityHarmSound(entity);
 			if (meta != null)
 				entity.removeMetadata(meta, plugin);
 			return true;
 		}
 		entity.setHealth(Math.min(Math.max(entity.getHealth()-damage, 0), entity.getHealth()));
 		playDamageEffect(entity);
+		if (!silent && !entity.isSilent())
+			VersionUtils.playEntityHarmSound(entity);
 		if (event instanceof EntityDamageByEntityEvent damageEntityEvent && entity instanceof Mob mob && damageEntityEvent.getDamager() instanceof LivingEntity livingDamager)
 			mob.setTarget(livingDamager);
 		return true;
 	}
 	@SuppressWarnings("removal")
-	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, Entity source, @NotNull DamageCause cause, boolean ignoreTotem) {
+	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, Entity source, @NotNull DamageCause cause, boolean ignoreTotem, boolean silent) {
 		if (source != null)
-			return pureDamageEntity(entity, damage, meta, ignoreTotem, new EntityDamageByEntityEvent(source, entity, cause, damage));
-		return pureDamageEntity(entity, damage, meta, ignoreTotem, new EntityDamageEvent(entity, cause, damage));
+			return pureDamageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageByEntityEvent(source, entity, cause, damage));
+		return pureDamageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageEvent(entity, cause, damage));
 	}
 	@SuppressWarnings("removal")
 	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, Entity source, @NotNull DamageCause cause) {
 		if (source != null)
-			return pureDamageEntity(entity, damage, meta, false, new EntityDamageByEntityEvent(source, entity, cause, damage));
-		return pureDamageEntity(entity, damage, meta, false, new EntityDamageEvent(entity, cause, damage));
+			return pureDamageEntity(entity, damage, meta, false, false, new EntityDamageByEntityEvent(source, entity, cause, damage));
+		return pureDamageEntity(entity, damage, meta, false, false, new EntityDamageEvent(entity, cause, damage));
 	}
 	@SuppressWarnings("removal")
-	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, boolean ignoreTotem) {
-		return pureDamageEntity(entity, damage, meta, ignoreTotem, new EntityDamageEvent(entity, cause, damage));
+	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, boolean ignoreTotem, boolean silent) {
+		return pureDamageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageEvent(entity, cause, damage));
 	}
 	@SuppressWarnings("removal")
 	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause) {
-		return pureDamageEntity(entity, damage, meta, false, new EntityDamageEvent(entity, cause, damage));
+		return pureDamageEntity(entity, damage, meta, false, false, new EntityDamageEvent(entity, cause, damage));
 	}
 	public static void damageArmor(LivingEntity entity, double damage) {
 		int dmg = Math.max((int) (damage + 4 / 4), 1);
@@ -94,35 +98,35 @@ public class EntityUtils {
 			armor.setItemMeta(meta);
 		}
 	}
-	private static <T extends EntityDamageEvent> boolean damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, T event) {
+	private static <T extends EntityDamageEvent> boolean damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, boolean silent, T event) {
 		final double armor = entity.getAttribute(VersionUtils.getArmorAttribute()).getValue();
 		final double toughness = entity.getAttribute(VersionUtils.getArmorToughnessAttribute()).getValue();
 		final double actualDamage = damage * (1 - Math.min(20, Math.max(armor / 5, armor - damage / (2 + toughness / 4))) / 25);
-		if (pureDamageEntity(entity, actualDamage, meta, ignoreTotem, event)) {
+		if (pureDamageEntity(entity, actualDamage, meta, ignoreTotem, silent, event)) {
 			damageArmor(entity, actualDamage);
 			return true;
 		}
 		return false;
 	}
 	@SuppressWarnings("removal")
-	public static boolean damageEntity(LivingEntity entity, double damage, String meta, Entity source, @NotNull DamageCause cause, boolean ignoreTotem) {
+	public static boolean damageEntity(LivingEntity entity, double damage, String meta, Entity source, @NotNull DamageCause cause, boolean ignoreTotem, boolean silent) {
 		if (source != null)
-			return damageEntity(entity, damage, meta, ignoreTotem, new EntityDamageByEntityEvent(source, entity, cause, damage));
-		return damageEntity(entity, damage, meta, ignoreTotem, new EntityDamageEvent(entity, cause, damage));
+			return damageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageByEntityEvent(source, entity, cause, damage));
+		return damageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageEvent(entity, cause, damage));
 	}
 	@SuppressWarnings("removal")
 	public static boolean damageEntity(LivingEntity entity, double damage, String meta, Entity source, @NotNull DamageCause cause) {
 		if (source != null)
-			return damageEntity(entity, damage, meta, false, new EntityDamageByEntityEvent(source, entity, cause, damage));
-		return damageEntity(entity, damage, meta, false, new EntityDamageEvent(entity, cause, damage));
+			return damageEntity(entity, damage, meta, false, false, new EntityDamageByEntityEvent(source, entity, cause, damage));
+		return damageEntity(entity, damage, meta, false, false, new EntityDamageEvent(entity, cause, damage));
 	}
 	@SuppressWarnings("removal")
-	public static boolean damageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, boolean ignoreTotem) {
-		return damageEntity(entity, damage, meta, ignoreTotem, new EntityDamageEvent(entity, cause, damage));
+	public static boolean damageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, boolean ignoreTotem, boolean silent) {
+		return damageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageEvent(entity, cause, damage));
 	}
 	@SuppressWarnings("removal")
 	public static boolean damageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause) {
-		return damageEntity(entity, damage, meta, false, new EntityDamageEvent(entity, cause, damage));
+		return damageEntity(entity, damage, meta, false, false, new EntityDamageEvent(entity, cause, damage));
 	}
 	@SuppressWarnings("deprecation")
 	public static void playDamageEffect(LivingEntity entity) {

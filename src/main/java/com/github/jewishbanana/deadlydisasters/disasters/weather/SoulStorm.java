@@ -10,7 +10,6 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
-import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -45,7 +44,7 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 	}
 	public void init() {
 		super.init();
-		this.mobSpawnRate = (float) (0.04 * getConfigDouble("mob_spawn_multiplier") * (scale / 2.0));
+		this.mobSpawnRate = (float) (0.08 * getConfigDouble("mob_spawn_multiplier") * (scale / 2.0));
 		
 		this.effects = buildPotionEffects("entity_effects");
 		
@@ -55,53 +54,48 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 	public void start() {
 		super.start();
 		location.setY(128);
-		final World world = location.getWorld();
 		scheduleTask(new BukkitRunnable() {
 			@Override
 			public void run() {
 				for (Entity entity : entitiesInMonitorArea) {
-					if (entity instanceof Player player) {
-						if (EntityUtils.isPlayerImmune(player))
-							continue;
-						if (random.nextFloat() < mobSpawnRate) {
-							Location spawn = SpawnUtils.findMonsterSpawnLocationNoCollision(entity.getLocation(), 1, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
-							if (spawn != null) {
-								Mob mob = null;
-								switch (DependencyUtils.isUltimateContentEnabled() ? 1 : 0) {
-								default:
-								case 0:
-									mob = world.spawn(spawn, Vex.class);
-									break;
-								case 1:
-									if (random.nextInt(20) == 0)
-										mob = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(spawn, com.github.jewishbanana.ultimatecontent.entities.netherentities.SoulReaper.class).getCastedEntity();
-									else
-										mob = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(spawn, com.github.jewishbanana.ultimatecontent.entities.netherentities.LostSoul.class).getCastedEntity();
-									break;
+					if (!entity.isValid())
+						continue;
+					if (entity instanceof LivingEntity alive) {
+						if (entity instanceof Player player) {
+							if (EntityUtils.isPlayerImmune(player))
+								continue;
+							if (random.nextFloat() < mobSpawnRate) {
+								Location spawn = SpawnUtils.findMonsterSpawnLocationNoCollision(entity.getLocation(), 1, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
+								if (spawn != null) {
+									Mob mob = null;
+									switch (DependencyUtils.isUltimateContentEnabled() ? 1 : 0) {
+									default:
+									case 0:
+										mob = world.spawn(spawn, Vex.class);
+										break;
+									case 1:
+										if (random.nextInt(20) == 0)
+											mob = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(spawn, com.github.jewishbanana.ultimatecontent.entities.netherentities.SoulReaper.class).getCastedEntity();
+										else
+											mob = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(spawn, com.github.jewishbanana.ultimatecontent.entities.netherentities.LostSoul.class).getCastedEntity();
+										break;
+									}
+									addEntityToDisasterList(mob, player);
 								}
-								addEntityToDisasterList(mob, player);
 							}
 						}
-					}
-					if (entity instanceof LivingEntity alive)
 						alive.addPotionEffects(effects);
-					else if (entity instanceof Item && random.nextInt(10) == 0)
+					} else if (entity instanceof Item && random.nextInt(5) == 0)
 						entity.setVelocity(entity.getVelocity().add(new Vector(random.nextFloat(-1, 1), random.nextFloat(), random.nextFloat(-1, 1)).multiply(scale / 2.0 * currentStrength)));
 				}
-				
 				updateEntityTargets();
-				
-				time -= 5;
-				if (time <= 0)
-					stop();
 			}
-		}.runTaskTimer(plugin, 0, 5));
+		}.runTaskTimer(plugin, 0, 10));
 		
-		final double distanceSquared = disasterRange * disasterRange;
 		createAsyncEntityMonitor(Entity::isValid, 
 				(found, entities, players) -> {
 					found.forEach((entity, loc) -> {
-						if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+						if (!isWithinStorm(loc))
 							return;
 						if (isEntityProtected(entity))
 							return;
@@ -112,21 +106,25 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 		final double trueSmoothingRange = (disasterRange + smoothingRange) * (disasterRange + smoothingRange);
 		createParticleAsyncTask(player -> {
 			final ThreadLocalRandom random = ThreadLocalRandom.current();
-			final Location loc = player.getLocation();
-			if (new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()).distanceSquared(location) > distanceSquared 
-					|| random.nextFloat() > particleRate * currentStrength)
+			if (random.nextFloat() >= particleRate * currentStrength)
 				return;
-			final Location particleLoc = loc.clone().add(0, 1, 0);
-			player.spawnParticle(Particle.ASH, particleLoc, 10, 5.0, 3.0, 5.0, 1.0);
-			player.spawnParticle(Particle.WHITE_ASH, particleLoc, 10, 5.0, 3.0, 5.0, 1.0);
-			player.spawnParticle(Particle.WARPED_SPORE, particleLoc, 10, 5.0, 3.0, 5.0, 1.0);
-			player.spawnParticle(Particle.SOUL, particleLoc, 1, 5.0, 3.0, 5.0, 1.0);
+			final Location loc = player.getLocation();
+			if (!isWithinStorm(loc))
+				return;
+			final double x = loc.getX();
+			final double y = loc.getY() + 1.0;
+			final double z = loc.getZ();
+			player.spawnParticle(Particle.ASH, x, y, z, 10, 5.0, 3.0, 5.0, 1.0);
+			player.spawnParticle(Particle.WHITE_ASH, x, y, z, 10, 5.0, 3.0, 5.0, 1.0);
+			player.spawnParticle(Particle.WARPED_SPORE, x, y, z, 10, 5.0, 3.0, 5.0, 1.0);
+			player.spawnParticle(Particle.SOUL, x, y, z, 1, 5.0, 3.0, 5.0, 1.0);
 //			playSound(player, particleLoc, Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, 0.017 * currentStrength, .5);
 			if (soundTick == 0) {
-				playSound(player, particleLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_ADDITIONS, SoundCategory.WEATHER, 1, .5);
-				playSound(player, particleLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 1, .5);
+				final Location soundLoc = new Location(world, x, y, z);
+				playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_ADDITIONS, SoundCategory.WEATHER, 1, .5);
+				playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 1, .5);
 				if (random.nextInt(10) == 0)
-					playSound(player, particleLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, SoundCategory.WEATHER, 1, .75);
+					playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, SoundCategory.WEATHER, 1, .75);
 			}
 		}, pair -> {
 			final ThreadLocalRandom random = ThreadLocalRandom.current();
@@ -134,19 +132,25 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 			final double intensity = pair.getSecond();
 			final Location loc = player.getLocation();
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
-				final double actualDistance = new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location);
-				if (actualDistance > trueSmoothingRange || random.nextFloat() > intensity * 2.0 * particleRate * currentStrength)
+				if (random.nextFloat() >= intensity * 2.0 * particleRate * currentStrength)
 					continue;
-				final Location particleLoc = new Location(loc.getWorld(), block.getX() + 0.5, loc.getY() + 2.0, block.getZ() + 0.5);
-				if (actualDistance <= distanceSquared) {
-					player.spawnParticle(Particle.ASH, particleLoc, 2, 5.0, 3.0, 5.0, 1.0);
-					player.spawnParticle(Particle.WHITE_ASH, particleLoc, 2, 5.0, 3.0, 5.0, 1.0);
-					player.spawnParticle(Particle.WARPED_SPORE, particleLoc, 2, 5.0, 3.0, 5.0, 1.0);
-					player.spawnParticle(Particle.SOUL, particleLoc, 1, 5.0, 3.0, 5.0, 1.0);
+				final double centerX = block.getX() + 0.5;
+				final double centerZ = block.getZ() + 0.5;
+				final double dx = centerX - location.getX();
+				final double dz = centerZ - location.getZ();
+				final double distanceSquared = dx * dx + dz * dz;
+				if (distanceSquared > trueSmoothingRange)
+					continue;
+				final double particleY = loc.getY() + 2.0;
+				if (distanceSquared <= disasterRangeSquared) {
+					player.spawnParticle(Particle.ASH, centerX, particleY, centerZ, 2, 5.0, 3.0, 5.0, 1.0);
+					player.spawnParticle(Particle.WHITE_ASH, centerX, particleY, centerZ, 2, 5.0, 3.0, 5.0, 1.0);
+					player.spawnParticle(Particle.WARPED_SPORE, centerX, particleY, centerZ, 2, 5.0, 3.0, 5.0, 1.0);
+					player.spawnParticle(Particle.SOUL, centerX, particleY, centerZ, 1, 5.0, 3.0, 5.0, 1.0);
 				} else {
-					player.spawnParticle(Particle.ASH, particleLoc, 2, 5.0, 3.0, 5.0, 1.0);
-					player.spawnParticle(Particle.WHITE_ASH, particleLoc, 2, 5.0, 3.0, 5.0, 1.0);
-					player.spawnParticle(Particle.WARPED_SPORE, particleLoc, 2, 5.0, 3.0, 5.0, 1.0);
+					player.spawnParticle(Particle.ASH, centerX, particleY, centerZ, 2, 5.0, 3.0, 5.0, 1.0);
+					player.spawnParticle(Particle.WHITE_ASH, centerX, particleY, centerZ, 2, 5.0, 3.0, 5.0, 1.0);
+					player.spawnParticle(Particle.WARPED_SPORE, centerX, particleY, centerZ, 2, 5.0, 3.0, 5.0, 1.0);
 				}
 			}
 			if (soundTick == 0) {

@@ -3,7 +3,6 @@ package com.github.jewishbanana.deadlydisasters.disasters.weather;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,10 +17,11 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
-import org.bukkit.World;
+import org.bukkit.Tag;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Snow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.IronGolem;
@@ -31,6 +31,14 @@ import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Skeleton;
 import org.bukkit.entity.Stray;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockSpreadEvent;
+import org.bukkit.event.entity.EntityCombustByBlockEvent;
+import org.bukkit.event.entity.EntityCombustByEntityEvent;
+import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -46,8 +54,9 @@ import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
-public class Blizzard extends WeatherDisaster implements MobDisaster {
+public class Blizzard extends WeatherDisaster implements Listener, MobDisaster {
 	
 	private static final float MAX_TEMPERATURE;
 	public static final NamespacedKey frozenEntityKey;
@@ -88,9 +97,9 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 	private boolean despawnFrozenEntities;
 	private boolean leatherArmorReduction;
 	private boolean freezeTicks;
-	private float raiseSnowLevelMultiplier;
 	private int minimumYLevel;
 	
+	private float raiseSnowLevelRate;
 	private float particleRate;
 	private float soundVolume;
 	private List<PotionEffect> effects;
@@ -103,13 +112,13 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 	public void init() {
 		super.init();
 		this.damage = getConfigDouble("damage") * (scale / 2.0);
-		this.damageRate = (float) (0.25 * getConfigDouble("damage_multiplier") * (scale / 2.0));
-		this.mobSpawnRate = (float) (0.018 * getConfigDouble("mob_spawn_multiplier") * (scale / 2.0));
+		this.damageRate = (float) (0.5 * getConfigDouble("damage_multiplier") * (scale / 2.0));
+		this.mobSpawnRate = (float) (0.02 * getConfigDouble("mob_spawn_multiplier") * (scale / 1.5));
 		this.freezeEntities = getConfigBoolean("freeze_entities");
 		this.despawnFrozenEntities = getConfigBoolean("despawn_frozen_entities");
 		this.leatherArmorReduction = getConfigBoolean("leather_armor_reduction");
 		this.freezeTicks = getConfigBoolean("give_entities_freeze_ticks");
-		this.raiseSnowLevelMultiplier = (float) (0.0325 * getConfigDouble("raise_snow_layer_multiplier") * (scale / 2.0));
+		this.raiseSnowLevelRate = (float) (0.0065 * getConfigDouble("raise_snow_layer_multiplier") * (scale / 2.0));
 		this.minimumYLevel = getConfigInt("minimum_entity_Y_level");
 		
 		this.effects = buildPotionEffects("entity_effects");
@@ -128,16 +137,14 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 	}
 	public void start() {
 		super.start();
+		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 		location.setY(128);
-		final World world = location.getWorld();
-		final Set<LivingEntity> freezingEntities = new HashSet<>();
+		final List<LivingEntity> freezingEntities = new ArrayList<>();
 		scheduleTask(new BukkitRunnable() {
-			private final boolean isUCEnabled = DependencyUtils.isUltimateContentEnabled();
-			
 			@Override
 			public void run() {
 				for (Player player : playersInMonitorArea) {
-					if (EntityUtils.isPlayerImmune(player))
+					if (!player.isValid() || EntityUtils.isPlayerImmune(player))
 						continue;
 					if (random.nextFloat() < mobSpawnRate) {
 						Location spawn = SpawnUtils.findMonsterSpawnLocation(player.getLocation(), 2, SpawnUtils.MIN_SPAWN_DISTANCE_FROM_PLAYERS, 30);
@@ -147,18 +154,14 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 							default:
 							case 0:
 								mob = world.spawn(spawn, Stray.class, stray -> {
-									stray.getEquipment().setHelmet(new ItemStack(Material.CHAINMAIL_HELMET));
-									stray.getEquipment().setHelmetDropChance(0);
 									plugin.getServer().getScheduler().runTaskLater(plugin, () -> stray.getEquipment().setItemInMainHand(new ItemStack(Material.AIR)), 1);
 								});
 								break;
 							case 1:
-								if (random.nextInt(2) == 0)
+								if (random.nextInt(2) == 0 && Utils.isAreaClear(spawn, 1.8f, 2.5f))
 									mob = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(spawn, com.github.jewishbanana.ultimatecontent.entities.snowentities.Yeti.class).getCastedEntity();
 								else
 									mob = world.spawn(spawn, Stray.class, stray -> {
-										stray.getEquipment().setHelmet(new ItemStack(Material.CHAINMAIL_HELMET));
-										stray.getEquipment().setHelmetDropChance(0);
 										plugin.getServer().getScheduler().runTaskLater(plugin, () -> stray.getEquipment().setItemInMainHand(new ItemStack(Material.AIR)), 1);
 									});
 								break;
@@ -169,9 +172,10 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 				}
 				freezingEntities.clear();
 				for (Entity entity : entitiesInMonitorArea) {
+					if (!entity.isValid())
+						continue;
 					if (entity instanceof LivingEntity alive) {
-						if (EntityUtils.isEntityImmunePlayer(entity) || 
-								(isUCEnabled && entity instanceof IronGolem && com.github.jewishbanana.uiframework.entities.UIEntityManager.getEntity(entity) instanceof com.github.jewishbanana.ultimatecontent.entities.snowentities.Yeti))
+						if (EntityUtils.isEntityImmunePlayer(entity))
 							continue;
 						alive.addPotionEffects(effects);
 						freezingEntities.add(alive);
@@ -199,14 +203,9 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 					} else if (entity instanceof Item && random.nextInt(10) == 0)
 						entity.setVelocity(entity.getVelocity().add(new Vector(random.nextFloat(-1, 1), random.nextFloat(), random.nextFloat(-1, 1)).multiply(scale / 2.0 * currentStrength)));
 				}
-				
 				updateEntityTargets();
-				
-				time -= 5;
-				if (time <= 0)
-					stop();
 			}
-		}.runTaskTimer(plugin, 0, 5));
+		}.runTaskTimer(plugin, 0, 10));
 		
 		if (freezeTicks)
 			scheduleTask(new BukkitRunnable() {
@@ -219,9 +218,8 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 							entity.setFreezeTicks(Math.min(entity.getFreezeTicks() + increment, entity.getMaxFreezeTicks()));
 					});
 				}
-			}.runTaskTimer(plugin, 1, 1));
+			}.runTaskTimer(plugin, 0, 1));
 
-		final double distanceSquared = disasterRange * disasterRange;
 		final Set<UUID> playersInStorm = ConcurrentHashMap.newKeySet();
 		final List<UUID> playersIteratedOver = new ArrayList<>();
 		final Map<UUID, Integer> timeInStorm = new HashMap<>();
@@ -231,9 +229,11 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 					playersInStorm.addAll(playersIteratedOver);
 					playersIteratedOver.clear();
 					found.forEach((entity, loc) -> {
-						if (loc.getY() < minimumYLevel || !Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+						if (loc.getY() < minimumYLevel || !isWithinStorm(loc))
 							return;
 						if (isEntityProtected(entity) || !isBlockInBiome(loc.getBlock()))
+							return;
+						if (DependencyUtils.isUltimateContentEnabled() && entity instanceof IronGolem && com.github.jewishbanana.uiframework.entities.UIEntityManager.getEntity(entity) instanceof com.github.jewishbanana.ultimatecontent.entities.snowentities.Yeti)
 							return;
 						if (entity instanceof Player ? Utils.isLocationExposedToOutdoors(loc) : Utils.isLocationExposedToOutdoorsOptimized(loc, 8f, 6)) {
 							int time = timeInStorm.compute(entity.getUniqueId(), (key, oldValue) -> Math.min((oldValue != null ? oldValue : 0) + 1, 20));
@@ -264,30 +264,33 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 			double closestDistance = 0;
 			final boolean flag = playersInStorm.contains(player.getUniqueId());
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
-				if (new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location) > distanceSquared 
-						|| random.nextFloat() > particleRate * currentStrength)
+				if (random.nextFloat() > particleRate * currentStrength || !isWithinStorm(block))
 					continue;
-				Block highest = new Location(block.getWorld(), block.getX(), block.getWorld().getHighestBlockYAt(block.getX(), block.getZ()), block.getZ()).getBlock();
-				if (highest == null 
-						|| !isBlockInBiome(highest) 
-						|| highest.getY() - loc.getBlockY() > 10)
+				final Block highest = world.getHighestBlockAt(block.getX(), block.getZ());
+				if (highest == null || highest.getY() - loc.getBlockY() > 10 || !isBlockInBiome(highest))
 					continue;
-				final Location particleLoc = new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 3, block.getZ() + 0.5);
+				final double particleY = (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 3;
 				if (!flag)
-					player.spawnParticle(Particle.CLOUD, particleLoc, 2, .5, 2.5, .5, .05);
-				else if (new Location(particleLoc.getWorld(), particleLoc.getX(), loc.getY(), particleLoc.getZ()).distanceSquared(loc) > internalDistanceSquared)
-					player.spawnParticle(Particle.CLOUD, particleLoc, 5, .5, 2.5, .5, .05);
-				else
-					for (int i=0; i < 2; i++)
-						player.spawnParticle(Particle.CLOUD, particleLoc.clone().add(random.nextFloat()-.5, random.nextFloat(3f) + 5, random.nextFloat()-.5), 0, random.nextFloat(-.5f, .5f), random.nextFloat(-1.25f, -.5f), random.nextFloat(-.5f, .5f), 1);
-				double dist = highest.getLocation().distanceSquared(loc);
+					player.spawnParticle(Particle.CLOUD, block.getX() + 0.5, particleY, block.getZ() + 0.5, 2, .5, 2.5, .5, .05);
+				else {
+					final double dx = block.getX() + 0.5 - loc.getX();
+					final double dz = block.getZ() + 0.5 - loc.getZ();
+					if (dx * dx + dz * dz > internalDistanceSquared)
+						player.spawnParticle(Particle.CLOUD, block.getX() + 0.5, particleY, block.getZ() + 0.5, 5, .5, 2.5, .5, .05);
+					else
+						for (int i=0; i < 2; i++)
+							player.spawnParticle(Particle.CLOUD, block.getX() + 0.5 + random.nextFloat(-.5f, .5f), particleY + random.nextFloat(5f, 8f), block.getZ() + 0.5 + random.nextFloat(-.5f, .5f), 0, random.nextFloat(-.5f, .5f), random.nextFloat(-1.25f, -.5f), random.nextFloat(-.5f, .5f), 1);
+				}
+				final double dx = highest.getX() - loc.getX();
+				final double dz = highest.getZ() - loc.getZ();
+				final double dist = dx * dx + dz * dz;
 				if (closest == null || dist < closestDistance) {
 					closest = highest;
 					closestDistance = dist;
 				}
 			}
 			if (closest != null) {
-				playSound(player, loc.clone().add(0, 5, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength * (flag ? 1.0 : 0.15), .5);
+				playSound(player, loc.add(0, 5, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength * (flag ? 1.0 : 0.15), .5);
 				if (soundTick == 0) {
 //					Location soundLoc = BlockUtils.getCenterOfBlock(closest);
 //					playSound(player, soundLoc, Sound.AMBIENT_BASALT_DELTAS_ADDITIONS, SoundCategory.WEATHER, 1, .75);
@@ -301,87 +304,90 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 			final Player player = pair.getFirst();
 			final double intensity = pair.getSecond();
 			final Location loc = player.getLocation();
-			boolean soundFlag = false;
 			boolean aboveFlag = false;
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
-				final double actualDistance = new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location);
-				if (actualDistance > trueSmoothingRange || random.nextFloat() > intensity * 2.0 * particleRate * currentStrength)
+				if (random.nextFloat() >= intensity * 2.0 * particleRate * currentStrength)
 					continue;
-				Block highest = new Location(block.getWorld(), block.getX(), block.getWorld().getHighestBlockYAt(block.getX(), block.getZ()), block.getZ()).getBlock();
-				if (highest == null 
-						|| !isBlockInBiome(highest)
-						|| highest.getY() - loc.getBlockY() > 10)
+				final double dx = block.getX() + 0.5 - location.getX();
+				final double dz = block.getZ() + 0.5 - location.getZ();
+				final double distanceSquared = dx * dx + dz * dz;
+				if (distanceSquared > trueSmoothingRange)
+					continue;
+				final Block highest = world.getHighestBlockAt(block.getX(), block.getZ());
+				if (highest == null || highest.getY() - loc.getBlockY() > 10 || !isBlockInBiome(highest))
 					continue;
 				aboveFlag = true;
-				final Location particleLoc = new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 5, block.getZ() + 0.5);
-				if (actualDistance <= distanceSquared) {
-					player.spawnParticle(Particle.CLOUD, particleLoc, 1, .5, .7, .5, .05);
+				final double particleY = (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 5;
+				if (distanceSquared <= disasterRangeSquared) {
+					player.spawnParticle(Particle.CLOUD, block.getX() + 0.5, particleY, block.getZ() + 0.5, 1, .5, .7, .5, .05);
 				} else {
-					player.spawnParticle(Particle.CLOUD, particleLoc.clone().add(random.nextFloat()-.5, random.nextFloat(5f) + 3, random.nextFloat()-.5), 0, random.nextFloat(-.2f, .2f), random.nextFloat(-.5f, -.2f), random.nextFloat(-.2f, .2f), .05);
+					player.spawnParticle(Particle.CLOUD, block.getX() + 0.5 + random.nextFloat(-.5f, .5f), particleY + random.nextFloat(3f, 8f), block.getZ() + random.nextFloat(-.5f, .5f), 0, random.nextFloat(-.2f, .2f), random.nextFloat(-.5f, -.2f), random.nextFloat(-.2f, .2f), .05);
 				}
-				if (!soundFlag && loc.distanceSquared(BlockUtils.getCenterOfBlock(highest)) <= 25
-						|| (loc.getY() > highest.getY() && loc.distanceSquared(new Location(loc.getWorld(), highest.getX() + 0.5, loc.getY(), highest.getZ() + 0.5)) <= 25))
-					soundFlag = true;
 			}
 			if (aboveFlag && soundTick == 0) {
-				Location fixed = new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ());
+				final Location fixed = new Location(world, loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
 					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, ((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength, .5);
 				else
-					playSound(player, loc.clone().add(0, 7, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength, .5);
+					playSound(player, loc.add(0, 7, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength, .5);
 			}
 		});
 		
-		if (raiseSnowLevelMultiplier > 0)
+		if (raiseSnowLevelRate > 0)
 			getChunksInvolvedSafelyAndThen(() -> {
 				scheduleTask(new BukkitRunnable() {
+					private final BlockData snowData = Material.SNOW.createBlockData();
+					
 					@Override
 					public void run() {
 						if (currentStrength < 1.0)
 							return;
 						final ThreadLocalRandom random = ThreadLocalRandom.current();
 						involvedChunks.forEach(chunk -> {
-							if (!chunk.isLoaded())
+							if (!chunk.isLoaded() || random.nextFloat() >= raiseSnowLevelRate)
 								return;
-							if (random.nextFloat() > raiseSnowLevelMultiplier)
-								return;
-							Block block = BlockUtils.getHighestExposedBlock(location.getWorld().getHighestBlockAt(chunk.getBlock(random.nextInt(16), 0, random.nextInt(16)).getLocation()), 10);
-							if (block == null 
-									|| !isBlockInBiome(block)
-									|| new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location) > distanceSquared)
+							Block block = world.getHighestBlockAt((chunk.getX() << 4) + random.nextInt(16), (chunk.getZ() << 4) + random.nextInt(16));
+							if (block == null || !isBlockInBiome(block) || !isWithinStorm(block))
 								return;
 							if (block.getType() != Material.SNOW) {
-								if (!block.getType().isSolid())
-									return;
 								block = block.getRelative(BlockFace.UP);
-								if (block == null)
+								if (block == null || !block.canPlace(snowData) || isBlockProtected(block))
 									return;
-							}
+							} else if (block.getBlockData() instanceof Snow data && data.getLayers() >= data.getMaximumLayers() - 2)
+								return;
 							final Block toPlace = block;
-							plugin.getServer().getScheduler().runTask(plugin, () -> {
-								if (toPlace.getType() == Material.SNOW) {
-									Snow data = (Snow) toPlace.getBlockData();
-									if (data.getLayers() < data.getMaximumLayers() - 2) {
-										data.setLayers(data.getLayers() + 1);
-										placeBlock(toPlace, data, false, true);
-									}
-								} else if (toPlace.getType() == Material.AIR)
-									placeBlock(toPlace, Material.SNOW);
-							});
+							new BukkitRunnable() {
+								@Override
+								public void run() {
+									if (toPlace.getType() == Material.SNOW) {
+										Snow data = (Snow) toPlace.getBlockData();
+										if (data.getLayers() < data.getMaximumLayers() - 2) {
+											data.setLayers(data.getLayers() + 1);
+											placeBlock(toPlace, data, false, true);
+										}
+									} else if (toPlace.getType() == Material.AIR)
+										placeBlock(toPlace, Material.SNOW);
+								}
+							}.runTask(plugin);
 						});
 					}
-				}.runTaskTimerAsynchronously(plugin, 0, 5));
+				}.runTaskTimerAsynchronously(plugin, 0, 1));
 			});
 	}
+	public void clean() {
+		super.clean();
+		HandlerList.unregisterAll(this);
+	}
 	private boolean isBlockInBiome(Block block) {
-		return DependencyUtils.isRealisticSeasonsEnabled() ? DependencyUtils.isTemperatureUnderOrAtBlizzardThreshold(block.getLocation()) : block.getWorld().getTemperature(block.getX(), block.getY(), block.getZ()) <= MAX_TEMPERATURE;
+		return DependencyUtils.isRealisticSeasonsEnabled() ? DependencyUtils.isTemperatureUnderOrAtBlizzardThreshold(block.getLocation()) : world.getTemperature(block.getX(), block.getY(), block.getZ()) <= MAX_TEMPERATURE;
 	}
 	private void damageEntity(LivingEntity entity, double damage) {
 		if (entity.isInvulnerable())
 			return;
 		if (freezeEntities && !entity.isDead() && entity.getHealth() <= damage) {
 			if (entity instanceof Player p) {
-				Skeleton skeleton = entity.getWorld().spawn(entity.getLocation(), Skeleton.class, temp -> {
+				Location loc = entity.getLocation();
+				Skeleton skeleton = loc.getWorld().spawn(loc, Skeleton.class, temp -> {
 					temp.setCustomName(p.getDisplayName());
 					temp.setCustomNameVisible(false);
 					plugin.getServer().getScheduler().runTaskLater(plugin, () -> temp.getEquipment().setItemInMainHand(new ItemStack(Material.AIR)), 1);
@@ -402,7 +408,7 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 				entity.setRemoveWhenFarAway(false);
 			frozenEntities.add(entity);
 			Location loc = entity.getLocation();
-			entity.teleport(new Location(loc.getWorld(), loc.getBlockX() + 0.5, loc.getBlockY(), loc.getBlockZ() + 0.5, loc.getYaw(), loc.getPitch()));
+			entity.teleport(new Location(world, loc.getBlockX() + 0.5, loc.getBlockY(), loc.getBlockZ() + 0.5, loc.getYaw(), loc.getPitch()));
 			Block block = loc.getBlock();
 			for (int i=0; i < (int) Math.ceil(entity.getHeight()); i++) {
 				if (block == null)
@@ -412,7 +418,12 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 			}
 			return;
 		}
-		EntityUtils.pureDamageEntity(entity, damage, "deaths.blizzard", DamageCause.FREEZE);
+		if (EntityUtils.pureDamageEntity(entity, damage, "deaths.blizzard", DamageCause.FREEZE, false, true) && !entity.isSilent()) {
+			if (entity instanceof Player)
+				entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 1f, random.nextFloat(0.8f, 1.2f));
+			else
+				VersionUtils.playEntityHarmSound(entity, 1f, random.nextFloat(0.8f, 1.2f));
+		}
 	}
 	protected String getConfigPath() {
 		return "disasters.weather.blizzard";
@@ -421,4 +432,21 @@ public class Blizzard extends WeatherDisaster implements MobDisaster {
 		return EnumSet.of(Environment.NETHER, Environment.THE_END);
 	}
 	
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	public void onEntityCombust(EntityCombustEvent event) {
+		if (event instanceof EntityCombustByBlockEvent || event instanceof EntityCombustByEntityEvent)
+			return;
+		final Entity entity = event.getEntity();
+		if (entity.getWorld().equals(world) && isWithinStorm(entity.getLocation()))
+			event.setCancelled(true);
+	}
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	public void onFireSpread(BlockSpreadEvent event) {
+		if (!Tag.FIRE.isTagged(event.getNewState().getType()))
+			return;
+		Block block = event.getBlock();
+		if (!block.getWorld().equals(world) || block.getLightFromSky() != 15 || !isWithinStorm(block))
+			return;
+		event.setCancelled(true);
+	}
 }

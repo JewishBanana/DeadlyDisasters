@@ -126,7 +126,19 @@ public class DataUtils {
 				plugin.getConfig().set("regeneration.force_regen_blocks_per_tick", null);
 				plugin.saveConfig();
 				plugin.reloadConfig();
-				
+			} catch (Exception e) {
+				Utils.sendExceptionLog(e);
+			}
+			for (File f : folder.listFiles())
+				try {
+					FileConfiguration file = YamlConfiguration.loadConfiguration(f);
+					if (file.getInt("disasters.weather.acid_storm.entity_effects.poison.ticks") == 10)
+						file.set("disasters.weather.acid_storm.entity_effects.poison.ticks", 11);
+					file.save(f);
+				} catch (Exception e) {
+					Utils.sendExceptionLog(e);
+				}
+			try {
 				File blocksFile = new File(plugin.getDataFolder().getAbsolutePath(), "blocks.yml");
 				FileConfiguration blocksConfig = YamlConfiguration.loadConfiguration(blocksFile);
 				if (blocksConfig.getDouble("stones.polished_granite") == 0.3)

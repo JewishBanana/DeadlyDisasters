@@ -167,7 +167,10 @@ public class Purge extends Disaster implements MobDisaster {
 							entity.remove();
 							continue;
 						}
-						addEntityToDisasterList(entity, player);
+						if (entity instanceof Mob mob)
+							addEntityToDisasterList(mob, player);
+						else
+							addEntityToDisasterList(entity);
 						entity.setMetadata(purgeMobMetadata, plugin.getFixedMetadata());
 						if (entity instanceof Mob mob)
 							mob.setTarget(player);

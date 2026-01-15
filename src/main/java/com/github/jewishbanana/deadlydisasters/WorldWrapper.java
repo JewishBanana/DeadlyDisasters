@@ -55,7 +55,8 @@ public class WorldWrapper {
 				DisasterRegistry.getRegistry("soul_storm"),
 				DisasterRegistry.getRegistry("monsoon"),
 				DisasterRegistry.getRegistry("meteor_shower"),
-				DisasterRegistry.getRegistry("end_storm")
+				DisasterRegistry.getRegistry("end_storm"),
+				DisasterRegistry.getRegistry("solar_storm")
 				));
 		disasterCategory.put("MOB_DISASTERS", Set.of(
 				DisasterRegistry.getRegistry("purge")

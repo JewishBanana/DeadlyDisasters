@@ -27,8 +27,8 @@ import org.bukkit.util.Vector;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
+import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
-import com.github.jewishbanana.ultimatecontent.utils.EntityUtils;
 
 public class WaterGeyser extends Disaster {
 	
@@ -221,6 +221,8 @@ public class WaterGeyser extends Disaster {
 				}
 			}.runTaskTimer(plugin, 0, 1));
 			scheduleTask(new BukkitRunnable() {
+				private int damageTick;
+				
 				@Override
 				public void run() {
 					if (isFinished) {
@@ -235,9 +237,11 @@ public class WaterGeyser extends Disaster {
 						if (loc.distanceSquared(location) > innerDistanceFalloff || loc.getBlock().getType() != material)
 							continue;
 						e.setVelocity(new Vector(0, 3, 0));
-						if (e instanceof LivingEntity alive && !alive.hasPotionEffect(PotionEffectType.FIRE_RESISTANCE) && !EntityUtils.isEntityImmunePlayer(e))
+						if (damageTick == 0 && e instanceof LivingEntity alive && !alive.hasPotionEffect(PotionEffectType.FIRE_RESISTANCE) && !EntityUtils.isEntityImmunePlayer(e))
 							EntityUtils.pureDamageEntity(alive, damage, "deaths.water_geyser", DamageCause.LAVA);
 					}
+					if (++damageTick == 10)
+						damageTick = 0;
 				}
 			}.runTaskTimer(plugin, 0, 1));
 		}

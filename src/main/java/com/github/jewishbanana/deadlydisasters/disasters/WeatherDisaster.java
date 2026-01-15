@@ -20,6 +20,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.WeatherType;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
@@ -51,6 +52,7 @@ public abstract class WeatherDisaster extends Disaster {
 	protected float particleRenderDistance;
 	protected int soundTickRate;
 	protected int soundTick;
+	protected double disasterRangeSquared;
 	
 	public final Set<Chunk> involvedChunks = ConcurrentHashMap.newKeySet();
 
@@ -70,6 +72,7 @@ public abstract class WeatherDisaster extends Disaster {
 			this.particleRenderDistance = (float) getConfigOverrideDouble("particle_render_distance");
 		}
 		this.weatherEffectsRange = (float) (disasterRange + (smoothingRange / 2.0));
+		this.disasterRangeSquared = disasterRange * disasterRange;
 	}
 	public void start() {
 		super.start();
@@ -78,6 +81,8 @@ public abstract class WeatherDisaster extends Disaster {
 		scheduleTask(new BukkitRunnable() {
 			@Override
 			public void run() {
+				if (time-- <= 0)
+					stop();
 				if (time <= 200) {
 					currentStrength = Utils.clamp(currentStrength - 0.005, 0.0, 1.0);
 					return;
@@ -212,6 +217,16 @@ public abstract class WeatherDisaster extends Disaster {
 	}
 	public void getChunksInvolvedSafelyAndThen(Runnable function) {
 		getChunksInvolvedSafelyAndThen(function, false);
+	}
+	public boolean isWithinStorm(Location loc) {
+		final double dx = loc.getX() - location.getX();
+		final double dz = loc.getZ() - location.getZ();
+		return dx * dx + dz * dz <= disasterRangeSquared;
+	}
+	public boolean isWithinStorm(Block block) {
+		final double dx = block.getX() + 0.5 - location.getX();
+		final double dz = block.getZ() + 0.5 - location.getZ();
+		return dx * dx + dz * dz <= disasterRangeSquared;
 	}
 	protected int getConfigOverrideInt(String path) {
 		if (getWorldLink().getConfig().contains(getConfigPath()+'.'+path, true))

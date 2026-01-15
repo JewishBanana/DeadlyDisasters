@@ -415,7 +415,7 @@ disasters:
                     ticks: 20
                     level: 1
                 poison:
-                    ticks: 10
+                    ticks: 11
                     level: 2
             # Control block changes to blocks that are exposed to acid rain. The format is as follows: "BLOCK_MATERIAL: NEW_BLOCK_MATERIAL"
             # Block changes are done at random, to control how many blocks get changed modify the setting "block_damage_rate" multiplier. Bukkit and custom tags can be used here too!
@@ -608,10 +608,10 @@ disasters:
         solar_storm:
             # If players should have their in-game time set to dawn during the solar storm.
             set_to_dawn: true
-            # The chance from 0-100 in percent, of entities that are near heat sources and exposed to solar storms catching on fire. This value scales with the scale factor.
+            # The chance from 0-100 in percent, of entities that are near heat sources and exposed to solar storms catching on fire every storm tick. This value scales with the scale factor.
             entity_ignite_chance: 5.0
-            # The chance from 0-100 in percent, of burnable blocks that are exposed to solar storms catching on fire. This value scales with the scale factor.
-            block_ignite_chance: 2.5
+            # The multiplier for burnable blocks that are exposed to solar storms catching on fire. This value scales with the scale factor.
+            block_ignite_multiplier: 1.0
             # The multiplier for how much falling fire spawns near players in solar storms.
             fire_spawn_multiplier: 1.0
             # The size in blocks of explosions from falling fire balls.

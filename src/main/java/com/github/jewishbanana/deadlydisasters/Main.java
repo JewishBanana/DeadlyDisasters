@@ -58,6 +58,8 @@ public class Main extends JavaPlugin {
 	 * - Regen bug, if block is broken and player places new block on spot, if that next block gets broken it does not regen as first block occupies map. Create second map to store excess blocks and drop them according after regen.
 	 * - Regen bug, potential dupe block drops when regenerating. Actual block items dropping.
 	 * - Monsoon, dripping water is floating when on blocks like upside down vines.
+	 * - Monsoon dirt paths were not regenerating when another monsoon is called on a regenerating monsoon.
+	 * - Fix end storms picking up crates. Add config option to disable block tiles and make them by default drop all items and empty.
 	 * 
 	 * Before Update:
 	 * - Verify disaster categories in WorldWrapper.java

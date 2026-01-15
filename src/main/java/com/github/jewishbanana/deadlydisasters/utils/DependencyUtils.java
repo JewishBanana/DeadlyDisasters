@@ -40,6 +40,9 @@ import com.github.jewishbanana.uiframework.UIFramework;
 
 public class DependencyUtils {
 
+	private static final boolean isSpigot;
+	private static final boolean isPaper;
+	
 	private static boolean uif;
 	private static UIFHook uifHook;
 	private static UCHook ucHook;
@@ -54,6 +57,20 @@ public class DependencyUtils {
 	
 	private static final String UIFrameworkVersion = "3.0.0";
 	private static final String UltimateContentVersion = "2.0.0";
+	static {
+		boolean spigotCheck = false;
+		try {
+	        Class.forName("org.bukkit.entity.Player$Spigot");
+	        spigotCheck = true;
+	    } catch (Throwable tr) {}
+		isSpigot = spigotCheck;
+		boolean paperCheck = false;
+		try {
+	        Class.forName("com.destroystokyo.paper.entity.ai.Goal");
+	        paperCheck = true;
+	    } catch (ClassNotFoundException e) {}
+		isPaper = paperCheck;
+	}
 	
 	public static void init(Main plugin) {
 		PluginManager pm = plugin.getServer().getPluginManager();
@@ -212,6 +229,12 @@ public class DependencyUtils {
 		} catch (NumberFormatException ex) {
 			throw new NumberFormatException("The version string you supplied '"+toCheckFor+"' is not a valid version string! Format must be as follows: '1.2.3' or '1.2' or '1'!");
 		}
+	}
+	public static boolean isSpigotServer() {
+		return isSpigot;
+	}
+	public static boolean isPaperServer() {
+		return isPaper;
 	}
 	public static boolean isUIFrameworkEnabled() {
 		return uif;

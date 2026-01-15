@@ -20,7 +20,6 @@ import org.bukkit.Material;
 import org.bukkit.Particle.DustOptions;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
-import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -65,12 +64,12 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 	private int minHeight;
 	private boolean setDawn;
 	private float entityIgniteChance;
-	private float blockIgniteChance;
 	private int fireSpawnRate;
 	private float fireballExplosionSize;
 	private float mobSpawnRate;
 	private float blockChangeRate;
 	
+	private float blockIgniteRate;
 	private float particleRate;
 	private List<PotionEffect> effects;
 	private Map<Material, Material[]> blockChanges;
@@ -89,11 +88,11 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 		super.init();
 		this.setDawn = getConfigBoolean("set_to_dawn");
 		this.entityIgniteChance = (float) (getConfigDouble("entity_ignite_chance") / 100.0 * scale);
-		this.blockIgniteChance = (float) (getConfigDouble("block_ignite_chance") / 100.0 * scale);
+		this.blockIgniteRate = (float) (0.005 * getConfigDouble("block_ignite_multiplier") * scale);
 		this.fireSpawnRate = (int) (2.5 * getConfigDouble("fire_spawn_multiplier") * scale);
 		this.fireballExplosionSize = (float) getConfigDouble("fireball_explosion_size");
-		this.mobSpawnRate = (float) (0.0325 * getConfigDouble("mob_spawn_multiplier") * (scale / 2.0));
-		this.blockChangeRate = (float) (0.0025 * getConfigDouble("block_damage_rate") * scale);
+		this.mobSpawnRate = (float) (0.02 * getConfigDouble("mob_spawn_multiplier") * (scale / 1.5));
+		this.blockChangeRate = (float) (0.0005 * getConfigDouble("block_damage_rate") * scale);
 		
 		this.effects = buildPotionEffects("entity_effects");
 		this.blockChanges = buildBlockChanges("block_changes");
@@ -103,10 +102,11 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 		this.soundTickRate = 30;
 	}
 	public boolean canStart() {
-		if (getLocation().getBlockY() < minHeight)
+		final Block block = getLocation().getBlock();
+		if (block.getY() < minHeight)
 			return false;
 		// Dry only climate
-		if (!isBlockInClimate(getLocation().getBlock()))
+		if (!isBlockInClimate(block))
 			return false;
 		return super.canStart();
 	}
@@ -114,7 +114,6 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 		super.start();
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 		location.setY(128);
-		final World world = location.getWorld();
 		this.currentTime = world.getTime();
 		direction = Utils.getRandomizedVector(1f, 0, 1f);
 		scheduleTask(new BukkitRunnable() {
@@ -125,7 +124,7 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 			@Override
 			public void run() {
 				for (Player player : playersInMonitorArea) {
-					if (EntityUtils.isPlayerImmune(player))
+					if (!player.isValid() || EntityUtils.isPlayerImmune(player))
 						continue;
 					if (DependencyUtils.isUltimateContentEnabled() && random.nextFloat() < mobSpawnRate) {
 						for (int i=0; i < 5; i++) {
@@ -142,10 +141,10 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 					}
 				}
 				for (Entity entity : entitiesInMonitorArea) {
+					if (!entity.isValid())
+						continue;
 					if (entity instanceof LivingEntity alive) {
 						if (EntityUtils.isEntityImmunePlayer(entity))
-							continue;
-						if (DependencyUtils.isUltimateContentEnabled() && entity instanceof Phantom && com.github.jewishbanana.uiframework.entities.UIEntityManager.getEntity(entity) instanceof com.github.jewishbanana.ultimatecontent.entities.netherentities.FirePhantom)
 							continue;
 						alive.addPotionEffects(effects);
 					}
@@ -217,13 +216,9 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 					currentTime += 500;
 				else if (currentTime > 14000)
 					currentTime -= 500;
-				time -= 10;
-				if (time <= 0)
-					stop();
 			}
 		}.runTaskTimer(plugin, 0, 10));
 		
-		final double distanceSquared = disasterRange * disasterRange;
 		final Set<UUID> playersInStorm = ConcurrentHashMap.newKeySet();
 		final List<UUID> playersIteratedOver = new ArrayList<>();
 		final Map<UUID, Integer> timeInStorm = new HashMap<>();
@@ -233,9 +228,11 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 					playersInStorm.addAll(playersIteratedOver);
 					playersIteratedOver.clear();
 					found.forEach((entity, loc) -> {
-						if (!Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, distanceSquared))
+						if (!isWithinStorm(loc))
 							return;
 						if (isEntityProtected(entity) || !isBlockInClimate(loc.getBlock()))
+							return;
+						if (DependencyUtils.isUltimateContentEnabled() && entity instanceof Phantom && com.github.jewishbanana.uiframework.entities.UIEntityManager.getEntity(entity) instanceof com.github.jewishbanana.ultimatecontent.entities.netherentities.FirePhantom)
 							return;
 						if (entity instanceof Player ? Utils.isLocationExposedToOutdoors(loc) : Utils.isLocationExposedToOutdoorsOptimized(loc, 8f, 6)) {
 							int time = timeInStorm.compute(entity.getUniqueId(), (key, oldValue) -> Math.min((oldValue != null ? oldValue : 0) + 1, 20));
@@ -266,29 +263,30 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 			double closestDistance = 0;
 			final boolean flag = playersInStorm.contains(player.getUniqueId());
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
-				if (new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location) > distanceSquared 
-						|| random.nextFloat() > particleRate * currentStrength)
+				if (random.nextFloat() >= particleRate * currentStrength || !isWithinStorm(block))
 					continue;
-				Block highest = new Location(block.getWorld(), block.getX(), block.getWorld().getHighestBlockYAt(block.getX(), block.getZ()), block.getZ()).getBlock();
-				if (highest == null 
-						|| !isBlockInClimate(highest)
-						|| highest.getY() - loc.getBlockY() > 10)
+				final Block highest = world.getHighestBlockAt(block.getX(), block.getZ());
+				if (highest == null || highest.getY() - loc.getBlockY() > 10 || !isBlockInClimate(highest))
 					continue;
-				final Location particleLoc = new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 3, block.getZ() + 0.5);
-				player.spawnParticle(VersionUtils.getRedstoneDust(), particleLoc, 1, .5, 3, .5, 1, dust);
+				final double centerX = block.getX() + 0.5;
+				final double centerZ = block.getZ() + 0.5;
+				final double particleY = (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 3;
+				player.spawnParticle(VersionUtils.getRedstoneDust(), centerX, particleY, centerZ, 1, .5, 3, .5, 1, dust);
 				if (!flag)
 					for (int i=0; i < 2; i++)
-						player.spawnParticle(VersionUtils.getNormalSmoke(), particleLoc.getX() + random.nextFloat(-.5f, .5f), particleLoc.getY() + random.nextFloat(-5f, 2f), particleLoc.getZ() + random.nextFloat(-.5f, .5f), 0, random.nextFloat(-.2f, .2f), random.nextFloat(-.2f, .2f), random.nextFloat(-.2f, .2f), 0.01);
-				double dist = highest.getLocation().distanceSquared(loc);
+						player.spawnParticle(VersionUtils.getNormalSmoke(),centerX + random.nextFloat(-.5f, .5f), particleY + random.nextFloat(-5f, 2f), centerZ + random.nextFloat(-.5f, .5f), 0, random.nextFloat(-.2f, .2f), random.nextFloat(-.2f, .2f), random.nextFloat(-.2f, .2f), 0.01);
+				final double dx = highest.getX() - loc.getX();
+				final double dz = highest.getZ() - loc.getZ();
+				final double dist = dx * dx + dz * dz;
 				if (closest == null || dist < closestDistance) {
 					closest = highest;
 					closestDistance = dist;
 				}
 			}
 			if (closest != null) {
-				playSound(player, loc.clone().add(0, 3, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, 0.01 * currentStrength * (flag ? 1.0 : 0.15), .5);
+				playSound(player, loc.add(0, 3, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, 0.01 * currentStrength * (flag ? 1.0 : 0.15), .5);
 				if (soundTick == 0) {
-					Location soundLoc = BlockUtils.getCenterOfBlock(closest);
+					final Location soundLoc = BlockUtils.getCenterOfBlock(closest);
 					playSound(player, soundLoc, Sound.AMBIENT_BASALT_DELTAS_ADDITIONS, SoundCategory.WEATHER, 0.3 * (flag ? 1.0 : 0.15), .75);
 					playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 0.3 * (flag ? 1.0 : 0.15), .5);
 				}
@@ -303,30 +301,40 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 			boolean soundFlag = false;
 			boolean aboveFlag = false;
 			for (Block block : BlockUtils.getBlocksInCircleRadius(loc, particleRenderDistance)) {
-				final double actualDistance = new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location);
-				if (actualDistance > trueSmoothingRange || random.nextFloat() > intensity * 2.0 * particleRate * currentStrength)
+				if (random.nextFloat() >= intensity * 2.0 * particleRate * currentStrength)
 					continue;
-				Block highest = new Location(block.getWorld(), block.getX(), block.getWorld().getHighestBlockYAt(block.getX(), block.getZ()), block.getZ()).getBlock();
-				if (highest == null 
-						|| !isBlockInClimate(highest)
-						|| highest.getY() - loc.getBlockY() > 10)
+				final double dx = block.getX() + 0.5 - location.getX();
+				final double dz = block.getZ() + 0.5 - location.getZ();
+				final double distanceSquared = dx * dx + dz * dz;
+				if (distanceSquared > trueSmoothingRange)
+					continue;
+				final Block highest = world.getHighestBlockAt(block.getX(), block.getZ());
+				if (highest == null || highest.getY() - loc.getBlockY() > 10 || !isBlockInClimate(highest))
 					continue;
 				aboveFlag = true;
-				if (actualDistance <= distanceSquared) {
-					final Location particleLoc = new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 5, block.getZ() + 0.5);
-					player.spawnParticle(VersionUtils.getRedstoneDust(), particleLoc, 2, .5, 3, .5, 1, dust);
+				final double centerX = block.getX() + 0.5;
+				final double centerZ = block.getZ() + 0.5;
+				final double particleY = (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 5;
+				if (distanceSquared <= disasterRangeSquared) {
+					player.spawnParticle(VersionUtils.getRedstoneDust(), centerX, particleY, centerZ, 2, .5, 3, .5, 1, dust);
 					for (int i=0; i < 2; i++)
-						player.spawnParticle(VersionUtils.getNormalSmoke(), particleLoc.getX() + random.nextFloat(-.5f, .5f), particleLoc.getY() + random.nextFloat(-5f, 2f), particleLoc.getZ() + random.nextFloat(-.5f, .5f), 0, random.nextFloat(-.2f, .2f), random.nextFloat(-.2f, .2f), random.nextFloat(-.2f, .2f), 1);
+						player.spawnParticle(VersionUtils.getNormalSmoke(), centerX + random.nextFloat(-.5f, .5f), particleY + random.nextFloat(-5f, 2f), centerZ + random.nextFloat(-.5f, .5f), 0, random.nextFloat(-.2f, .2f), random.nextFloat(-.2f, .2f), random.nextFloat(-.2f, .2f), 1);
 				} else {
-					final Location particleLoc = new Location(loc.getWorld(), block.getX() + 0.5, (loc.getY() > highest.getY() ? loc.getY() : highest.getY() + 3) + 5, block.getZ() + 0.5);
-					player.spawnParticle(VersionUtils.getRedstoneDust(), particleLoc, 1, .5, 3, .5, 1, dust);
+					player.spawnParticle(VersionUtils.getRedstoneDust(), centerX, particleY, centerZ, 1, .5, 3, .5, 1, dust);
 				}
-				if (!soundFlag && loc.distanceSquared(BlockUtils.getCenterOfBlock(highest)) <= 25
-						|| (loc.getY() > highest.getY() && loc.distanceSquared(new Location(loc.getWorld(), highest.getX() + 0.5, loc.getY(), highest.getZ() + 0.5)) <= 25))
-					soundFlag = true;
+				if (!soundFlag) {
+					if (loc.distanceSquared(BlockUtils.getCenterOfBlock(highest)) <= 25)
+						soundFlag = true;
+					else if (loc.getY() > highest.getY()) {
+						final double bx = highest.getX() + 0.5 - loc.getX();
+						final double bz = highest.getZ() + 0.5 - loc.getZ();
+						if (bx * bx + bz * bz <= 25)
+							soundFlag = true;
+					}
+				}
 			}
 			if (aboveFlag && soundTick == 0) {
-				Location fixed = new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ());
+				final Location fixed = new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
 					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, ((0.02 / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength, .5);
 				else
@@ -349,42 +357,44 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 					involvedChunks.forEach(chunk -> {
 						if (!chunk.isLoaded())
 							return;
-						Block block = BlockUtils.getHighestExposedBlock(location.getWorld().getHighestBlockAt(chunk.getBlock(random.nextInt(16), 0, random.nextInt(16)).getLocation()), 10);
-						if (block == null 
-								|| !isBlockInClimate(block)
-								|| new Location(block.getWorld(), block.getX() + 0.5, location.getY(), block.getZ() + 0.5).distanceSquared(location) > distanceSquared)
+						final Block block = world.getHighestBlockAt((chunk.getX() << 4) + random.nextInt(16), (chunk.getZ() << 4) + random.nextInt(16));
+						if (block == null || !isBlockInClimate(block) || !isWithinStorm(block))
 							return;
-						if (block.getType().isBurnable() && random.nextFloat() < blockIgniteChance) {
-							Block above = block.getRelative(BlockFace.UP);
+						if (random.nextFloat() < blockIgniteRate && block.getType().isBurnable()) {
+							final Block above = block.getRelative(BlockFace.UP);
 							if (above != null && above.getType() == Material.AIR)
 								new BukkitRunnable() {
 									@Override
 									public void run() {
-										if (time <= 0 || above.getType() != Material.AIR)
+										if (above.getType() != Material.AIR)
 											return;
 										placeBlock(above, Material.FIRE);
 									}
 								}.runTask(plugin);
 						}
-						if (random.nextFloat() > blockChangeRate)
+						if (random.nextFloat() >= blockChangeRate)
 							return;
-						Material[] materials = blockChanges.get(block.getType());
+						final Material type = block.getType();
+						final Material[] materials = blockChanges.get(type);
 						if (materials != null && materials.length != 0) {
-							Material change = materials[random.nextInt(materials.length)];
+							final Material change = materials[random.nextInt(materials.length)];
 							new BukkitRunnable() {
 								@Override
 								public void run() {
+									if (block.getType() != type)
+										return;
 									replaceBlockWithProperties(block, change);
 								}
 							}.runTask(plugin);
 						}
 					});
 				}
-			}.runTaskTimerAsynchronously(plugin, 0, 10));
+			}.runTaskTimerAsynchronously(plugin, 0, 1));
 		});
 	}
 	public void clean() {
 		super.clean();
+		HandlerList.unregisterAll(this);
 		fireballs.forEach(uuid -> {
 			Entity entity = Bukkit.getEntity(uuid);
 			if (entity != null)
@@ -417,7 +427,6 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 					}
 				}
 			}.runTaskTimer(plugin, 0, 10);
-		HandlerList.unregisterAll(this);
 		weatherPlayers.forEach(uuid -> {
 			Player player = Bukkit.getPlayer(uuid);
 			if (player == null || !player.isOnline())
@@ -428,7 +437,7 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 		});
 	}
 	public boolean isBlockInClimate(Block block) {
-		return block.getWorld().getTemperature(block.getX(), block.getY(), block.getZ()) >= MIN_TEMPERATURE && block.getWorld().getHumidity(block.getX(), block.getY(), block.getZ()) <= MAX_HUMIDITY;
+		return world.getTemperature(block.getX(), block.getY(), block.getZ()) >= MIN_TEMPERATURE && world.getHumidity(block.getX(), block.getY(), block.getZ()) <= MAX_HUMIDITY;
 	}
 	public void addPlayerToWeather(Player player) {
 		super.addPlayerToWeather(player);

@@ -86,6 +86,7 @@ public abstract class Disaster {
 	protected int level;
 	protected double disasterRange;
 	protected int startDelayTicks;
+	protected World world;
 
 	public Disaster(@NotNull Location location, @Nullable Player player, int level) {
 		this.location = location;
@@ -95,6 +96,7 @@ public abstract class Disaster {
 		this.worldLink = WorldWrapper.getWorldWrapper(location.getWorld());
 	}
 	public void init() {
+		this.world = location.getWorld();
 		if (getConfigPath() != null) {
 			this.volume = (float) getConfigOverrideDouble("volume");
 			this.startDelayTicks = (int) (getConfigOverrideDouble("start_delay") * 20.0);
@@ -263,20 +265,13 @@ public abstract class Disaster {
 		List<Block> copiedSet = new ArrayList<>(modifiedBlocks);
 		if (reverseRegenerationOrder())
 			Collections.reverse(copiedSet);
-//		List<Block> copiedSet = new ArrayList<>(modifiedBlocks);
-//		if (reverseRegenerationOrder()) {
-//			List<Block> list = new ArrayList<>(copiedSet);
-//			Collections.reverse(list);
-//			copiedSet = new ArrayList<>(list);
-//		}
 		if (reason != DisasterStopReason.SERVER_CLOSING) {
-			BlockRegenHandler.printMaps();
+//			BlockRegenHandler.printMaps();
 			final double regenRate = getRegenTickRate() * (getConfigPath() == null ? 1.0 : getConfigOverrideDouble("regen_rate"));
 			if (regenRate > 0)
 				regeneratingDisasters.put(this, this.new RegeneratingTask(this, copiedSet, regenRate, (int) (worldLink.getConfigDouble("regeneration.regeneration_delay") * 20)));
 			modifiedBlocks.clear();
 		} else {
-//			modifiedBlocks = copiedSet;
 			modifiedBlocks.clear();
 			modifiedBlocks.addAll(copiedSet);
 		}
@@ -446,7 +441,7 @@ public abstract class Disaster {
 		final World world = location.getWorld();
 		final Map<Entity, Location> foundEntities = new HashMap<>();
 		for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, findConditions))
-			foundEntities.put(entity, entity.getLocation().add(0, entity.getHeight() / 2.0, 0));
+			foundEntities.put(entity, entity.getLocation());
 		final List<Player> players = new ArrayList<>(foundEntities.size());
 		new BukkitRunnable() {
 			@Override

@@ -9,8 +9,12 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Registry;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.potion.PotionEffectType;
@@ -60,6 +64,8 @@ public class VersionUtils {
 	private static final Attribute followRangeAttribute;
 	private static final Attribute armorAttribute;
 	private static final Attribute armorToughnessAttribute;
+	
+	private static final boolean isVersion192OrAbove;
 	
 	static {
 		serverVersion = Arrays.stream(Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf('-')).split("\\.")).map(e -> Integer.parseInt(e)).toArray(Integer[]::new);
@@ -147,6 +153,8 @@ public class VersionUtils {
 			armorAttribute = Attribute.valueOf("GENERIC_ARMOR");
 			armorToughnessAttribute = Attribute.valueOf("GENERIC_ARMOR_TOUGHNESS");
 		}
+		
+		isVersion192OrAbove = isMCVersionOrAbove("1.19.2");
 	}
 	public static boolean isMCVersionOrAbove(String version) {
 		try {
@@ -172,11 +180,52 @@ public class VersionUtils {
 	public static void spawnDragonBreathParticle(Player player, Location location, int count, double offX, double offY, double offZ, double speed, float data) {
 		player.spawnParticle(Particle.DRAGON_BREATH, location, count, offX, offY, offZ, speed, legacyDragonParticles ? null : data);
 	}
+	public static void spawnDragonBreathParticle(Player player, double x, double y, double z, int count, double offX, double offY, double offZ, double speed, float data) {
+		player.spawnParticle(Particle.DRAGON_BREATH, x, y, z, count, offX, offY, offZ, speed, legacyDragonParticles ? null : data);
+	}
 	public static void spawnFlashParticle(Location location, int count, double offX, double offY, double offZ, double speed, Color data) {
 		location.getWorld().spawnParticle(Particle.FLASH, location, count, offX, offY, offZ, speed, legacyFlashParticles ? null : data);
 	}
 	public static void spawnFlashParticle(Player player, Location location, int count, double offX, double offY, double offZ, double speed, Color data) {
 		player.spawnParticle(Particle.FLASH, location, count, offX, offY, offZ, speed, legacyFlashParticles ? null : data);
+	}
+	public static enum EntitySound {
+		HURT_SOUND,
+		DEATH_SOUND;
+	}
+	public static void playEntitySound(LivingEntity entity, Location location, EntitySound sound, float volume, float pitch) {
+		if (!isVersion192OrAbove)
+			return;
+		switch (sound) {
+		case HURT_SOUND -> location.getWorld().playSound(location, entity.getHurtSound(), volume, pitch);
+		case DEATH_SOUND -> location.getWorld().playSound(location, entity.getDeathSound(), volume, pitch);
+		}
+	}
+	public static void playEntitySound(LivingEntity entity, EntitySound sound, float volume, float pitch) {
+		playEntitySound(entity, entity.getLocation(), sound, volume, pitch);
+	}
+	public static void playEntityHarmSound(LivingEntity entity, Location location, float volume, float pitch) {
+		if (entity instanceof Player) {
+			if (entity.isDead())
+				location.getWorld().playSound(location, Sound.ENTITY_PLAYER_DEATH, SoundCategory.PLAYERS, volume, pitch);
+			else
+				location.getWorld().playSound(location, Sound.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, volume, pitch);
+		}
+		if (!isVersion192OrAbove)
+			return;
+		if (entity.isDead())
+			location.getWorld().playSound(location, entity.getDeathSound(), entity instanceof Monster ? SoundCategory.HOSTILE : SoundCategory.NEUTRAL, volume, pitch);
+		else
+			location.getWorld().playSound(location, entity.getHurtSound(), entity instanceof Monster ? SoundCategory.HOSTILE : SoundCategory.NEUTRAL, volume, pitch);
+	}
+	public static void playEntityHarmSound(LivingEntity entity, float volume, float pitch) {
+		playEntityHarmSound(entity, entity.getLocation(), volume, pitch);
+	}
+	public static void playEntityHarmSound(LivingEntity entity, Location location) {
+		playEntityHarmSound(entity, location, 1, Utils.getRandomGenerator().nextFloat(0.8f, 1.2f));
+	}
+	public static void playEntityHarmSound(LivingEntity entity) {
+		playEntityHarmSound(entity, entity.getLocation(), 1, Utils.getRandomGenerator().nextFloat(0.8f, 1.2f));
 	}
 	
 	public static Enchantment getSharpness() {
