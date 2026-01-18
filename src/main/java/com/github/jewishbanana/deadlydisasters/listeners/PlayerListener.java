@@ -23,7 +23,7 @@ import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class PlayerListener implements Listener	{
 	
-	public static boolean notifyAdminOfUpdate;
+	public static String adminUpdateMessage;
 	
 	private final Main plugin;
 	private final Set<UUID> warnForKick = new HashSet<>();
@@ -41,8 +41,8 @@ public class PlayerListener implements Listener	{
 			@Override
 			public void run() {
 				sendWorldForecast(player);
-				if (notifyAdminOfUpdate && player.isOp() && !updateNotified.contains(player.getUniqueId())) {
-					player.sendMessage(Utils.convertString(Utils.prefix+DataUtils.getLanguageString("messages.internal.update_notify_player")));
+				if (adminUpdateMessage != null && player.isOp() && !updateNotified.contains(player.getUniqueId())) {
+					player.sendMessage(adminUpdateMessage);
 					updateNotified.add(player.getUniqueId());
 				}
 				if (warnForKick.remove(player.getUniqueId()))

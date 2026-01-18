@@ -20,6 +20,7 @@ import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
@@ -95,9 +96,10 @@ public class BlockRegenHandler implements Listener {
 		if (state instanceof InventoryHolder holder) {
 			if (disaster.getWorldLink().dropContainerItems) {
 				Location loc = BlockUtils.getCenterOfBlock(block);
+				World world = loc.getWorld();
 				for (ItemStack item : holder.getInventory().getContents())
 					if (item != null)
-						block.getWorld().dropItemNaturally(loc, item);
+						world.dropItemNaturally(loc, item);
 				holder.getInventory().setContents(new ItemStack[holder.getInventory().getSize()]);
 			}
 			if (damagedBlocks.get(other) instanceof InventoryHolder otherHolder)
@@ -209,13 +211,14 @@ public class BlockRegenHandler implements Listener {
 					BlockState current = block.getState();
 					state.update(true, false);
 					Location center = BlockUtils.getCenterOfBlock(block);
+					World world = center.getWorld();
 					for (ItemStack item : block.getDrops())
-						center.getWorld().dropItemNaturally(center, item);
+						world.dropItemNaturally(center, item);
 					current.update(true, false);
 					if (state instanceof InventoryHolder holder)
 						for (ItemStack temp : holder.getInventory().getContents())
 							if (temp != null)
-								center.getWorld().dropItemNaturally(center, temp);
+								world.dropItemNaturally(center, temp);
 				}
 				updatePhysicBlocks(physicsBlocks, withPhysics);
 				return false;
@@ -250,13 +253,14 @@ public class BlockRegenHandler implements Listener {
 				BlockState current = block.getState();
 				state.update(true, false);
 				Location center = BlockUtils.getCenterOfBlock(block);
+				World world = center.getWorld();
 				for (ItemStack item : block.getDrops())
-					center.getWorld().dropItemNaturally(center, item);
+					world.dropItemNaturally(center, item);
 				current.update(true, false);
 				if (state instanceof InventoryHolder holder)
 					for (ItemStack temp : holder.getInventory().getContents())
 						if (temp != null)
-							center.getWorld().dropItemNaturally(center, temp);
+							world.dropItemNaturally(center, temp);
 			}
 			updatePhysicBlocks(physicsBlocks, withPhysics);
 			return true;

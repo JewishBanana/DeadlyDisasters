@@ -209,9 +209,9 @@ public class BlockUtils {
 		return disableResistances || resistances.getOrDefault(block.getType(), 0f) == 1f;
 	}
 	public static Block rayTraceForBlock(Location location, Vector direction, double maxDistance, Predicate<Block> conditions) {
-	    final float dx = (float)direction.getX();
-	    final float dy = (float)direction.getY();
-	    final float dz = (float)direction.getZ();
+	    final float dx = (float) direction.getX();
+	    final float dy = (float) direction.getY();
+	    final float dz = (float) direction.getZ();
 	    final float lengthSquared = dx * dx + dy * dy + dz * dz;
 	    if (lengthSquared == 0.0f)
 	        return null;
@@ -220,12 +220,12 @@ public class BlockUtils {
 	    final float dirY = dy * invLength * 0.8f;
 	    final float dirZ = dz * invLength * 0.8f;
 	    final World world = location.getWorld();
-	    final int steps = (int)(maxDistance / 0.8);
-	    float x = (float)location.getX() + dirX;
-	    float y = (float)location.getY() + dirY;
-	    float z = (float)location.getZ() + dirZ;
+	    final int steps = (int) (maxDistance / 0.8);
+	    float x = (float) location.getX() + dirX;
+	    float y = (float) location.getY() + dirY;
+	    float z = (float) location.getZ() + dirZ;
 	    for (int i = 0; i < steps; i++) {
-	        final Block temp = world.getBlockAt((int)Math.floor(x), (int)Math.floor(y), (int)Math.floor(z));
+	        final Block temp = world.getBlockAt((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
 	        if (temp != null && conditions.test(temp))
 	            return temp;
 	        x += dirX;

@@ -53,67 +53,90 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 	private final String usage = Utils.convertString("&cUsage: /disasters <help|start|stop|regenerate|fastRegenerate|config|blacklist|timers>...");
 	private final Map<String, ConfigSettingOption> configSettings = Map.of(
 			"targeting", 
-			new ConfigSettingOption("world.", Set.of("DISABLED", "INDIVIDUAL", "GLOBAL"), container -> {
+			new ConfigSettingOption(Set.of("DISABLED", "INDIVIDUAL", "GLOBAL"), container -> {
 				switch (container.value.toUpperCase()) {
 				case "DISABLED":
 				case "INDIVIDUAL":
 				case "GLOBAL":
+					container.wrapper.getConfig().set("world.targeting", container.value.toUpperCase());
 					return true;
 				}
 				container.sender.sendMessage(Utils.convertString("&cThe targeting type '"+container.value+"' is not valid! You can only select one of the valid targeting options."));
 				return false;
 			}),
 			"minimum_time", 
-			new ConfigSettingOption("world.", null, container -> {
+			new ConfigSettingOption(null, container -> {
 				try {
 					int value = Integer.parseInt(container.value);
-					if (container.wrapper.maximumTime < value)
-						container.wrapper.getConfig().set("maximum_time", value);
+					if (value < 0) {
+						container.sender.sendMessage(Utils.convertString("&cThe value '"+container.value+"' is not valid! Must be greater than or equal to 0!"));
+						return false;
+					}
+					container.wrapper.getConfig().set("world.minimum_time", value);
+					if (container.wrapper.maximumTime < value) {
+						container.wrapper.getConfig().set("maximum_time", value + 1);
+						container.sender.sendMessage(Utils.convertString("&eThe maximum time was adjusted to &b'"+(value + 1)+"' &efor world &d'"+container.wrapper.getConfigName()+"'&e!"));
+					}
 					return true;
 				} catch (NumberFormatException ex) {}
 				container.sender.sendMessage(Utils.convertString("&cThe value '"+container.value+"' is not valid! Expected an integer value."));
 				return false;
 			}),
 			"maximum_time", 
-			new ConfigSettingOption("world.", null, container -> {
+			new ConfigSettingOption(null, container -> {
 				try {
 					int value = Integer.parseInt(container.value);
-					if (container.wrapper.minimumTime > value)
-						container.wrapper.getConfig().set("minimumTime", value);
+					if (value < 1) {
+						container.sender.sendMessage(Utils.convertString("&cThe value '"+container.value+"' is not valid! Must be greater than or equal to 1!"));
+						return false;
+					}
+					container.wrapper.getConfig().set("world.maximum_time", value);
+					if (container.wrapper.minimumTime > value) {
+						container.wrapper.getConfig().set("minimum_time", value - 1);
+						container.sender.sendMessage(Utils.convertString("&eThe minimum time was adjusted to &b'"+(value - 1)+"' &efor world &d'"+container.wrapper.getConfigName()+"'&e!"));
+					}
 					return true;
 				} catch (NumberFormatException ex) {}
 				container.sender.sendMessage(Utils.convertString("&cThe value '"+container.value+"' is not valid! Expected an integer value."));
 				return false;
 			}),
 			"disaster_offset", 
-			new ConfigSettingOption("world.", null, container -> {
+			new ConfigSettingOption(null, container -> {
 				try {
-					Float.parseFloat(container.value);
+					float value = Float.parseFloat(container.value);
+					container.wrapper.getConfig().set("world.disaster_offset", value);
 					return true;
 				} catch (NumberFormatException ex) {}
 				container.sender.sendMessage(Utils.convertString("&cThe value '"+container.value+"' is not valid! Expected a decimal value."));
 				return false;
 			}),
 			"shared_disaster_radius", 
-			new ConfigSettingOption("world.", null, container -> {
+			new ConfigSettingOption(null, container -> {
 				try {
-					Float.parseFloat(container.value);
+					float value = Float.parseFloat(container.value);
+					container.wrapper.getConfig().set("world.shared_disaster_radius", value);
 					return true;
 				} catch (NumberFormatException ex) {}
 				container.sender.sendMessage(Utils.convertString("&cThe value '"+container.value+"' is not valid! Expected a decimal value."));
 				return false;
 			}),
 			"broadcast_disasters", 
-			new ConfigSettingOption("world.", Set.of("true", "false"), container -> {
-				if (container.value.equals("true") || container.value.equals("false"))
+			new ConfigSettingOption(Set.of("true", "false"), container -> {
+				if (container.value.equalsIgnoreCase("true") || container.value.equalsIgnoreCase("false")) {
+					boolean value = Boolean.parseBoolean(container.value);
+					container.wrapper.getConfig().set("world.broadcast_disasters", value);
 					return true;
+				}
 				container.sender.sendMessage(Utils.convertString("&cThe value '"+container.value+"' is not valid! Expected a true/false value."));
 				return false;
 			}),
 			"disaster_tips", 
-			new ConfigSettingOption("world.", Set.of("true", "false"), container -> {
-				if (container.value.equals("true") || container.value.equals("false"))
+			new ConfigSettingOption(Set.of("true", "false"), container -> {
+				if (container.value.equalsIgnoreCase("true") || container.value.equalsIgnoreCase("false")) {
+					boolean value = Boolean.parseBoolean(container.value);
+					container.wrapper.getConfig().set("world.disaster_tips", value);
 					return true;
+				}
 				container.sender.sendMessage(Utils.convertString("&cThe value '"+container.value+"' is not valid! Expected a true/false value."));
 				return false;
 			}));
@@ -478,20 +501,21 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					}
 				}
 				if (worlds.length > 1) {
+					boolean success = false;
 					for (World world : Bukkit.getWorlds()) {
 						WorldWrapper wrapper = WorldWrapper.getWorldWrapper(world);
 						if (!option.function.apply(new ConfigSettingContainer(args[3], sender, wrapper)))
-							return true;
-						wrapper.getConfig().set(option.configSection + args[2].toLowerCase(), args[3]);
+							continue;
 						wrapper.saveAndReload();
+						success = true;
 					}
-					sender.sendMessage(Utils.convertString(Utils.prefix+"&aSuccessfully set the setting &6'"+args[2].toLowerCase()+"' &ato the value &b'"+args[3]+"' &afor all worlds configs!"));
+					if (success)
+						sender.sendMessage(Utils.convertString(Utils.prefix+"&aSuccessfully set the setting &6'"+args[2].toLowerCase()+"' &ato the value &b'"+args[3]+"' &afor all worlds configs!"));
 					return true;
 				} else {
 					WorldWrapper wrapper = WorldWrapper.getWorldWrapper(worlds[0]);
 					if (!option.function.apply(new ConfigSettingContainer(args[3], sender, wrapper)))
 						return true;
-					wrapper.getConfig().set(option.configSection + args[2].toLowerCase(), args[3]);
 					wrapper.saveAndReload();
 					sender.sendMessage(Utils.convertString(Utils.prefix+"&aSuccessfully set the setting &6'"+args[2].toLowerCase()+"' &ato the value &b'"+args[3]+"' &afor the world config &d'"+wrapper.getConfigName()+"'&a!"));
 					return true;
@@ -914,12 +938,10 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 	}
 	private class ConfigSettingOption {
 		
-		private String configSection;
 		private Set<String> values;
 		private Function<ConfigSettingContainer, Boolean> function;
 		
-		private ConfigSettingOption(String configSection, Set<String> values, Function<ConfigSettingContainer, Boolean> function) {
-			this.configSection = configSection;
+		private ConfigSettingOption(Set<String> values, Function<ConfigSettingContainer, Boolean> function) {
 			this.values = values;
 			this.function = function;
 		}

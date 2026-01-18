@@ -25,11 +25,11 @@ import org.bukkit.entity.Endermite;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Item;
-import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.inventory.BlockInventoryHolder;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -53,6 +53,7 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 	private double riftDamageRate;
 	private float mobSpawnRate;
 	private boolean riftDestroysItems;
+	private boolean riftDestroyItemContainers;
 	
 	private float particleRate;
 	private float soundVolume;
@@ -69,8 +70,9 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 		this.teleportRange = (float) getConfigDouble("max_teleport_range");
 		this.riftSpawnRate = (float) (0.025 * getConfigDouble("rift_spawn_multiplier") * (scale / 1.5));
 		this.riftDamageRate = getConfigDouble("rift_damage_rate");
-		this.mobSpawnRate = (float) (1.0 / 6.0 * getConfigDouble("mob_spawn_multiplier"));
+		this.mobSpawnRate = (float) (1.0 / 12.0 * getConfigDouble("mob_spawn_multiplier"));
 		this.riftDestroysItems = getConfigBoolean("rift_destroys_items");
+		this.riftDestroyItemContainers = getConfigBoolean("rift_destroy_item_containers");
 		
 		this.effects = buildPotionEffects("entity_effects");
 		
@@ -85,8 +87,6 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 		super.start();
 		location.setY(128);
 		scheduleTask(new BukkitRunnable() {
-			private final Map<Location, Integer> riftCooldowns = new HashMap<>();
-			
 			@Override
 			public void run() {
 				for (Player player : playersInMonitorArea) {
@@ -102,23 +102,23 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 									final Location temp = SpawnUtils.findSmartYSpawn(playerLoc, Utils.findRandomSpotInCircle(playerLoc, 3f, 20f), 3.0, 15);
 									if (temp == null)
 										continue;
-									temp.add(0, 2.1, 0);
+									temp.add(0, 2.0, 0);
 									if (rifts.stream().anyMatch(rift -> rift.distanceSquared(temp) <= 25))
 										continue;
 									if (!Utils.isAreaClear(temp.getBlock().getRelative(BlockFace.UP), AreaClearing.PLUS_SIGN_3D_FROM_CENTER) || !Utils.isLocationExposedToOutdoors(temp))
 										continue;
 									rifts.add(temp);
 									scheduleTask(new BukkitRunnable() {
-										private int tick = 60;
+										private int tick = 80;
 										
 										@Override
 										public void run() {
 											if (tick-- <= 0) {
-												activeRifts.put(temp, ThreadLocalRandom.current().nextInt(8, 24));
+												activeRifts.put(temp, ThreadLocalRandom.current().nextInt(16, 48));
 												this.cancel();
 												return;
 											}
-											world.spawnParticle(Particle.PORTAL, temp, (59 - tick) / 10 * 2, .1, 1.2, .1, .01, null, true);
+											world.spawnParticle(Particle.PORTAL, temp, (int) ((79 - tick) / 2.5), .4, .5, .4, .01, null, true);
 										}
 									}.runTaskTimer(plugin, 0, 1));
 									break;
@@ -133,8 +133,8 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 						continue;
 					if (entity instanceof LivingEntity living)
 						living.addPotionEffects(effects);
-					else if (entity instanceof Item && random.nextInt(10) == 0)
-						entity.setVelocity(entity.getVelocity().add(new Vector(random.nextFloat(-1, 1), random.nextFloat(), random.nextFloat(-1, 1)).multiply(scale / 2.0 * currentStrength)));
+					else if (entity instanceof Item && random.nextInt(8 - level) == 0)
+						entity.setVelocity(entity.getVelocity().add(new Vector(random.nextFloat(-1, 1), random.nextFloat(), random.nextFloat(-1, 1)).multiply(scale / 4.0 * currentStrength)));
 					if (random.nextFloat() < teleportRate) {
 						Location entityLoc = entity.getLocation();
 						Location spawn = Utils.findRandomSpotInRadius(entityLoc, Math.min(teleportRange - 1, 7f), teleportRange, 2, 10, () -> Utils.getRandomizedVector(1f, 0.25f, 1f));
@@ -147,6 +147,13 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 						}
 					}
 				}
+			}
+		}.runTaskTimer(plugin, 0, 10));
+		scheduleTask(new BukkitRunnable() {
+			private final Map<Location, Integer> riftCooldowns = new HashMap<>();
+			
+			@Override
+			public void run() {
 				final Iterator<Entry<Location, Integer>> iterator = activeRifts.entrySet().iterator();
 				while (iterator.hasNext()) {
 					Entry<Location, Integer> entry = iterator.next();
@@ -165,24 +172,28 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 						Location entityLoc = e.getLocation();
 						e.setVelocity(Utils.getVectorTowards(entityLoc, temp).multiply(0.3));
 						if (e instanceof LivingEntity living) {
-							if (!e.isDead() && entityLoc.distanceSquared(temp) < 1 && !(e instanceof ItemFrame))
+							if (!e.isDead() && entityLoc.distanceSquared(temp) < 1)
 								EntityUtils.pureDamageEntity(living, riftDamageRate, "deaths.end_storm", DamageCause.VOID);
-						} else if (entityLoc.distanceSquared(temp) < 4 && !(e instanceof Item && !riftDestroysItems))
+						} else if (entityLoc.distanceSquared(temp) < 4 && !(!riftDestroysItems && e instanceof Item))
 							e.remove();
 					}
-					if (random.nextInt(4) == 0) {
-						Block b = BlockUtils.rayTraceForBlock(temp, Utils.getRandomizedVector(), 4.0, t -> t.getType().isBlock());
-						if (b != null) {
+					if (random.nextInt(4) == 0)
+						for (int i=0; i < 3; i++) {
+							Block b = BlockUtils.rayTraceForBlock(temp, Utils.getRandomizedVector(), 4.0, t -> !t.isPassable());
+							if (b == null)
+								continue;
+							if (!riftDestroyItemContainers && b.getState() instanceof BlockInventoryHolder)
+								continue;
 							FallingBlock fb = convertBlockIntoFallingBlock(b);
-							if (fb != null) {
-								fb.setHurtEntities(true);
-								fb.setDropItem(false);
-								fb.setVelocity(Utils.getVectorTowards(b.getLocation().add(.5, .5, .5), temp).multiply(0.3));
-							}
+							if (fb == null)
+								continue;
+							fb.setHurtEntities(true);
+							fb.setDropItem(false);
+							fb.setVelocity(Utils.getVectorTowards(b.getLocation().add(.5, .5, .5), temp).multiply(0.3));
+							break;
 						}
-					}
 					if (!riftCooldowns.containsKey(temp) && random.nextFloat() < mobSpawnRate) {
-						riftCooldowns.put(temp, random.nextInt(2, 4));
+						riftCooldowns.put(temp, random.nextInt(4, 8));
 						Mob mob = null;
 						switch (random.nextInt(DependencyUtils.isUltimateContentEnabled() ? 7 : 2)) {
 						default:
@@ -209,7 +220,8 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 							break;
 						}
 						if (mob != null) {
-							mob.setTarget(player);
+							if (player != null && !EntityUtils.isPlayerImmune(player))
+								mob.setTarget(player);
 							addEntityToDisasterList(mob);
 						}
 					}
@@ -222,7 +234,7 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 					return false;
 				});
 			}
-		}.runTaskTimer(plugin, 0, 10));
+		}.runTaskTimer(plugin, 0, 5));
 		
 		final Set<UUID> playersInStorm = ConcurrentHashMap.newKeySet();
 		final List<UUID> playersIteratedOver = new ArrayList<>();
@@ -234,6 +246,10 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 					playersIteratedOver.clear();
 					found.forEach((entity, loc) -> {
 						if (isEntityProtected(entity) || !isWithinStorm(loc))
+							return;
+						if (DependencyUtils.isUltimateContentEnabled() 
+								&& com.github.jewishbanana.uiframework.entities.UIEntityManager.getEntity(entity) instanceof com.github.jewishbanana.ultimatecontent.entities.BaseEntity base 
+								&& base.getEntityType().category == com.github.jewishbanana.ultimatecontent.entities.CustomEntityType.Category.END_ENTITIES)
 							return;
 						if (entity instanceof Player ? Utils.isLocationExposedToOutdoors(loc) : Utils.isLocationExposedToOutdoorsOptimized(loc, 8f, 6)) {
 							int time = timeInStorm.compute(entity.getUniqueId(), (key, oldValue) -> Math.min((oldValue != null ? oldValue : 0) + 1, 20));

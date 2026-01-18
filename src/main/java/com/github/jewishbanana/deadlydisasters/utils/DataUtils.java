@@ -108,19 +108,6 @@ public class DataUtils {
 		folder.mkdirs();
 		switch (last != null ? last : "default") {
 		default:
-		case "1.0.1-BETA":
-			for (File f : folder.listFiles())
-				try {
-					FileConfiguration file = YamlConfiguration.loadConfiguration(f);
-					List<String> list = file.getStringList("disasters.weather.end_storm.blacklisted_mob_types");
-					if (!list.isEmpty()) {
-						list.add("end_crystal");
-						file.set("disasters.weather.end_storm.blacklisted_mob_types", list);
-					}
-					file.save(f);
-				} catch (Exception e) {
-					Utils.sendExceptionLog(e);
-				}
 		case "1.0.2-BETA":
 			try {
 				plugin.getConfig().set("regeneration.force_regen_blocks_per_tick", null);
@@ -252,6 +239,21 @@ public class DataUtils {
 			} catch (Exception e) {
 				Utils.sendExceptionLog(e);
 			}
+		case "1.1.0-BETA":
+			for (File f : folder.listFiles())
+				try {
+					FileConfiguration file = YamlConfiguration.loadConfiguration(f);
+					List<String> list = file.getStringList("disasters.global.blacklisted_mob_types");
+					if (!list.isEmpty()) {
+						list.add("elder_guardian");
+						list.add("end_crystal");
+						list.add("item_frame");
+						file.set("disasters.global.blacklisted_mob_types", list);
+					}
+					file.save(f);
+				} catch (Exception e) {
+					Utils.sendExceptionLog(e);
+				}
 			break;
 		}
 		writeToDataFile(file -> file.set("stored_version", plugin.getDescription().getVersion()));

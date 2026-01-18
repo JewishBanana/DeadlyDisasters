@@ -163,6 +163,8 @@ public class Purge extends Disaster implements MobDisaster {
 						if (container == null)
 							continue;
 						Entity entity = container.spawnEntity(spawn);
+						if (entity == null)
+							continue;
 						if (!Utils.isAreaClear(spawn, (float) entity.getWidth(), (float) (entity.getHeight() - 0.2))) {
 							entity.remove();
 							continue;

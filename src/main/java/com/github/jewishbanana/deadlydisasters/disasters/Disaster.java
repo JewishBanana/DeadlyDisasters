@@ -90,13 +90,13 @@ public abstract class Disaster {
 
 	public Disaster(@NotNull Location location, @Nullable Player player, int level) {
 		this.location = location;
+		this.world = location.getWorld();
 		this.player = player;
 		this.setLevel(level);
 		
-		this.worldLink = WorldWrapper.getWorldWrapper(location.getWorld());
+		this.worldLink = WorldWrapper.getWorldWrapper(this.world);
 	}
 	public void init() {
-		this.world = location.getWorld();
 		if (getConfigPath() != null) {
 			this.volume = (float) getConfigOverrideDouble("volume");
 			this.startDelayTicks = (int) (getConfigOverrideDouble("start_delay") * 20.0);
@@ -515,7 +515,8 @@ public abstract class Disaster {
 	}
 	public void setLocation(@NotNull Location location) {
 		this.location = location;
-		this.worldLink = WorldWrapper.getWorldWrapper(location.getWorld());
+		this.world = location.getWorld();
+		this.worldLink = WorldWrapper.getWorldWrapper(this.world);
 	}
 	public Player getPlayer() {
 		return player;

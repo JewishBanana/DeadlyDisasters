@@ -196,7 +196,10 @@ disasters:
         blacklisted_mob_types:
         - ender_dragon
         - wither
+        - elder_guardian
         - warden
+        - end_crystal
+        - item_frame
     ###########################################################################################################################################################################
     #
     # Destructive Disasters
@@ -681,6 +684,8 @@ disasters:
             rift_damage_rate: 4.0
             # If rifts will destroy items that get pulled into them.
             rift_destroys_items: true
+            # If rifts should be able to pick up blocks which can contain items such as chests, brewing stands, barrels, etc.
+            rift_destroy_item_containers: true
             # Controls how many end storm related mobs spawn near players in end storms. By default endermen can spawn. If you are using UltimateContent then end type entities will spawn instead!
             mob_spawn_multiplier: 1.0
             # Controls what effects are applied to vulnerable entities exposed in end storms. Effects are applied every storm tick. You can add or remove any effect you wish with its in game name.
@@ -694,8 +699,6 @@ disasters:
             # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
             frequency: 1.0
             blacklisted_mob_types:
-            - ender_dragon
-            - end_crystal
             - enderman
             - endermite
     ###########################################################################################################################################################################

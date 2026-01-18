@@ -52,6 +52,8 @@ public class Utils {
 	private static final RandomGenerator random;
 	
 	public static final String prefix;
+	public static final String symbolLine;
+	
 	private static final boolean sendErrors;
 	private static final DecimalFormat decimalFormat;
 	private static final Pattern hexPattern;
@@ -63,6 +65,11 @@ public class Utils {
 		prefix = convertString("&a[DeadlyDisasters]: ");
 		sendErrors = DataUtils.getMainConfigBoolean("general.debug_messages");
 		decimalFormat = new DecimalFormat("0.0");
+		
+		StringBuilder builder = new StringBuilder();
+		for (int i=0; i < 17; i++)
+			builder.append('=');
+		symbolLine = builder.toString();
 		
 		dyeChatMap = new HashMap<>();
 		dyeChatMap.put(DyeColor.BLACK, ChatColor.BLACK);

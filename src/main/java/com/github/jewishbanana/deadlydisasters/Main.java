@@ -59,7 +59,6 @@ public class Main extends JavaPlugin {
 	 * - Regen bug, potential dupe block drops when regenerating. Actual block items dropping.
 	 * - Monsoon, dripping water is floating when on blocks like upside down vines.
 	 * - Monsoon dirt paths were not regenerating when another monsoon is called on a regenerating monsoon.
-	 * - Fix end storms picking up crates. Add config option to disable block tiles and make them by default drop all items and empty.
 	 * 
 	 * Before Update:
 	 * - Verify disaster categories in WorldWrapper.java
@@ -96,6 +95,8 @@ public class Main extends JavaPlugin {
 		init();
 		
 		BlockRegenHandler.loadAll(this);
+		
+		checkForUpdates();
 	}
 	public void registerDisasters() {
 		// Destructive
@@ -171,13 +172,17 @@ public class Main extends JavaPlugin {
 					String latestVersion = br.readLine();
 					br.close();
 					if (!getDescription().getVersion().equals(latestVersion)) {
-						consoleSender.sendMessage(Utils.convertString(Utils.prefix+DataUtils.getLanguageString("messages.internal.update_notify_console")
+						final String updateMessage = Utils.convertString(
+								"&a" + Utils.symbolLine + Utils.symbolLine + Utils.symbolLine + "\n"
+								+ Utils.prefix+DataUtils.getLanguageString("messages.internal.update_notify_console")
 								.replaceAll("%version%", getDescription().getVersion())
 								.replaceAll("%newversion%", latestVersion)
-								.replaceAll("%webpage%", pluginSpigotPage)));
+								.replaceAll("%webpage%", pluginSpigotPage)
+								+ "\n&a" + Utils.symbolLine + Utils.symbolLine + Utils.symbolLine);
+						consoleSender.sendMessage(Utils.convertString("\n&a" + Utils.symbolLine + Utils.symbolLine + updateMessage + Utils.symbolLine + Utils.symbolLine));
 						
 						if (DataUtils.getMainConfigBoolean("general.update_notify_admins"))
-							PlayerListener.notifyAdminOfUpdate = true;
+							PlayerListener.adminUpdateMessage = updateMessage;
 					}
 				} catch (Exception e) {
 					Utils.sendConsoleMessage("&cERROR could not connect to spigot to check if a new plugin version is available!");
