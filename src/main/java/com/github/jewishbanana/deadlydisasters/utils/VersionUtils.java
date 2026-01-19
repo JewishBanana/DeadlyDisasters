@@ -139,19 +139,19 @@ public class VersionUtils {
 		legacyFlashParticles = legacyDragonParticles;
 		
 		if (isMCVersionOrAbove("1.21.3")) {
-			maxHealthAttribute = Attribute.MAX_HEALTH;
-			attackDamageAttribute = Attribute.ATTACK_DAMAGE;
-			movementSpeedAttribute = Attribute.MOVEMENT_SPEED;
-			followRangeAttribute = Attribute.FOLLOW_RANGE;
-			armorAttribute = Attribute.ARMOR;
-			armorToughnessAttribute = Attribute.ARMOR_TOUGHNESS;
+		    maxHealthAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("max_health"));
+		    attackDamageAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("attack_damage"));
+		    movementSpeedAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("movement_speed"));
+		    followRangeAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("follow_range"));
+		    armorAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("armor"));
+		    armorToughnessAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("armor_toughness"));
 		} else {
-			maxHealthAttribute = Attribute.valueOf("GENERIC_MAX_HEALTH");
-			attackDamageAttribute = Attribute.valueOf("GENERIC_ATTACK_DAMAGE");
-			movementSpeedAttribute = Attribute.valueOf("GENERIC_MOVEMENT_SPEED");
-			followRangeAttribute = Attribute.valueOf("GENERIC_FOLLOW_RANGE");
-			armorAttribute = Attribute.valueOf("GENERIC_ARMOR");
-			armorToughnessAttribute = Attribute.valueOf("GENERIC_ARMOR_TOUGHNESS");
+		    maxHealthAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.max_health"));
+		    attackDamageAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.attack_damage"));
+		    movementSpeedAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.movement_speed"));
+		    followRangeAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.follow_range"));
+		    armorAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor"));
+		    armorToughnessAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor_toughness"));
 		}
 		
 		isVersion192OrAbove = isMCVersionOrAbove("1.19.2");

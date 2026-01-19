@@ -96,7 +96,8 @@ public class Main extends JavaPlugin {
 		
 		BlockRegenHandler.loadAll(this);
 		
-		checkForUpdates();
+		if (DataUtils.getMainConfigBoolean("general.check_for_update"))
+			checkForUpdates();
 	}
 	public void registerDisasters() {
 		// Destructive

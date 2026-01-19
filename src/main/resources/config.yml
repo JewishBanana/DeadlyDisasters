@@ -38,7 +38,9 @@
 ###############################################################################################################################################################################
 
 general:
-    # If set to true then admins will receive a message about updates for the plugin upon joining if any are available.
+    # If the plugin should check for updates upon server startup. If an update is available, a message will be sent to the console to notify.
+    check_for_update: true
+    # If set to true then admins will receive a message about updates for the plugin upon joining the server if any are available.
     update_notify_admins: true
     # If set to true then admins will be alerted when new content is added to the custom disaster catalog.
     catalog_notify: true
