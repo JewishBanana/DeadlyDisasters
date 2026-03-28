@@ -85,6 +85,11 @@
 		    <id>playpro-repo</id>
 		    <url>https://maven.playpro.com</url>
 		</repository>
+		<repository>
+		    <id>rtustudio-repo</id>
+		    <name>RTUStudio</name>
+		    <url>https://repo.codemc.io/repository/rtustudio/</url>
+		</repository>
 	</repositories>
 
 	<dependencies>
@@ -177,6 +182,12 @@
 		    <groupId>net.coreprotect</groupId>
 		    <artifactId>coreprotect</artifactId>
 		    <version>23.1</version>
+		    <scope>provided</scope>
+		</dependency>
+		<dependency>
+		    <groupId>kr.rtustudio</groupId>
+		    <artifactId>fieldzone</artifactId>
+		    <version>1.2.0</version>
 		    <scope>provided</scope>
 		</dependency>
 	</dependencies>
