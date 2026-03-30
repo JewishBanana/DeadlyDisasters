@@ -173,7 +173,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 								stack.setAmount(0);
 								final Location loc = entity.getLocation();
 								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
-								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 1);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5f, 1f);
 							}
 							break;
 						case LAVA_BUCKET:
@@ -182,7 +182,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 								entity.remove();
 								world.dropItem(loc, new ItemStack(Material.BUCKET));
 								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
-								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 1);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5f, 1f);
 							}
 							break;
 						case POWDER_SNOW_BUCKET:
@@ -191,7 +191,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 								entity.remove();
 								world.dropItem(loc, new ItemStack(Material.WATER_BUCKET));
 								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
-								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 1);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5f, 1f);
 							}
 							break;
 						case MAGMA_BLOCK:
@@ -200,7 +200,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 								entity.remove();
 								world.dropItem(loc, new ItemStack(Material.NETHERRACK));
 								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
-								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 1);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5f, 1f);
 							}
 							break;
 						case TORCH:
@@ -213,7 +213,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 								entity.remove();
 								world.dropItem(loc, new ItemStack(Material.STICK));
 								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
-								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 1);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5f, 1f);
 							}
 							break;
 						default:
@@ -236,15 +236,7 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 						if (entity.getRemainingAir() > -10)
 							entity.setRemainingAir(entity.getRemainingAir() - drownRate);
 						else if (damageTick == 0 && !entity.getEyeLocation().getBlock().isLiquid()) {
-							if (EntityUtils.pureDamageEntity(entity, 1.0, "deaths.monsoon", DamageCause.DROWNING, false, true) && !entity.isSilent()) {
-								if (entity instanceof Player) {
-									if (entity.isDead())
-										entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_PLAYER_DEATH, SoundCategory.PLAYERS, 1, random.nextFloat(0.8f, 1.2f));
-									else
-										entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_PLAYER_HURT_DROWN, SoundCategory.PLAYERS, 1, random.nextFloat(0.8f, 1.2f));
-								} else
-									VersionUtils.playEntityHarmSound(entity);
-							}
+							EntityUtils.pureDamageEntity(entity, 1.0, "deaths.monsoon", DamageCause.DROWNING, null, false, false, Sound.ENTITY_PLAYER_HURT_DROWN);
 						}
 					});
 					if (++damageTick == 10)
@@ -348,9 +340,9 @@ public class Monsoon extends WeatherDisaster implements MobDisaster, Listener {
 			if (aboveFlag && soundTick == 0) {
 				final Location fixed = new Location(world, loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
-					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, ((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength, 1);
+					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, (float) (((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength), 1f);
 				else
-					playSound(player, loc.clone().add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength, 1);
+					playSound(player, loc.clone().add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (soundVolume * currentStrength), 1f);
 			}
 		});
 		

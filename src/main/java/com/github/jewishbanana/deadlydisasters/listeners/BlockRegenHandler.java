@@ -44,6 +44,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -97,10 +98,12 @@ public class BlockRegenHandler implements Listener {
 			if (disaster.getWorldLink().dropContainerItems) {
 				Location loc = BlockUtils.getCenterOfBlock(block);
 				World world = loc.getWorld();
-				for (ItemStack item : holder.getInventory().getContents())
+				Inventory inv = holder.getInventory();
+				for (ItemStack item : inv.getContents())
 					if (item != null)
 						world.dropItemNaturally(loc, item);
-				holder.getInventory().setContents(new ItemStack[holder.getInventory().getSize()]);
+				inv.clear();
+				state = block.getState();
 			}
 			if (damagedBlocks.get(other) instanceof InventoryHolder otherHolder)
 				otherHolder.getInventory().setContents(holder.getInventory().getContents());

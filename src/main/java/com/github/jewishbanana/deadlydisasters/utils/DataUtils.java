@@ -254,6 +254,15 @@ public class DataUtils {
 				} catch (Exception e) {
 					Utils.sendExceptionLog(e);
 				}
+		case "1.1.2-BETA":
+			try {
+				File translationsFile = new File(plugin.getDataFolder().getAbsolutePath(), "language.yml");
+				FileConfiguration yaml = YamlConfiguration.loadConfiguration(translationsFile);
+				yaml.set("messages.commands.help.timers", "&6Usage: &d/disasters timers <reset|listworlds|listplayer> [world|player]\n&7This command will either list all worlds global disaster timer countdowns (countdown till next disaster in seconds), or players individual disaster timer countdowns. This can also be used to reset disaster countdowns in a world. This command will can be run for offline players.\n&c<reset | listworlds | listplayer> &8- &7To either list the worlds global timer countdowns, or players indiviudal countdowns, or reset the timers for a world.\n&3[<player>] &8- &7This argument is required if you have chosen the listplayer option. This will list the current individual disaster countdowns for this target player.");
+				yaml.save(translationsFile);
+			} catch (Exception e) {
+				Utils.sendExceptionLog(e);
+			}
 			break;
 		}
 		writeToDataFile(file -> file.set("stored_version", plugin.getDescription().getVersion()));

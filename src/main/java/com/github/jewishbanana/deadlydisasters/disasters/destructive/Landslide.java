@@ -233,9 +233,9 @@ public class Landslide extends Disaster implements Listener {
 						double dist = pLoc.distanceSquared(location);
 						if (dist <= soundDistance) {
 							if (!isAvalanche)
-								playSound(p, pLoc.add(Utils.getVectorTowards(pLoc, location).multiply(4.0)), random.nextInt(2) == 0 ? Sound.BLOCK_GRAVEL_BREAK : Sound.BLOCK_GRASS_BREAK, SoundCategory.AMBIENT, vol * (soundDistance - dist), .5);
+								playSound(p, pLoc.add(Utils.getVectorTowards(pLoc, location).multiply(4.0)), random.nextInt(2) == 0 ? Sound.BLOCK_GRAVEL_BREAK : Sound.BLOCK_GRASS_BREAK, SoundCategory.AMBIENT, (float) (vol * (soundDistance - dist)), .5f);
 							else
-								playSound(p, pLoc.add(Utils.getVectorTowards(pLoc, location).multiply(4.0)), random.nextInt(2) == 0 ? Sound.BLOCK_SNOW_BREAK : Sound.BLOCK_SAND_BREAK, SoundCategory.AMBIENT, vol * (soundDistance - dist), .5);
+								playSound(p, pLoc.add(Utils.getVectorTowards(pLoc, location).multiply(4.0)), random.nextInt(2) == 0 ? Sound.BLOCK_SNOW_BREAK : Sound.BLOCK_SAND_BREAK, SoundCategory.AMBIENT, (float) (vol * (soundDistance - dist)), .5f);
 						}
 					}
 				}
@@ -251,9 +251,9 @@ public class Landslide extends Disaster implements Listener {
 						EntityUtils.markFallingBlock(fb);
 						fb.setVelocity(direction.clone().add(new Vector(random.nextFloat(-.125f, .125f), 0, random.nextFloat(-.125f, .125f))).multiply(random.nextFloat(.4f, .65f)).setY(0.3));
 						if (!isAvalanche)
-							playSound(fb.getLocation(), random.nextInt(2) == 0 ? Sound.BLOCK_GRAVEL_BREAK : Sound.BLOCK_GRASS_BREAK, SoundCategory.AMBIENT, 1, .5);
+							playSound(fb.getLocation(), random.nextInt(2) == 0 ? Sound.BLOCK_GRAVEL_BREAK : Sound.BLOCK_GRASS_BREAK, SoundCategory.AMBIENT, 1f, .5f);
 						else
-							playSound(fb.getLocation(), random.nextInt(2) == 0 ? Sound.BLOCK_SNOW_BREAK : Sound.BLOCK_SAND_BREAK, SoundCategory.AMBIENT, 1, .5);
+							playSound(fb.getLocation(), random.nextInt(2) == 0 ? Sound.BLOCK_SNOW_BREAK : Sound.BLOCK_SAND_BREAK, SoundCategory.AMBIENT, 1f, .5f);
 						int bounces = entry.getValue();
 						transferFallingBlockTracking(uuid, fb);
 						if (bounces > 0)
@@ -363,8 +363,8 @@ public class Landslide extends Disaster implements Listener {
 			fallingBlocks.put(fb.getUniqueId(), bounces - 1);
 		current.remove();
 		if (!isAvalanche)
-			playSound(fb.getLocation(), random.nextInt(2) == 0 ? Sound.BLOCK_GRAVEL_BREAK : Sound.BLOCK_GRASS_BREAK, SoundCategory.AMBIENT, 1, .5);
+			playSound(fb.getLocation(), random.nextInt(2) == 0 ? Sound.BLOCK_GRAVEL_BREAK : Sound.BLOCK_GRASS_BREAK, SoundCategory.AMBIENT, 1f, .5f);
 		else
-			playSound(fb.getLocation(), random.nextInt(2) == 0 ? Sound.BLOCK_SNOW_BREAK : Sound.BLOCK_SAND_BREAK, SoundCategory.AMBIENT, 1, .5);
+			playSound(fb.getLocation(), random.nextInt(2) == 0 ? Sound.BLOCK_SNOW_BREAK : Sound.BLOCK_SAND_BREAK, SoundCategory.AMBIENT, 1f, .5f);
 	}
 }

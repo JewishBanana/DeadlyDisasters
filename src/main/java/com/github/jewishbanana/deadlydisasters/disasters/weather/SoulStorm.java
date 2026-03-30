@@ -121,10 +121,10 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 //			playSound(player, particleLoc, Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, 0.017 * currentStrength, .5);
 			if (soundTick == 0) {
 				final Location soundLoc = new Location(world, x, y, z);
-				playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_ADDITIONS, SoundCategory.WEATHER, 1, .5);
-				playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 1, .5);
+				playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_ADDITIONS, SoundCategory.WEATHER, 1f, .5f);
+				playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 1f, .5f);
 				if (random.nextInt(10) == 0)
-					playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, SoundCategory.WEATHER, 1, .75);
+					playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, SoundCategory.WEATHER, 1f, .75f);
 			}
 		}, pair -> {
 			final ThreadLocalRandom random = ThreadLocalRandom.current();
@@ -156,9 +156,9 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 			if (soundTick == 0) {
 				Location fixed = new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
-					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, ((0.017 / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength, .5);
+					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, (float) (((0.017 / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength), .5f);
 				else
-					playSound(player, loc.clone().add(0, 3, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, 0.017 * currentStrength, .5);
+					playSound(player, loc.clone().add(0, 3, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (0.017 * currentStrength), .5f);
 			}
 		});
 	}
@@ -176,8 +176,8 @@ public class SoulStorm extends WeatherDisaster implements MobDisaster {
 	public void addPlayerToWeather(Player player) {
 		super.addPlayerToWeather(player);
 		Location soundLoc = player.getLocation().add(0, 5, 0);
-		playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_ADDITIONS, SoundCategory.WEATHER, 1, .5);
-		playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 1, .5);
+		playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_ADDITIONS, SoundCategory.WEATHER, 1f, .5f);
+		playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 1f, .5f);
 	}
 	public void removePlayerFromWeather(Player player) {
 		player.stopSound(Sound.AMBIENT_SOUL_SAND_VALLEY_ADDITIONS);

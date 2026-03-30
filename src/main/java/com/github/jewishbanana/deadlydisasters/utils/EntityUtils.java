@@ -5,10 +5,13 @@ import org.bukkit.EntityEffect;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -28,15 +31,18 @@ public class EntityUtils {
 	
 	private static final Main plugin;
 	private static final FixedMetadataValue pluginMetadata;
+	private static final boolean isVersion192OrAbove;
 	static {
 		plugin = Main.getInstance();
 		pluginMetadata = plugin.getFixedMetadata();
+		isVersion192OrAbove = VersionUtils.isMCVersionOrAbove("1.19.2");
 	}
 	
 	@SuppressWarnings("removal")
-	private static <T extends EntityDamageEvent> boolean pureDamageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, boolean silent, T event) {
+	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, Entity source, boolean ignoreTotem, boolean silent, Sound playerHurtSound) {
 		if (entity == null || entity.isDead())
 			return false;
+		EntityDamageEvent event = source == null ? new EntityDamageEvent(entity, cause, damage) : new EntityDamageByEntityEvent(source, entity, cause, damage);
 		Bukkit.getPluginManager().callEvent(event);
 		if (event.isCancelled())
 			return false;
@@ -50,11 +56,11 @@ public class EntityUtils {
 				return true;
 			}
 			if (meta != null)
-				entity.setMetadata(meta, plugin.getFixedMetadata());
+				entity.setMetadata(meta, pluginMetadata);
 			entity.setHealth(0);
 			playDamageEffect(entity);
 			if (!silent && !entity.isSilent())
-				VersionUtils.playEntityHarmSound(entity);
+				playEntityHarmSound(entity, playerHurtSound);
 			if (meta != null)
 				entity.removeMetadata(meta, plugin);
 			return true;
@@ -62,30 +68,22 @@ public class EntityUtils {
 		entity.setHealth(Math.min(Math.max(entity.getHealth()-damage, 0), entity.getHealth()));
 		playDamageEffect(entity);
 		if (!silent && !entity.isSilent())
-			VersionUtils.playEntityHarmSound(entity);
+			playEntityHarmSound(entity, playerHurtSound);
 		if (event instanceof EntityDamageByEntityEvent damageEntityEvent && entity instanceof Mob mob && damageEntityEvent.getDamager() instanceof LivingEntity livingDamager)
 			mob.setTarget(livingDamager);
 		return true;
 	}
-	@SuppressWarnings("removal")
-	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, Entity source, @NotNull DamageCause cause, boolean ignoreTotem, boolean silent) {
-		if (source != null)
-			return pureDamageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageByEntityEvent(source, entity, cause, damage));
-		return pureDamageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageEvent(entity, cause, damage));
+	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, Entity source, boolean ignoreTotem, boolean silent) {
+		return pureDamageEntity(entity, damage, meta, cause, source, ignoreTotem, silent, Sound.ENTITY_PLAYER_HURT);
 	}
-	@SuppressWarnings("removal")
-	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, Entity source, @NotNull DamageCause cause) {
-		if (source != null)
-			return pureDamageEntity(entity, damage, meta, false, false, new EntityDamageByEntityEvent(source, entity, cause, damage));
-		return pureDamageEntity(entity, damage, meta, false, false, new EntityDamageEvent(entity, cause, damage));
+	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, Entity source, boolean ignoreTotem) {
+		return pureDamageEntity(entity, damage, meta, cause, source, ignoreTotem, false);
 	}
-	@SuppressWarnings("removal")
-	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, boolean ignoreTotem, boolean silent) {
-		return pureDamageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageEvent(entity, cause, damage));
+	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, Entity source) {
+		return pureDamageEntity(entity, damage, meta, cause, source, false);
 	}
-	@SuppressWarnings("removal")
 	public static boolean pureDamageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause) {
-		return pureDamageEntity(entity, damage, meta, false, false, new EntityDamageEvent(entity, cause, damage));
+		return pureDamageEntity(entity, damage, meta, cause, null);
 	}
 	public static void damageArmor(LivingEntity entity, double damage) {
 		int dmg = Math.max((int) (damage + 4 / 4), 1);
@@ -98,35 +96,27 @@ public class EntityUtils {
 			armor.setItemMeta(meta);
 		}
 	}
-	private static <T extends EntityDamageEvent> boolean damageEntity(LivingEntity entity, double damage, String meta, boolean ignoreTotem, boolean silent, T event) {
+	public static boolean damageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, Entity source, boolean ignoreTotem, boolean silent, Sound playerHurtSound) {
 		final double armor = entity.getAttribute(VersionUtils.getArmorAttribute()).getValue();
 		final double toughness = entity.getAttribute(VersionUtils.getArmorToughnessAttribute()).getValue();
 		final double actualDamage = damage * (1 - Math.min(20, Math.max(armor / 5, armor - damage / (2 + toughness / 4))) / 25);
-		if (pureDamageEntity(entity, actualDamage, meta, ignoreTotem, silent, event)) {
+		if (pureDamageEntity(entity, actualDamage, meta, cause, source, ignoreTotem, silent, playerHurtSound)) {
 			damageArmor(entity, actualDamage);
 			return true;
 		}
 		return false;
 	}
-	@SuppressWarnings("removal")
-	public static boolean damageEntity(LivingEntity entity, double damage, String meta, Entity source, @NotNull DamageCause cause, boolean ignoreTotem, boolean silent) {
-		if (source != null)
-			return damageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageByEntityEvent(source, entity, cause, damage));
-		return damageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageEvent(entity, cause, damage));
+	public static boolean damageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, Entity source, boolean ignoreTotem, boolean silent) {
+		return damageEntity(entity, damage, meta, cause, source, ignoreTotem, silent, Sound.ENTITY_PLAYER_HURT);
 	}
-	@SuppressWarnings("removal")
-	public static boolean damageEntity(LivingEntity entity, double damage, String meta, Entity source, @NotNull DamageCause cause) {
-		if (source != null)
-			return damageEntity(entity, damage, meta, false, false, new EntityDamageByEntityEvent(source, entity, cause, damage));
-		return damageEntity(entity, damage, meta, false, false, new EntityDamageEvent(entity, cause, damage));
+	public static boolean damageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, Entity source, boolean ignoreTotem) {
+		return damageEntity(entity, damage, meta, cause, source, ignoreTotem, false);
 	}
-	@SuppressWarnings("removal")
-	public static boolean damageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, boolean ignoreTotem, boolean silent) {
-		return damageEntity(entity, damage, meta, ignoreTotem, silent, new EntityDamageEvent(entity, cause, damage));
+	public static boolean damageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause, Entity source) {
+		return damageEntity(entity, damage, meta, cause, source, false);
 	}
-	@SuppressWarnings("removal")
 	public static boolean damageEntity(LivingEntity entity, double damage, String meta, @NotNull DamageCause cause) {
-		return damageEntity(entity, damage, meta, false, false, new EntityDamageEvent(entity, cause, damage));
+		return damageEntity(entity, damage, meta, cause, null);
 	}
 	@SuppressWarnings("deprecation")
 	public static void playDamageEffect(LivingEntity entity) {
@@ -183,5 +173,49 @@ public class EntityUtils {
 		if (entity == null)
 			return false;
 		return entity.getHealth() < entity.getAttribute(VersionUtils.getMaxHealthAttribute()).getValue() * value;
+	}
+	public static enum EntitySound {
+		HURT_SOUND,
+		DEATH_SOUND;
+	}
+	public static void playEntitySound(LivingEntity entity, Location location, EntitySound sound, float volume, float pitch) {
+		if (!isVersion192OrAbove)
+			return;
+		switch (sound) {
+		case HURT_SOUND -> location.getWorld().playSound(location, entity.getHurtSound(), volume, pitch);
+		case DEATH_SOUND -> location.getWorld().playSound(location, entity.getDeathSound(), volume, pitch);
+		}
+	}
+	public static void playEntitySound(LivingEntity entity, EntitySound sound, float volume, float pitch) {
+		playEntitySound(entity, entity.getLocation(), sound, volume, pitch);
+	}
+	public static void playEntityHarmSound(LivingEntity entity, Location location, float volume, float pitch, Sound playerHarmSound) {
+		if (entity instanceof Player) {
+			if (entity.isDead())
+				location.getWorld().playSound(location, Sound.ENTITY_PLAYER_DEATH, SoundCategory.PLAYERS, volume, pitch);
+			else
+				location.getWorld().playSound(location, playerHarmSound, SoundCategory.PLAYERS, volume, pitch);
+		}
+		if (!isVersion192OrAbove)
+			return;
+		if (entity.isDead())
+			location.getWorld().playSound(location, entity.getDeathSound(), entity instanceof Monster ? SoundCategory.HOSTILE : SoundCategory.NEUTRAL, volume, pitch);
+		else
+			location.getWorld().playSound(location, entity.getHurtSound(), entity instanceof Monster ? SoundCategory.HOSTILE : SoundCategory.NEUTRAL, volume, pitch);
+	}
+	public static void playEntityHarmSound(LivingEntity entity, float volume, float pitch) {
+		playEntityHarmSound(entity, entity.getLocation(), volume, pitch, Sound.ENTITY_PLAYER_HURT);
+	}
+	public static void playEntityHarmSound(LivingEntity entity, Location location, Sound playerHarmSound) {
+		playEntityHarmSound(entity, location, 1, Utils.getRandomGenerator().nextFloat(0.8f, 1.2f), playerHarmSound);
+	}
+	public static void playEntityHarmSound(LivingEntity entity, Location location) {
+		playEntityHarmSound(entity, location, 1, Utils.getRandomGenerator().nextFloat(0.8f, 1.2f), Sound.ENTITY_PLAYER_HURT);
+	}
+	public static void playEntityHarmSound(LivingEntity entity, Sound playerHarmSound) {
+		playEntityHarmSound(entity, entity.getLocation(), 1, Utils.getRandomGenerator().nextFloat(0.8f, 1.2f), playerHarmSound);
+	}
+	public static void playEntityHarmSound(LivingEntity entity) {
+		playEntityHarmSound(entity, entity.getLocation(), 1, Utils.getRandomGenerator().nextFloat(0.8f, 1.2f), Sound.ENTITY_PLAYER_HURT);
 	}
 }

@@ -29,7 +29,6 @@ import org.jetbrains.annotations.NotNull;
 
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
-import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
@@ -204,7 +203,7 @@ public class Supernova extends Disaster {
 										|| isEntityProtected(entity))
 									return;
 								if (entity instanceof LivingEntity alive)
-									EntityUtils.pureDamageEntity(alive, 1000, "deaths.supernova", DamageCause.BLOCK_EXPLOSION, true, false);
+									EntityUtils.pureDamageEntity(alive, 1000, "deaths.supernova", DamageCause.BLOCK_EXPLOSION, null, true);
 								else {
 									if (!destroyItems && entity instanceof Item)
 										return;
@@ -232,13 +231,13 @@ public class Supernova extends Disaster {
 					final Vector direction = Utils.getVectorTowards(loc, crystalLoc);
 					if (soundTick == 10)
 						if (explosionRange == 0)
-							playSound(player, loc.clone().add(direction.clone().multiply(4.0)), Sound.AMBIENT_NETHER_WASTES_MOOD, 2.0 - (0.002 * loc.distance(crystalLoc)), 0.5);
+							playSound(player, loc.clone().add(direction.clone().multiply(4.0)), Sound.AMBIENT_NETHER_WASTES_MOOD, (float) (2.0 - (0.002 * loc.distance(crystalLoc))), 0.5f);
 						else {
 							final Location soundLoc = loc.clone().add(direction.clone().multiply(4.0));
-							final double vol = 2.0 - (0.0005 * loc.distance(location));
-							playSound(player, soundLoc, Sound.AMBIENT_WARPED_FOREST_MOOD, vol, 0.5);
-							playSound(player, soundLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, vol, 0.5);
-							playSound(player, soundLoc, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, vol / 30, 0.5);
+							final float vol = (float) (2.0 - (0.0005 * loc.distance(location)));
+							playSound(player, soundLoc, Sound.AMBIENT_WARPED_FOREST_MOOD, vol, 0.5f);
+							playSound(player, soundLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, vol, 0.5f);
+							playSound(player, soundLoc, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, vol / 30, 0.5f);
 						}
 					if (!flashing)
 						return;
@@ -297,9 +296,6 @@ public class Supernova extends Disaster {
 	}
 	protected String getConfigPath() {
 		return "disasters.destructive.supernova";
-	}
-	public String getDisplayName() {
-		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
 	}
 	public double getRegenTickRate() {
 		return level * 2;

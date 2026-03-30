@@ -191,7 +191,7 @@ public class ExtremeWinds extends WeatherDisaster {
 					player.spawnParticle(Particle.CLOUD, x + random.nextFloat(-10f, 10f), y + random.nextFloat(-3f, 7f), z + random.nextFloat(-10f, 10f), 0, direction.getX(), .001, direction.getZ(), currentForce * 15.0);
 			}
 			if (closest != null) {
-				playSound(player, loc.add(0, 5, 0), flag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentSoundLevel * currentStrength * (flag ? 1.0 : 0.2), .5);
+				playSound(player, loc.add(0, 5, 0), flag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (soundVolume * currentSoundLevel * currentStrength * (flag ? 1.0 : 0.2)), .5f);
 			}
 		}, pair -> {
 			if (currentForce <= 0)
@@ -226,9 +226,9 @@ public class ExtremeWinds extends WeatherDisaster {
 			if (aboveFlag) {
 				final Location fixed = new Location(world, loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
-					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, ((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * currentSoundLevel * smoothingIntensity * currentStrength, .5);
+					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, (float) (((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * currentSoundLevel * smoothingIntensity * currentStrength), .5f);
 				else
-					playSound(player, loc.add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentSoundLevel * currentStrength, .5);
+					playSound(player, loc.add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (soundVolume * currentSoundLevel * currentStrength), .5f);
 			}
 		});
 	}

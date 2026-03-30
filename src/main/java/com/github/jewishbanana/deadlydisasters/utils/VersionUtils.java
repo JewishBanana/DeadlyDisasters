@@ -9,12 +9,8 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Registry;
-import org.bukkit.Sound;
-import org.bukkit.SoundCategory;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.potion.PotionEffectType;
@@ -64,8 +60,6 @@ public class VersionUtils {
 	private static final Attribute followRangeAttribute;
 	private static final Attribute armorAttribute;
 	private static final Attribute armorToughnessAttribute;
-	
-	private static final boolean isVersion192OrAbove;
 	
 	static {
 		serverVersion = Arrays.stream(Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf('-')).split("\\.")).map(e -> Integer.parseInt(e)).toArray(Integer[]::new);
@@ -139,12 +133,12 @@ public class VersionUtils {
 		legacyFlashParticles = legacyDragonParticles;
 		
 		if (isMCVersionOrAbove("1.21.3")) {
-		    maxHealthAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("max_health"));
-		    attackDamageAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("attack_damage"));
-		    movementSpeedAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("movement_speed"));
-		    followRangeAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("follow_range"));
-		    armorAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("armor"));
-		    armorToughnessAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("armor_toughness"));
+			maxHealthAttribute = Attribute.MAX_HEALTH;
+		    attackDamageAttribute = Attribute.ATTACK_DAMAGE;
+		    movementSpeedAttribute = Attribute.MOVEMENT_SPEED;
+		    followRangeAttribute = Attribute.FOLLOW_RANGE;
+		    armorAttribute = Attribute.ARMOR;
+		    armorToughnessAttribute = Attribute.ARMOR_TOUGHNESS;
 		} else {
 		    maxHealthAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.max_health"));
 		    attackDamageAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.attack_damage"));
@@ -153,8 +147,6 @@ public class VersionUtils {
 		    armorAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor"));
 		    armorToughnessAttribute = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor_toughness"));
 		}
-		
-		isVersion192OrAbove = isMCVersionOrAbove("1.19.2");
 	}
 	public static boolean isMCVersionOrAbove(String version) {
 		try {
@@ -188,44 +180,6 @@ public class VersionUtils {
 	}
 	public static void spawnFlashParticle(Player player, Location location, int count, double offX, double offY, double offZ, double speed, Color data) {
 		player.spawnParticle(Particle.FLASH, location, count, offX, offY, offZ, speed, legacyFlashParticles ? null : data);
-	}
-	public static enum EntitySound {
-		HURT_SOUND,
-		DEATH_SOUND;
-	}
-	public static void playEntitySound(LivingEntity entity, Location location, EntitySound sound, float volume, float pitch) {
-		if (!isVersion192OrAbove)
-			return;
-		switch (sound) {
-		case HURT_SOUND -> location.getWorld().playSound(location, entity.getHurtSound(), volume, pitch);
-		case DEATH_SOUND -> location.getWorld().playSound(location, entity.getDeathSound(), volume, pitch);
-		}
-	}
-	public static void playEntitySound(LivingEntity entity, EntitySound sound, float volume, float pitch) {
-		playEntitySound(entity, entity.getLocation(), sound, volume, pitch);
-	}
-	public static void playEntityHarmSound(LivingEntity entity, Location location, float volume, float pitch) {
-		if (entity instanceof Player) {
-			if (entity.isDead())
-				location.getWorld().playSound(location, Sound.ENTITY_PLAYER_DEATH, SoundCategory.PLAYERS, volume, pitch);
-			else
-				location.getWorld().playSound(location, Sound.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, volume, pitch);
-		}
-		if (!isVersion192OrAbove)
-			return;
-		if (entity.isDead())
-			location.getWorld().playSound(location, entity.getDeathSound(), entity instanceof Monster ? SoundCategory.HOSTILE : SoundCategory.NEUTRAL, volume, pitch);
-		else
-			location.getWorld().playSound(location, entity.getHurtSound(), entity instanceof Monster ? SoundCategory.HOSTILE : SoundCategory.NEUTRAL, volume, pitch);
-	}
-	public static void playEntityHarmSound(LivingEntity entity, float volume, float pitch) {
-		playEntityHarmSound(entity, entity.getLocation(), volume, pitch);
-	}
-	public static void playEntityHarmSound(LivingEntity entity, Location location) {
-		playEntityHarmSound(entity, location, 1, Utils.getRandomGenerator().nextFloat(0.8f, 1.2f));
-	}
-	public static void playEntityHarmSound(LivingEntity entity) {
-		playEntityHarmSound(entity, entity.getLocation(), 1, Utils.getRandomGenerator().nextFloat(0.8f, 1.2f));
 	}
 	
 	public static Enchantment getSharpness() {

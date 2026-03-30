@@ -327,7 +327,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 				for (Entity entity : centerBlock.getNearbyEntities(size * 5, size * 5, size * 5))
 					if (entity instanceof Player player) {
 						Location playerLoc = player.getLocation();
-						playSound(player, playerLoc.clone().add(Utils.getVectorTowards(playerLoc, center).multiply(5.0)), Sound.BLOCK_FIRE_AMBIENT, SoundCategory.BLOCKS, 1.0 / (size * 5.0) * playerLoc.distance(center), 2);
+						playSound(player, playerLoc.clone().add(Utils.getVectorTowards(playerLoc, center).multiply(5.0)), Sound.BLOCK_FIRE_AMBIENT, SoundCategory.BLOCKS, (float) (1.0 / (size * 5.0) * playerLoc.distance(center)), 2f);
 					}
 			if (depth <= 0) {
 				markForDead = true;
@@ -478,7 +478,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 			for (Entity entity : first.getWorld().getNearbyEntities(first, size * 6, size * 6, size * 6))
 				if (entity instanceof Player player) {
 					Location playerLoc = player.getLocation();
-					playSound(player, playerLoc.clone().add(Utils.getVectorTowards(playerLoc, first).multiply(5.0)), Sound.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 1.0 / (size * 6.0) * playerLoc.distance(first), 0.5);
+					playSound(player, playerLoc.clone().add(Utils.getVectorTowards(playerLoc, first).multiply(5.0)), Sound.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, (float) (1.0 / (size * 6.0) * playerLoc.distance(first)), 0.5f);
 				}
 			final double explosionRadiusSquared = explosionRadius * explosionRadius;
 			for (Entity entity : first.getWorld().getNearbyEntities(first, explosionRadius, explosionRadius, explosionRadius, temp -> temp.isValid())) {
@@ -521,7 +521,7 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 			for (Entity entity : first.getWorld().getNearbyEntities(first, size * 6, size * 6, size * 6))
 				if (entity instanceof Player player) {
 					Location playerLoc = player.getLocation();
-					playSound(player, playerLoc.clone().add(Utils.getVectorTowards(playerLoc, first).multiply(5.0)), Sound.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 1.0 / (size * 6.0) * playerLoc.distance(first), 1.0);
+					playSound(player, playerLoc.clone().add(Utils.getVectorTowards(playerLoc, first).multiply(5.0)), Sound.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, (float) (1.0 / (size * 6.0) * playerLoc.distance(first)), 1f);
 				}
 			new BukkitRunnable() {
 				private int timeout = 80;

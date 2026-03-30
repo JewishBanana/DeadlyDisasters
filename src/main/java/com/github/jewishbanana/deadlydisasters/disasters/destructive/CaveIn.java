@@ -28,7 +28,6 @@ import org.bukkit.util.Vector;
 
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
-import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
@@ -166,9 +165,9 @@ public class CaveIn extends Disaster {
 						if (distance > soundRange)
 							return;
 						if (distance > distanceSquared)
-							playSound(player, loc.add(Utils.getVectorTowards(loc, location).multiply(7.0)), Sound.ENTITY_WITHER_BREAK_BLOCK, (0.0125 * (level * 2)) * (1.0 - ((1.0 / excessSoundRange) * (loc.distance(location) - disasterRange))), 0.5);
+							playSound(player, loc.add(Utils.getVectorTowards(loc, location).multiply(7.0)), Sound.ENTITY_WITHER_BREAK_BLOCK, (float) ((0.0125 * (level * 2)) * (1.0 - ((1.0 / excessSoundRange) * (loc.distance(location) - disasterRange)))), 0.5f);
 						else
-							playSound(player, loc.subtract(0, 7, 0), Sound.ENTITY_WITHER_BREAK_BLOCK, (0.0125 * (level * 2)), 0.5);
+							playSound(player, loc.subtract(0, 7, 0), Sound.ENTITY_WITHER_BREAK_BLOCK, (0.0125f * (level * 2)), 0.5f);
 					});
 					scheduleTask(new BukkitRunnable() {
 						private double distance = 1.0;
@@ -302,9 +301,6 @@ public class CaveIn extends Disaster {
 	}
 	protected String getConfigPath() {
 		return "disasters.destructive.cavein";
-	}
-	public String getDisplayName() {
-		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return EnumSet.of(Environment.THE_END);

@@ -161,10 +161,10 @@ public class WorldWrapper {
 		List<String> disabledList = DataUtils.getConfigStringList(wrapper.config, wrapper.configName, "world.disabled_disasters");
 		disabledList.forEach(disaster -> {
 			switch (disaster.toUpperCase()) {
-			case "ALL":
-				wrapper.targetingMode = 0;
-				break;
 			case "NONE":
+				break;
+			case "ALL":
+				disasters.addAll(DisasterRegistry.getRegisteredDisasters());
 				break;
 			default:
 				Set<DisasterRegistry> category = disasterCategories.get(disaster.toUpperCase());
@@ -188,20 +188,20 @@ public class WorldWrapper {
 			wrapper.maximumTime = wrapper.minimumTime;
 			Utils.sendConsoleMessage("&cERROR the maximum time must be greater than the minimum time! Something won't work until you fix this value in the world config &b'"+wrapper.configName+"'&c!");
 		}
-		if (DataUtils.getDataFile().contains("worlds."+wrapper.world.getUID().toString()+".persisted_min") && DataUtils.getDataFile().contains("worlds."+wrapper.world.getUID().toString()+".persisted_max")) {
-			if (DataUtils.getDataFileInt("worlds."+wrapper.world.getUID().toString()+".persisted_min") != wrapper.minimumTime
-					|| DataUtils.getDataFileInt("worlds."+wrapper.world.getUID().toString()+".persisted_max") != wrapper.maximumTime) {
-				DataUtils.writeToDataFile(file -> {
-					file.set("worlds."+wrapper.world.getUID().toString()+".persisted_min", wrapper.minimumTime);
-					file.set("worlds."+wrapper.world.getUID().toString()+".persisted_max", wrapper.maximumTime);
-				});
-				plugin.selector.refreshWorldTimers(wrapper.world);
-			}
-		} else
-			DataUtils.writeToDataFile(file -> {
-				file.set("worlds."+wrapper.world.getUID().toString()+".persisted_min", wrapper.minimumTime);
-				file.set("worlds."+wrapper.world.getUID().toString()+".persisted_max", wrapper.maximumTime);
-			});
+//		if (DataUtils.getDataFile().contains("worlds."+wrapper.world.getUID().toString()+".persisted_min") && DataUtils.getDataFile().contains("worlds."+wrapper.world.getUID().toString()+".persisted_max")) {
+//			if (DataUtils.getDataFileInt("worlds."+wrapper.world.getUID().toString()+".persisted_min") != wrapper.minimumTime
+//					|| DataUtils.getDataFileInt("worlds."+wrapper.world.getUID().toString()+".persisted_max") != wrapper.maximumTime) {
+//				DataUtils.writeToDataFile(file -> {
+//					file.set("worlds."+wrapper.world.getUID().toString()+".persisted_min", wrapper.minimumTime);
+//					file.set("worlds."+wrapper.world.getUID().toString()+".persisted_max", wrapper.maximumTime);
+//				});
+//				plugin.selector.refreshWorldTimers(wrapper.world);
+//			}
+//		} else
+//			DataUtils.writeToDataFile(file -> {
+//				file.set("worlds."+wrapper.world.getUID().toString()+".persisted_min", wrapper.minimumTime);
+//				file.set("worlds."+wrapper.world.getUID().toString()+".persisted_max", wrapper.maximumTime);
+//			});
 		wrapper.disasterOffset = (float) DataUtils.getConfigDouble(wrapper.config, wrapper.configName, "world.disaster_offset", 15.0);
 		wrapper.sharedDisasterRadius = (float) DataUtils.getConfigDouble(wrapper.config, wrapper.configName, "world.shared_disaster_radius", 50.0);
 		ConfigurationSection probabilityTable = DataUtils.getConfigSection(wrapper.config, wrapper.configName, "world.level_probabilities");

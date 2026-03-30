@@ -648,10 +648,25 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 		}
 		case "timers" -> {
 			if (args.length < 2) {
-				sender.sendMessage(Utils.convertString("&cUsage: /disasters timers <listworlds|listplayer> [player]"));
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters timers <reset|listworlds|listplayer> [player]"));
 				return true;
 			}
 			switch (args[1].toLowerCase()) {
+			case "reset" -> {
+				World[] worlds = null;
+				if (args.length > 2) {
+					worlds = getWorldSelection(args[2], sender);
+					if (worlds == null) {
+						sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[2]+"'!"));
+						return true;
+					}
+				} else
+					worlds = Bukkit.getServer().getWorlds().toArray(new World[0]);
+				for (World world : worlds)
+					plugin.selector.refreshWorldTimers(world);
+				sender.sendMessage(Utils.convertString(Utils.prefix+"&bRefreshed all timers on "+(worlds.length == 1 ? "&d'"+args[2]+"'&b!" : "&aall worlds!")));
+				return true;
+			}
 			case "listworlds" -> {
 				StringBuilder builder = new StringBuilder(Utils.prefix+"&aAll worlds and their global timers listed:");
 				Bukkit.getWorlds().forEach(world -> {
@@ -850,7 +865,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			else if (args[0].equalsIgnoreCase("blacklist") && sender.hasPermission("deadlydisasters.blacklist"))
 				list.addAll(Arrays.asList("add", "remove"));
 			else if (args[0].equalsIgnoreCase("timers") && sender.hasPermission("deadlydisasters.timers"))
-				list.addAll(Arrays.asList("listworlds", "listplayer"));
+				list.addAll(Arrays.asList("reset", "listworlds", "listplayer"));
 			list.removeIf(e -> !e.toLowerCase().contains(keyword));
 		}
 		case 3 -> {
@@ -879,9 +894,12 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				}
 			} else if (args[0].equalsIgnoreCase("blacklist") && sender.hasPermission("deadlydisasters.blacklist"))
 				list.addAll(Bukkit.getServer().getOnlinePlayers().stream().map(player -> player.getName()).collect(Collectors.toList()));
-			else if (args[0].equalsIgnoreCase("timers") && sender.hasPermission("deadlydisasters.timers")
-					&& args[1].equalsIgnoreCase("listplayer"))
-				list.addAll(Bukkit.getServer().getOnlinePlayers().stream().map(player -> player.getName()).collect(Collectors.toList()));
+			else if (args[0].equalsIgnoreCase("timers") && sender.hasPermission("deadlydisasters.timers")) {
+				if (args[1].equalsIgnoreCase("reset"))
+					list.addAll(Bukkit.getServer().getWorlds().stream().map(world -> world.getName()).collect(Collectors.toList()));
+				else if (args[1].equalsIgnoreCase("listplayer"))
+					list.addAll(Bukkit.getServer().getOnlinePlayers().stream().map(player -> player.getName()).collect(Collectors.toList()));
+			}
 			list.removeIf(e -> !e.toLowerCase().contains(keyword));
 		}
 		case 4 -> {

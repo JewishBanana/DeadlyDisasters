@@ -333,19 +333,19 @@ public abstract class Disaster {
 			this(disaster, blocks, getRegenTickRate() * (getConfigPath() == null ? 1.0 : getConfigOverrideDouble("regen_rate")), startDelay);
 		}
 	}
-	public void playSound(Location loc, Sound sound, SoundCategory category, double vol, double pitch) {
-		loc.getWorld().playSound(loc, sound, category, (float) (vol * volume), (float) pitch);
+	public void playSound(Location loc, Sound sound, SoundCategory category, float vol, float pitch) {
+		loc.getWorld().playSound(loc, sound, category, vol * volume, pitch);
 	}
-	public void playSound(Location loc, Sound sound, double vol, double pitch) {
+	public void playSound(Location loc, Sound sound, float vol, float pitch) {
 		playSound(loc, sound, SoundCategory.MASTER, vol, pitch);
 	}
-	public void playSound(Player player, Location loc, Sound sound, SoundCategory category, double vol, double pitch) {
-		player.playSound(loc, sound, category, (float) (vol * volume), (float) pitch);
+	public void playSound(Player player, Location loc, Sound sound, SoundCategory category, float vol, float pitch) {
+		player.playSound(loc, sound, category, vol * volume, pitch);
 	}
-	public void playSound(Player player, Location loc, Sound sound, double vol, double pitch) {
+	public void playSound(Player player, Location loc, Sound sound, float vol, float pitch) {
 		playSound(player, loc, sound, SoundCategory.MASTER, vol, pitch);
 	}
-	public void playSoundInLargeArea(Location loc, Sound sound, double vol, double pitch, double range) {
+	public void playSoundInLargeArea(Location loc, Sound sound, float vol, float pitch, double range) {
 		final double rangeSquared = range * range;
 		final World world = loc.getWorld();
 		world.getPlayers().forEach(player -> {
@@ -353,10 +353,10 @@ public abstract class Disaster {
 			if (playerLoc.distanceSquared(loc) > rangeSquared)
 				return;
 			final double distance = playerLoc.distance(loc);
-			playSound(player, playerLoc.add(Utils.getVectorTowards(playerLoc, loc).multiply(7.0 / range * distance)), sound, vol - ((vol / range) * (distance - range)), pitch);
+			playSound(player, playerLoc.add(Utils.getVectorTowards(playerLoc, loc).multiply(7.0 / range * distance)), sound, (float) (vol - ((vol / range) * (distance - range))), pitch);
 		});
 	}
-	public void playSoundInLargeArea(Location loc, Sound sound, double vol, double pitch, double innerRange, double outerRange, Function<Location, Location> function) {
+	public void playSoundInLargeArea(Location loc, Sound sound, float vol, float pitch, double innerRange, double outerRange, Function<Location, Location> function) {
 		final double innerRangeSquared = innerRange * innerRange;
 		final double sumRange = innerRange + outerRange;
 		final double sumRangeSquared = sumRange * sumRange;
@@ -368,7 +368,7 @@ public abstract class Disaster {
 				return;
 			if (distanceSquared > innerRangeSquared) {
 				final double distance = playerLoc.distance(loc);
-				playSound(player, playerLoc.add(Utils.getVectorTowards(playerLoc, loc).multiply(7.0 / outerRange * distance)), sound, vol - ((vol / outerRange) * (distance - innerRange)), pitch);
+				playSound(player, playerLoc.add(Utils.getVectorTowards(playerLoc, loc).multiply(7.0 / outerRange * distance)), sound, (float) (vol - ((vol / outerRange) * (distance - innerRange))), pitch);
 			} else
 				playSound(player, function.apply(playerLoc), sound, vol, pitch);
 		});
@@ -543,6 +543,9 @@ public abstract class Disaster {
 		return "messages.disaster_broadcasts.general.level_"+level;
 	}
 	public String getDisplayName() {
+		String path = getConfigPath();
+		if (path != null)
+			return Utils.convertString(DataUtils.getLanguageString(path));
 		return this.getClass().getSimpleName();
 	}
 	public String getDisasterTip() {

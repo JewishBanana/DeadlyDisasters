@@ -167,7 +167,8 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 					Location temp = entry.getKey();
 					world.spawnParticle(Particle.PORTAL, temp, 20, .2, .2, .2, 1.5);
 					world.spawnParticle(Particle.SQUID_INK, temp.getX(), temp.getY() + 0.5, temp.getZ(), 30, .25, .25, .25, .0001);
-					playSound(temp, Sound.BLOCK_PORTAL_AMBIENT, SoundCategory.AMBIENT, .7, 1);
+					if (value % 6 == 0)
+						playSound(temp, Sound.BLOCK_PORTAL_AMBIENT, SoundCategory.AMBIENT, .7f, 1.5f);
 					for (Entity e : world.getNearbyEntities(temp, 3.0, 3.0, 3.0, t -> !isEntityProtected(t))) {
 						Location entityLoc = e.getLocation();
 						e.setVelocity(Utils.getVectorTowards(entityLoc, temp).multiply(0.3));
@@ -313,7 +314,7 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 				}
 			}
 			if (closest != null) {
-				playSound(player, loc.add(0, 5, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength * (flag ? 1.0 : 0.15), .5);
+				playSound(player, loc.add(0, 5, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (soundVolume * currentStrength * (flag ? 1.0 : 0.15)), .5f);
 				if (soundTick == 0) {
 					player.stopSound(Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP);
 					playSound(player, BlockUtils.getCenterOfBlock(closest), Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 2, 2);
@@ -351,9 +352,9 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 			if (aboveFlag && soundTick == 0) {
 				final Location fixed = new Location(world, loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
-					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, ((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength, .5);
+					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength), .5f);
 				else
-					playSound(player, loc.add(0, 7, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength, .5);
+					playSound(player, loc.add(0, 7, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (soundVolume * currentStrength), .5f);
 			}
 		});
 	}

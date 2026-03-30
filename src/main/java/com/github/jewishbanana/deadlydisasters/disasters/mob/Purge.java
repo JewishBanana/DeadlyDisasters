@@ -97,7 +97,7 @@ public class Purge extends Disaster implements MobDisaster {
 		}
 		this.targetUUID = player.getUniqueId();
 		targetedPlayers.add(targetUUID);
-		playSound(location, Sound.EVENT_RAID_HORN, 100, .1);
+		playSound(location, Sound.EVENT_RAID_HORN, 100f, .1f);
 		if (bar != null)
 			bar.addPlayer(player);
 		scheduleTask(new BukkitRunnable() {

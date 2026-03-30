@@ -33,7 +33,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStopEvent.DisasterStopReason;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
-import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.mojang.datafixers.util.Pair;
 
@@ -135,7 +134,7 @@ public class Sinkhole extends Disaster {
 						        .thenComparingDouble(cb -> cb.distance))                 // then by distance
 						    .collect(Collectors.toCollection(ArrayList::new));
 					
-					playSoundInLargeArea(location, Sound.ITEM_TOTEM_USE, 0.33 * level, 0.5, disasterRange, level * 7.0, loc -> loc.subtract(0, 7, 0));
+					playSoundInLargeArea(location, Sound.ITEM_TOTEM_USE, 0.33f * level, 0.5f, disasterRange, level * 7.0, loc -> loc.subtract(0, 7, 0));
 					
 					scheduleTask(new BukkitRunnable() {
 						private double distance = 1.0;
@@ -380,9 +379,6 @@ public class Sinkhole extends Disaster {
 	}
 	protected String getConfigPath() {
 		return "disasters.destructive.sinkhole";
-	}
-	public String getDisplayName() {
-		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return EnumSet.of(Environment.NETHER, Environment.THE_END);

@@ -29,7 +29,6 @@ import org.bukkit.util.Vector;
 
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
-import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
@@ -274,7 +273,7 @@ public class Tornado extends Disaster {
 			
 			@Override
 			public void run() {
-				playSoundInLargeArea(location, Sound.WEATHER_RAIN_ABOVE, 0.33 * level * amplifier, 0.5, disasterRange + (level * 7));
+				playSoundInLargeArea(location, Sound.WEATHER_RAIN_ABOVE, 0.33f * level * amplifier, 0.5f, disasterRange + (level * 7));
 				amplifier = Utils.clamp(amplifier + 0.045f, 0f, 1f);
 			}
 		}.runTaskTimer(plugin, 0, 10));
@@ -361,9 +360,6 @@ public class Tornado extends Disaster {
 	}
 	protected String getConfigPath() {
 		return "disasters.destructive.tornado";
-	}
-	public String getDisplayName() {
-		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return EnumSet.of(Environment.NETHER, Environment.THE_END);

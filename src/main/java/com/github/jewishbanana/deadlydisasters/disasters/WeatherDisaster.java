@@ -40,7 +40,7 @@ public abstract class WeatherDisaster extends Disaster {
 	
 	protected static final double smoothingRangeExcess = 16.0;
 	
-	protected Set<UUID> weatherPlayers = ConcurrentHashMap.newKeySet();
+	protected final Set<UUID> weatherPlayers = ConcurrentHashMap.newKeySet();
 	
 	protected int time;
 	protected float scale;
@@ -300,9 +300,6 @@ public abstract class WeatherDisaster extends Disaster {
 	}
 	public String getBroadcastMessageConfigPath() {
 		return "messages.disaster_broadcasts.weather.level_"+level;
-	}
-	public String getDisplayName() {
-		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
 	}
 	public void placeDebugRings() {
 		BlockUtils.getBlocksInCircleCircumference(new Location(location.getWorld(), location.getX(), 110, location.getZ()), (float) disasterRange).forEach(b -> b.setType(Material.GREEN_WOOL));

@@ -8,7 +8,7 @@
 ###############################################################################################################################################################################
 
 general:
-    # If realistic seasons should take any affect on Deadly Disasters.
+    # If realistic seasons should take any affect on Deadly Disasters. Changing this setting will require a server restart to take affect!
     enabled: true
     # The maximum temperature players can be at for blizzards to affect them. This uses the Realistic Seasons temperature for players.
     blizzard_temperature_threshold: -1
@@ -39,7 +39,7 @@ disasters:
     - SPRING
     - SUMMER
     - FALL
-    plague:
+    black_plague:
     - SPRING
     - SUMMER
     - FALL

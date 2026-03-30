@@ -23,7 +23,6 @@ import org.bukkit.util.Vector;
 
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
-import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class LavaGeyser extends Disaster {
@@ -133,9 +132,6 @@ public class LavaGeyser extends Disaster {
 	protected String getConfigPath() {
 		return "disasters.destructive.lava_geyser";
 	}
-	public String getDisplayName() {
-		return Utils.convertString(DataUtils.getLanguageString(getConfigPath()));
-	}
 	public Set<Environment> getBannedEnvironments() {
 		return EnumSet.of(Environment.NORMAL, Environment.THE_END);
 	}
@@ -225,7 +221,7 @@ public class LavaGeyser extends Disaster {
 						Location loc = e.getLocation();
 						loc.setY(location.getY());
 						if (e instanceof Player player)
-							playSound(player, player.getLocation().add(Utils.getVectorTowards(loc, location).multiply(5.0)), sound, (0.2 * level) * (1.0 - ((1.0 / (size * 3)) * (loc.distance(location) - size))), 0.5);
+							playSound(player, player.getLocation().add(Utils.getVectorTowards(loc, location).multiply(5.0)), sound, (float) ((0.2 * level) * (1.0 - ((1.0 / (size * 3)) * (loc.distance(location) - size)))), 0.5f);
 						if (loc.distanceSquared(location) > innerDistanceFalloff || loc.getBlock().getType() != material)
 							continue;
 						e.setVelocity(new Vector(0, 2, 0));

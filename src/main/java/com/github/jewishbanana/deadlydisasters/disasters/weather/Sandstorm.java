@@ -230,13 +230,13 @@ public class Sandstorm extends WeatherDisaster implements Listener, MobDisaster 
 				for (int i=0; i < 8; i++)
 					player.spawnParticle(VersionUtils.getNormalSmoke(), loc.getX() + random.nextFloat(-2f, 2f), loc.getY() + random.nextFloat(-.5f, 2.5f), loc.getZ() + random.nextFloat(-2f, 2f), 0, random.nextFloat(-3f, 3f), random.nextFloat(-3f, 3f), random.nextFloat(-3f, 3f), 1);
 			if (closest != null) {
-				playSound(player, loc.add(0, 3, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, 0.02 * currentStrength * (flag ? 1.0 : 0.15), .5);
+				playSound(player, loc.add(0, 3, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (0.02 * currentStrength * (flag ? 1.0 : 0.15)), .5f);
 				if (soundTick == 0) {
 					final Location soundLoc = BlockUtils.getCenterOfBlock(closest);
-					playSound(player, soundLoc, Sound.AMBIENT_BASALT_DELTAS_ADDITIONS, SoundCategory.WEATHER, 1 * (flag ? 1.0 : 0.15), .75);
-					playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 1 * (flag ? 1.0 : 0.15), .5);
+					playSound(player, soundLoc, Sound.AMBIENT_BASALT_DELTAS_ADDITIONS, SoundCategory.WEATHER, (float) (1 * (flag ? 1.0 : 0.15)), .75f);
+					playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, (float) (1 * (flag ? 1.0 : 0.15)), .5f);
 					if (random.nextInt(10) == 0)
-						playSound(player, soundLoc, Sound.ENTITY_EVOKER_PREPARE_WOLOLO, SoundCategory.WEATHER, 1 * (flag ? 1.0 : 0.15), .5);
+						playSound(player, soundLoc, Sound.ENTITY_EVOKER_PREPARE_WOLOLO, SoundCategory.WEATHER, (float) (1 * (flag ? 1.0 : 0.15)), .5f);
 				}
 			}
 		}, pair -> {
@@ -284,9 +284,9 @@ public class Sandstorm extends WeatherDisaster implements Listener, MobDisaster 
 			if (aboveFlag && soundTick == 0) {
 				final Location fixed = new Location(world, loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
-					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, ((0.02 / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength, .5);
+					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, (float) (((0.02 / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength), .5f);
 				else
-					playSound(player, loc.add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, 0.02 * currentStrength, .5);
+					playSound(player, loc.add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (0.02 * currentStrength), .5f);
 			}
 		}, loc -> isBlockInClimate(loc.getBlock()));
 		
@@ -377,8 +377,8 @@ public class Sandstorm extends WeatherDisaster implements Listener, MobDisaster 
 	public void addPlayerToWeather(Player player) {
 		super.addPlayerToWeather(player);
 		Location soundLoc = player.getLocation().add(0, 5, 0);
-		playSound(player, soundLoc, Sound.AMBIENT_BASALT_DELTAS_ADDITIONS, SoundCategory.WEATHER, 1, .75);
-		playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 1, .5);
+		playSound(player, soundLoc, Sound.AMBIENT_BASALT_DELTAS_ADDITIONS, SoundCategory.WEATHER, 1f, .75f);
+		playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 1f, .5f);
 	}
 	public void removePlayerFromWeather(Player player) {
 		super.removePlayerFromWeather(player);

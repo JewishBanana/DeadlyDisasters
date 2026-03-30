@@ -284,11 +284,11 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 				}
 			}
 			if (closest != null) {
-				playSound(player, loc.add(0, 3, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, 0.01 * currentStrength * (flag ? 1.0 : 0.15), .5);
+				playSound(player, loc.add(0, 3, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (0.01 * currentStrength * (flag ? 1.0 : 0.15)), .5f);
 				if (soundTick == 0) {
 					final Location soundLoc = BlockUtils.getCenterOfBlock(closest);
-					playSound(player, soundLoc, Sound.AMBIENT_BASALT_DELTAS_ADDITIONS, SoundCategory.WEATHER, 0.3 * (flag ? 1.0 : 0.15), .75);
-					playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 0.3 * (flag ? 1.0 : 0.15), .5);
+					playSound(player, soundLoc, Sound.AMBIENT_BASALT_DELTAS_ADDITIONS, SoundCategory.WEATHER, (float) (0.3 * (flag ? 1.0 : 0.15)), .75f);
+					playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, (float) (0.3 * (flag ? 1.0 : 0.15)), .5f);
 				}
 			}
 			if (setDawn)
@@ -336,9 +336,9 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 			if (aboveFlag && soundTick == 0) {
 				final Location fixed = new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
-					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, ((0.02 / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength, .5);
+					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, (float) (((0.02 / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength), .5f);
 				else
-					playSound(player, loc.clone().add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, 0.01 * currentStrength, .5);
+					playSound(player, loc.clone().add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (0.01 * currentStrength), .5f);
 			}
 			if (setDawn) {
 				final double actualDistance = new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()).distance(location);
@@ -442,8 +442,8 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 	public void addPlayerToWeather(Player player) {
 		super.addPlayerToWeather(player);
 		Location soundLoc = player.getLocation().add(0, 5, 0);
-		playSound(player, soundLoc, Sound.AMBIENT_BASALT_DELTAS_ADDITIONS, SoundCategory.WEATHER, 0.3, .75);
-		playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 0.3, .5);
+		playSound(player, soundLoc, Sound.AMBIENT_BASALT_DELTAS_ADDITIONS, SoundCategory.WEATHER, 0.3f, .75f);
+		playSound(player, soundLoc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, SoundCategory.WEATHER, 0.3f, .5f);
 	}
 	public void removePlayerFromWeather(Player player) {
 		super.removePlayerFromWeather(player);

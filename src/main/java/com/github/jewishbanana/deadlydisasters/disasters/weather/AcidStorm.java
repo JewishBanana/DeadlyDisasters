@@ -238,7 +238,7 @@ public class AcidStorm extends WeatherDisaster implements Listener, MobDisaster 
 								stack.setAmount(0);
 								Location loc = entity.getLocation();
 								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
-								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 2);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5f, 2f);
 							}
 							break;
 						case IRON_SWORD:
@@ -258,7 +258,7 @@ public class AcidStorm extends WeatherDisaster implements Listener, MobDisaster 
 								Location loc = entity.getLocation();
 								world.dropItem(loc, new ItemStack(Material.STICK));
 								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
-								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 2);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5f, 2f);
 							}
 							break;
 						case IRON_HELMET:
@@ -275,7 +275,7 @@ public class AcidStorm extends WeatherDisaster implements Listener, MobDisaster 
 							if (stack.getAmount() == 0) {
 								Location loc = entity.getLocation();
 								world.spawnParticle(Particle.CLOUD, loc, 3, .2, .2, .2, .001);
-								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5, 2);
+								playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, .5f, 2f);
 							}
 							break;
 						default:
@@ -367,9 +367,9 @@ public class AcidStorm extends WeatherDisaster implements Listener, MobDisaster 
 			if (aboveFlag && soundTick == 0) {
 				final Location fixed = new Location(world, loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
-					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, ((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength, 1);
+					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN, SoundCategory.WEATHER, (float) (((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength), 1f);
 				else
-					playSound(player, loc.add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength, 1);
+					playSound(player, loc.add(0, 7, 0), soundFlag ? Sound.WEATHER_RAIN : Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (soundVolume * currentStrength), 1f);
 			}
 		});
 		
@@ -416,7 +416,7 @@ public class AcidStorm extends WeatherDisaster implements Listener, MobDisaster 
 									if (block.getType() != type)
 										return;
 									replaceBlockWithProperties(block, change);
-									playSound(top, Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, .1, 2);
+									playSound(top, Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, .1f, 2f);
 									world.spawnParticle(Particle.CLOUD, change == Material.AIR ? top.subtract(0, 1, 0) : top, 3, .5, .05, .5, 0.001);
 								}
 							}.runTask(plugin);

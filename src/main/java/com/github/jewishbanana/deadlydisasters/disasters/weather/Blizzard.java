@@ -54,7 +54,6 @@ import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
-import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class Blizzard extends WeatherDisaster implements Listener, MobDisaster {
 	
@@ -290,7 +289,7 @@ public class Blizzard extends WeatherDisaster implements Listener, MobDisaster {
 				}
 			}
 			if (closest != null) {
-				playSound(player, loc.add(0, 5, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength * (flag ? 1.0 : 0.15), .5);
+				playSound(player, loc.add(0, 5, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (soundVolume * currentStrength * (flag ? 1.0 : 0.15)), .5f);
 				if (soundTick == 0) {
 //					Location soundLoc = BlockUtils.getCenterOfBlock(closest);
 //					playSound(player, soundLoc, Sound.AMBIENT_BASALT_DELTAS_ADDITIONS, SoundCategory.WEATHER, 1, .75);
@@ -327,9 +326,9 @@ public class Blizzard extends WeatherDisaster implements Listener, MobDisaster {
 			if (aboveFlag && soundTick == 0) {
 				final Location fixed = new Location(world, loc.getX(), location.getY(), loc.getZ());
 				if (fixed.distanceSquared(location) > trueSmoothingRange)
-					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, ((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength, .5);
+					playSound(player, loc.clone().add(Utils.getVectorTowards(loc, location).multiply(8.0).setY(7)), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (((soundVolume / smoothingRangeExcess) * ((smoothingRangeExcess - (fixed.distance(location) - disasterRange - smoothingRange)))) * smoothingIntensity * currentStrength), .5f);
 				else
-					playSound(player, loc.add(0, 7, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, soundVolume * currentStrength, .5);
+					playSound(player, loc.add(0, 7, 0), Sound.WEATHER_RAIN_ABOVE, SoundCategory.WEATHER, (float) (soundVolume * currentStrength), .5f);
 			}
 		});
 		
@@ -392,7 +391,7 @@ public class Blizzard extends WeatherDisaster implements Listener, MobDisaster {
 					temp.setCustomNameVisible(false);
 					plugin.getServer().getScheduler().runTaskLater(plugin, () -> temp.getEquipment().setItemInMainHand(new ItemStack(Material.AIR)), 1);
 				});
-				EntityUtils.pureDamageEntity(entity, damage, "deaths.blizzard", DamageCause.FREEZE);
+				EntityUtils.pureDamageEntity(entity, damage, "deaths.blizzard", DamageCause.FREEZE, null, false, false, Sound.ENTITY_PLAYER_HURT_FREEZE);
 				entity = skeleton;
 			}
 			byte data = 0;
@@ -418,12 +417,7 @@ public class Blizzard extends WeatherDisaster implements Listener, MobDisaster {
 			}
 			return;
 		}
-		if (EntityUtils.pureDamageEntity(entity, damage, "deaths.blizzard", DamageCause.FREEZE, false, true) && !entity.isSilent()) {
-			if (entity instanceof Player)
-				entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 1f, random.nextFloat(0.8f, 1.2f));
-			else
-				VersionUtils.playEntityHarmSound(entity, 1f, random.nextFloat(0.8f, 1.2f));
-		}
+		EntityUtils.pureDamageEntity(entity, damage, "deaths.blizzard", DamageCause.FREEZE, null, false, false, Sound.ENTITY_PLAYER_HURT_FREEZE);
 	}
 	protected String getConfigPath() {
 		return "disasters.weather.blizzard";
