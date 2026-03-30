@@ -178,6 +178,22 @@ public class DependencyUtils {
 			Utils.sendExceptionLog(e);
 			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eKingdoms &cregions from this plugin will NOT be protected!");
 		}
+		try {
+			if (pm.isPluginEnabled("FieldZone")) {
+				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.field_zone")) {
+					kr.rtustudio.fieldzone.region.RegionFlag flag = kr.rtustudio.fieldzone.region.RegionFlag.create(plugin, "disasters");
+					kr.rtustudio.fieldzone.FieldZoneAPI.registerFlag(flag);
+					check = (check == null) ? 
+				            loc -> kr.rtustudio.fieldzone.FieldZoneAPI.hasFlag(loc, flag) == kr.rtustudio.fieldzone.region.FlagState.FALSE : 
+				            check.and(loc -> kr.rtustudio.fieldzone.FieldZoneAPI.hasFlag(loc, flag) == kr.rtustudio.fieldzone.region.FlagState.FALSE);
+					plugin.getLogger().info("Successfully hooked into FieldZone");
+				} else
+					plugin.getLogger().info("FieldZone was detected, but region protection for this plugin is disabled in the main config.yml file. FieldZone regions will NOT be protected!");
+			}
+		} catch (Exception e) {
+			Utils.sendExceptionLog(e);
+			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eFieldZone &cregions from this plugin will NOT be protected!");
+		}
 		regionCheck = (check == null) ? loc -> false : check;
 		
 		try {

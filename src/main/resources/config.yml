@@ -95,3 +95,4 @@ external:
         grief_prevention: true
         lands: true
         kingdoms: true
+        field_zone: true
