@@ -211,21 +211,21 @@ public class DependencyUtils {
 		}
 	}
 	public static void reload(Main plugin) {
-		PluginManager pm = plugin.getServer().getPluginManager();
-		try {
-			if (pm.isPluginEnabled("RealisticSeasons")) {
-				FileConfiguration seasonsConfig = SeasonsHook.getSeasonsFile(plugin);
-				if (!DataUtils.getConfigBoolean(seasonsConfig, "seasons.yml", "general.enabled", false))
-					Utils.sendConsoleMessage("&eWARNING RealisticSeasons has been detected but &cdisabled &ein the &bseasons.yml &econfig file!");
-				else {
-					seasonsHook = new SeasonsHook(seasonsConfig);
-					plugin.getLogger().info("Successfully hooked into RealisticSeasons");
-				}
-			}
-		} catch (Exception e) {
-			Utils.sendExceptionLog(e);
-			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eRealistic Seasons &cseasonal disaster settings will NOT take affect!");
-		}
+//		PluginManager pm = plugin.getServer().getPluginManager();
+//		try {
+//			if (pm.isPluginEnabled("RealisticSeasons")) {
+//				FileConfiguration seasonsConfig = SeasonsHook.getSeasonsFile(plugin);
+//				if (!DataUtils.getConfigBoolean(seasonsConfig, "seasons.yml", "general.enabled", false))
+//					Utils.sendConsoleMessage("&eWARNING RealisticSeasons has been detected but &cdisabled &ein the &bseasons.yml &econfig file!");
+//				else {
+//					seasonsHook = new SeasonsHook(seasonsConfig);
+//					plugin.getLogger().info("Successfully hooked into RealisticSeasons");
+//				}
+//			}
+//		} catch (Exception e) {
+//			Utils.sendExceptionLog(e);
+//			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eRealistic Seasons &cseasonal disaster settings will NOT take affect!");
+//		}
 	}
 	public static boolean isVersionOrAbove(Plugin plugin, String toCheckFor) {
 		try {
