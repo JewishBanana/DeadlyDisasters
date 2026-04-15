@@ -62,7 +62,10 @@ public class VersionUtils {
 	private static final Attribute armorToughnessAttribute;
 	
 	static {
-		serverVersion = Arrays.stream(Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf('-')).split("\\.")).map(e -> Integer.parseInt(e)).toArray(Integer[]::new);
+		serverVersion = Arrays.stream(Bukkit.getBukkitVersion().split("-")[0].split("\\."))
+				.filter(e -> e.matches("\\d+"))
+				.map(Integer::parseInt)
+				.toArray(Integer[]::new);
 		
 		if (isMCVersionOrAbove("1.18")) {
 			sharpness = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("sharpness"));
