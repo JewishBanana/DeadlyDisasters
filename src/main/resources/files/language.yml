@@ -34,13 +34,14 @@ messages:
             config:
                 config: "&6Usage: &d/disasters config <reload|set|enable|disable|setting|list>...\n&7This command allows you to view, or change config settings directly in the game. To see a more specific help section, type the next argument into the help command (e.g. '/disasters help config setting')."
                 reload: "&6Usage: &d/disasters config reload\n&7This command will reload all configs for DeadlyDisasters."
-                set: "&6Usage: &d/disasters config set <world> <config>\n&7This command is used to attach a config file to a world meaning that the world will use disaster settings from the attached config file.\n&c<world> &8- &7The world to attach the config file to.\n&c<config> &8- &7The config file to attach to the world. This is the config file that is placed in the worldConfigs folder in the plugins directory!"
+                set: "&6Usage: &d/disasters config set <world> <config|EASY|NORMAL|HARD|EXTREME>\n&7This command is used to attach a config file to a world, or apply a built-in difficulty preset. Presets override timer values on top of the world's existing config file without modifying it.\n&c<world> &8- &7The world to configure.\n&c<config> &8- &7The config file to attach to the world (placed in the worldConfigs folder). Any config file that is not a built-in preset displays as CUSTOM.\n&c<EASY|NORMAL|HARD|EXTREME> &8- &7A built-in preset that overrides timer frequency."
                 enable: "&6Usage: &d/disasters config enable <disaster> [world]\n&7This command will enable the specified disaster or category in either the world the player has run it from, or the specified world. This will directly modify the worlds attached config file!\n&c<disaster> &8- &7The disaster type or category to enable.\n&e[world] &8- &7The world to enable the disaster in."
                 disable: "&6Usage: &d/disasters config disable <disaster> [world]\n&7This command will disable the specified disaster or category in either the world the player has run it from, or the specified world. This will directly modify the worlds attached config file!\n&c<disaster> &8- &7The disaster type or category to disable.\n&e[world] &8- &7The world to disable the disaster in."
                 setting: "&6Usage: &d/disasters config setting <option> <value> [world]\n&7This command will directly modify the config setting in either the world the player has run it from, or the specified world. This will directly modify the worlds attached config file!\n&c<option> &8- &7The config setting to change. This will match the exact config line and tab completion options will show what is available to be changed.\n&c<value> &8- &7The value to change the setting to. This expects the matching data type from the config data types, an error will be received if the data type was incompatible.\n&e[world] &8- &7The world to change the setting in."
                 list: "&6Usage: &d/disasters config list\n&7This command will list all worlds and their attached config files."
             blacklist: "&6Usage: &d/disasters blacklist <add|remove> <player> [world]\n&7This command will add or remove a player from the blacklist on either the world the player has run it from, or a specified world. Disasters do not naturally occur on blacklisted players! This command can be run for offline players.\n&c<add | remove> &8- &7To either add, or remove the player from the blacklist.\n&c<player> &8- &7The target player to add or remove.\n&e[world] &8- &7The world to add or remove the player from the blacklist. Disasters will not naturally occur on blacklisted players in the world."
-            timers: "&6Usage: &d/disasters timers <reset|listworlds|listplayer> [world|player]\n&7This command will either list all worlds global disaster timer countdowns (countdown till next disaster in seconds), or players individual disaster timer countdowns. This can also be used to reset disaster countdowns in a world. This command will can be run for offline players.\n&c<reset | listworlds | listplayer> &8- &7To either list the worlds global timer countdowns, or players indiviudal countdowns, or reset the timers for a world.\n&3[<player>] &8- &7This argument is required if you have chosen the listplayer option. This will list the current individual disaster countdowns for this target player."
+            timers: "&6Usage: &d/disasters timers <reset|listworlds|listplayer> [world|player]\n&7This command will either list all worlds global disaster timer countdowns, or players individual disaster timer countdowns. This can also be used to reset disaster countdowns in a world.\n&c<reset | listworlds | listplayer> &8- &7To either list the worlds global timer countdowns, list player countdowns, or reset the timers for a world.\n&3[player] &8- &7Optional for listplayer. If omitted, all online players are listed with their current world timer."
+            achievements: "&6Usage: &d/disasters achievements [add|remove|clear]...\n&7Opens the achievements menu where you can view your progress towards disaster achievements, claim rewards, and activate masteries.\n&7Server operators may also manage progress directly:\n&e/disasters achievements add <player> <key> <value> &8- &7Adds progress to an achievement.\n&e/disasters achievements remove <player> <key> <value> &8- &7Removes progress from an achievement.\n&e/disasters achievements clear <player> <key|ALL_ACHIEVEMENTS> &8- &7Clears progress for an achievement, or all of them."
             unrecognized: "&cUnrecognized command argument"
     disaster_broadcasts:
         general:
@@ -86,6 +87,7 @@ messages:
     world_messages:
         world_forecast:
         - "&bWorld disaster forecast for &d%world%"
+        - "&3- Preset difficulty: &e%preset%"
         - "&3- Disaster targeting: %targeting%"
         - "&3- Frequency: &6%lowminute%-%highminute% min &7/ &3Proximity: &6%offset%"
         - "&3- Severity levels 1-6: &a%level1%% &2%level2%% &b%level3%% &e%level4%% &c%level5%% &4%level6%%"
@@ -104,7 +106,6 @@ disasters:
         cavein: "(hex:#a6987e)Cave-In"
         supernova: "(hex:#db42ab)Supernova"
         tsunami: "(hex:#1b62bf)Tsunami"
-        hurricane: "(hex:#c8d6e6)Hurricane"
         infested_cave: "(hex:#1b7894)Infested Cave"
         landslide: "(hex:#d49639)Landslide"
         avalanche: "(hex:#88d8f7)Avalanche"
@@ -118,6 +119,7 @@ disasters:
         monsoon: "(hex:#1f3dff)Monsoon"
         end_storm: "(hex:#ec3dff)End Storm"
         solar_storm: "(hex:#ffc71f)Solar Storm"
+        hurricane: "(hex:#c8d6e6)Hurricane"
     mob:
         black_plague: "(hex:#4d4d4d)Black Plague"
         purge: "(hex:#917a7a)Purge"
@@ -130,20 +132,20 @@ disasters:
         cavein: "&7Tip: Avoid cramped caves with low roofs."
         supernova: "&7Tip: Run."
         tsunami: "&7Tip: Tsunamis only happen near deep water. They do not reach very deep, you may be able to dive under them."
-        hurricane: "&7Tip: Hurricanes only appear in tropical biomes or oceans. Take shelter, and patch holes."
-        infested_cave: "&7Tip: Avoid breaking the infestation, it will regenerate, and might let it know where you are..."
+        hurricane: "&7Tip: Hurricanes only appear in tropical biomes or near oceans. Take shelter, and patch holes."
+        infested_cave: "&7Tip: Avoid breaking the infestation. It will regenerate, and let them know where you are..."
         landslide: "&7Tip: Try not to stay in one spot or you will get buried."
         acid_storm: "&7Tip: Seek immediate shelter to avoid the acid rain; metal items and armor will melt incredibly fast."
         extreme_winds: "&7Tip: Strong winds do not affect you inside shelter, just watch out for the walls being torn."
         sandstorm: "&7Tip: Sandstorms only appear in desert biomes. If you get caught in one, don't stop running."
-        blizzard: "&7Tip: Blizzards only appear in cold biomes. Wearing leather armor will help with the cold, standing close to strong heat sources also prevents freezing."
+        blizzard: "&7Tip: Blizzards only appear in cold biomes. Wearing leather armor will help protect from the cold, standing close to strong heat sources also prevents freezing."
         soul_storm: "&7Tip: Lost souls can travel through walls so shelter won't help you."
-        meteor_shower: "&7Tip: Meteors fall on the surface and typically do not penetrate many blocks, try going deep underground."
-        monsoon: "&7Tip: Monsoons have such heavy rainfall that you cannot breathe in them. As the water level rises, drowned leave the ocean."
+        meteor_shower: "&7Tip: Meteors fall on the surface and typically do not penetrate many blocks. Some are filled with precious minerals."
+        monsoon: "&7Tip: Monsoons have such heavy rainfall that you cannot breathe outdoors. As the water level rises, drowned leave the ocean."
         end_storm: "&7Tip: Take shelter. Try to slay void mobs as they appear from rifts to avoid crowding."
         solar_storm: "&7Tip: Standing near heat sources can ignite you! During solarstorms all fires last twice as long."
         black_plague: "&7Tip: Avoid making contact with any mobs; if you see black particles near a mob, it means they are infected."
-        purge: "&7Tip: Try getting to high ground where most mobs cannot reach. Beware of Tunnellers."
+        purge: "&7Tip: Trying to pillar up, or tunnel underground will only make things worse..."
     features:
         purge_boss_bar_title: "&fHorde"
 deaths:
@@ -151,6 +153,7 @@ deaths:
     earthquake: "%player% fell into an earthquake"
     tornado: "%player% was swept away by a tornado"
     water_geyser: "%player% melted in a water geyser"
+    lava_geyser: "%player% melted in a lava geyser"
     cavein: "%player% was crushed in a cave-in"
     supernova: "%player% was obliterated by a supernova"
     tsunami: "%player% drowned in a tsunami"
@@ -159,7 +162,7 @@ deaths:
     landslide: "%player% was caught up in a landslide"
     avalanche: "%player% was caught up in an avalanche"
     acid_storm: "%player% dissolved in acid rain"
-    extreme_winds: "%player% was swept away by severe winds"
+    extreme_winds: "%player% was swept away by the winds"
     sandstorm: "%player% withered away in a sandstorm"
     blizzard: "%player% froze to death in a blizzard"
     meteor: "%player% was crushed by a meteor"
@@ -181,3 +184,15 @@ items:
         name: "&7Basic Coating Book"
 enchants:
     basic_coating: "&7Basic Coating"
+achievements:
+    # Shown when "announce_achievements" is "local". %achievement% becomes the achievement name (hover it to see the description).
+    earn_local: "&fYou have earned the achievement %achievement%"
+    # Shown when "announce_achievements" is "global" or "world". %player% is the player's name, %achievement% is the achievement name (hoverable).
+    earn_broadcast: "&f%player% has earned the achievement %achievement%"
+    notify_unclaimed: "&aYou have unclaimed achievements! &b(/disasters achievements)"
+    claim_reward: "Click to claim reward!"
+    enable_mastery: "Click to activate!"
+    deactivate_mastery: "Currently active, click to &cdeactivate"
+    gui_title: "&9DeadlyDisasters Achievements"
+    word_progress: "Progress"
+    word_rewards: "Rewards"

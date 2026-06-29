@@ -26,14 +26,12 @@ import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class DisasterSelector {
 	
-	private final Main plugin;
 	private final RandomGenerator random;
 	
 	public final Map<UUID, Map<UUID, Integer>> playerTimers = new ConcurrentHashMap<>();
 	public final Map<UUID, Integer> worldTimers = new ConcurrentHashMap<>();
 	
 	public DisasterSelector(Main plugin) {
-		this.plugin = plugin;
 		this.random = Utils.getRandomGenerator();
 		FileConfiguration data = DataUtils.getDataFile();
 		ConfigurationSection section = data.getConfigurationSection("timers");
@@ -44,7 +42,7 @@ public class DisasterSelector {
 			playerSection = section.createSection("players");
 		for (String worldID : playerSection.getKeys(false))
 			for (String playerID : playerSection.getConfigurationSection(worldID).getKeys(false))
-				playerTimers.computeIfAbsent(UUID.fromString(playerID), m -> new ConcurrentHashMap<>()).put(UUID.fromString(worldID), DataUtils.getDataFileInt(playerSection.getCurrentPath()+'.'+worldID+'.'+playerID));
+				playerTimers.computeIfAbsent(UUID.fromString(worldID), m -> new ConcurrentHashMap<>()).put(UUID.fromString(playerID), DataUtils.getDataFileInt(playerSection.getCurrentPath()+'.'+worldID+'.'+playerID));
 		ConfigurationSection worldsSection = section.getConfigurationSection("worlds");
 		if (worldsSection == null)
 			worldsSection = section.createSection("worlds");
@@ -66,11 +64,9 @@ public class DisasterSelector {
 					// Individual
 					case 1:
 						for (Player player : world.getPlayers()) {
-							if (EntityUtils.isPlayerImmune(player) || !player.isValid())
+							if (!isEligibleNaturalTarget(player, wrapper))
 								continue;
 							UUID uuid = player.getUniqueId();
-							if (wrapper.blacklistedPlayers != null && wrapper.blacklistedPlayers.contains(uuid))
-								continue;
 							Map<UUID, Integer> worldMap = playerTimers.computeIfAbsent(world.getUID(), m -> new ConcurrentHashMap<>());
 							worldMap.compute(uuid, (k, timer) -> {
 								if (k == null || timer == null)
@@ -80,7 +76,7 @@ public class DisasterSelector {
 								if (timer == -1)
 									return timer;
 								plugin.getServer().getScheduler().runTask(plugin, () -> {
-									if (selectDisaster(player, wrapper)) {
+									if (isEligibleNaturalTarget(player, wrapper) && selectDisaster(player, wrapper)) {
 										worldMap.replace(uuid, random.nextInt(wrapper.minimumTime, wrapper.maximumTime + 1));
 										Location playerLoc = player.getLocation();
 										final double distance = wrapper.sharedDisasterRadius * wrapper.sharedDisasterRadius;
@@ -110,7 +106,7 @@ public class DisasterSelector {
 								Collections.shuffle(players);
 								int disasterCount = wrapper.getConfigInt("world.global_disaster_count");
 								for (Player player : players)
-									if (selectDisaster(player, wrapper)) {
+									if (isEligibleNaturalTarget(player, wrapper) && selectDisaster(player, wrapper)) {
 										if (--disasterCount > 0)
 											continue;
 										worldTimers.replace(worldID, random.nextInt(wrapper.minimumTime, wrapper.maximumTime + 1));
@@ -123,12 +119,16 @@ public class DisasterSelector {
 					}
 				});
 			}
-		}.runTaskTimerAsynchronously(plugin, 0, 20);
+		}.runTaskTimer(plugin, 0, 20);
+	}
+	private boolean isEligibleNaturalTarget(Player player, WorldWrapper wrapper) {
+		if (EntityUtils.isPlayerImmune(player) || !player.isValid())
+			return false;
+		UUID uuid = player.getUniqueId();
+		return (wrapper.blacklistedPlayers == null || !wrapper.blacklistedPlayers.contains(uuid)) && !DependencyUtils.isDisasterStartBlocked(player.getLocation());
 	}
 	public boolean selectDisaster(Player player, WorldWrapper wrapper) {
 		try {
-			if (DependencyUtils.isEntityProtected(player))
-				return false;
 			Location loc = player.getLocation().add(new Vector(random.nextFloat(-wrapper.disasterOffset, wrapper.disasterOffset), 0, random.nextFloat(-wrapper.disasterOffset, wrapper.disasterOffset)));
 			final int level = wrapper.rollLevel(random);
 			final List<DisasterRegistry> registers = new ArrayList<>(DisasterRegistry.getRegisteredDisasters());
@@ -137,26 +137,42 @@ public class DisasterSelector {
 				if (wrapper.disabledDisasters.contains(registry))
 					continue;
 				Disaster disaster = registry.createDisaster(loc, player, level, false);
-				if (disaster.getBannedEnvironments().contains(loc.getWorld().getEnvironment())
-						|| (disaster.getFrequency() != 1f && disaster.getFrequency() > random.nextFloat()))
+				if (!disaster.softStart())
 					continue;
-				Location temp = disaster.findPossiblePosition(loc);
-				if (temp == null)
-					continue;
-				disaster.setLocation(temp);
-				if (!disaster.canStart())
-					continue;
-				if (DependencyUtils.isRealisticSeasonsEnabled() && !DependencyUtils.isDisasterInSeason(registry, loc.getWorld()))
-					continue;
-				disaster.init();
-				disaster.broadcastDisaster();
-				plugin.getServer().getScheduler().runTaskLater(plugin, () -> disaster.start(), disaster.startDelayTicks);
 				return true;
 			}
 			return false;
 		} catch (Exception e) {
 			Utils.sendExceptionLog(e);
 			return false;
+		}
+	}
+	/**
+	 * Seconds until the next disaster is rolled for {@code player} in their current world, or {@code -1} if disasters are
+	 * disabled there, no timer is running yet, or one is currently mid-selection ({@code -1} sentinel). Used by
+	 * UltimateContent's tameable baby end totem to warn the player as a disaster approaches.
+	 */
+	public int getSecondsUntilDisaster(Player player) {
+		World world = player.getWorld();
+		WorldWrapper wrapper = WorldWrapper.getWorldWrapper(world);
+		if (wrapper == null)
+			return -1;
+		switch (wrapper.targetingMode) {
+		// Individual
+		case 1: {
+			Map<UUID, Integer> worldMap = playerTimers.get(world.getUID());
+			if (worldMap == null)
+				return -1;
+			Integer timer = worldMap.get(player.getUniqueId());
+			return timer == null || timer < 0 ? -1 : timer;
+		}
+		// Global
+		case 2: {
+			Integer timer = worldTimers.get(world.getUID());
+			return timer == null || timer < 0 ? -1 : timer;
+		}
+		default:
+			return -1;
 		}
 	}
 	public void saveData() {

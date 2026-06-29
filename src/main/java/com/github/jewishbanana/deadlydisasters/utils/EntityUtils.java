@@ -46,8 +46,9 @@ public class EntityUtils {
 		Bukkit.getPluginManager().callEvent(event);
 		if (event.isCancelled())
 			return false;
+		double finalDamage = event.getFinalDamage();
 		entity.setLastDamageCause(event);
-		if (entity.getHealth()-damage <= 0) {
+		if (entity.getHealth()-finalDamage <= 0) {
 			if (!ignoreTotem && (entity.getEquipment().getItemInMainHand().getType() == Material.TOTEM_OF_UNDYING || entity.getEquipment().getItemInOffHand().getType() == Material.TOTEM_OF_UNDYING)) {
 				if (event instanceof EntityDamageByEntityEvent damageEntityEvent)
 					entity.damage(1, damageEntityEvent.getDamager());
@@ -65,7 +66,7 @@ public class EntityUtils {
 				entity.removeMetadata(meta, plugin);
 			return true;
 		}
-		entity.setHealth(Math.min(Math.max(entity.getHealth()-damage, 0), entity.getHealth()));
+		entity.setHealth(Math.min(Math.max(entity.getHealth()-finalDamage, 0), entity.getHealth()));
 		playDamageEffect(entity);
 		if (!silent && !entity.isSilent())
 			playEntityHarmSound(entity, playerHurtSound);

@@ -1,0 +1,14 @@
+# The colored display name shown in world messages for this difficulty preset.
+display_name: "&e&lNORMAL"
+world:
+    minimum_time: 600
+    maximum_time: 1800
+    shared_disaster_radius: 75.0
+    disaster_offset: 20.0
+    level_probabilities:
+        level_1: 30.0
+        level_2: 25.0
+        level_3: 20.0
+        level_4: 14.0
+        level_5: 9.0
+        level_6: 2.0

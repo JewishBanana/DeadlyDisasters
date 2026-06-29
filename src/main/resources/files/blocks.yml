@@ -18,6 +18,11 @@
 # CUSTOM CATEGORIES
 #
 #   "stone_stairs" - Represents all stone type stairs.
+#   "glass_blocks" - Represents clear, tinted, and all stained full glass blocks.
+#   "glass_panes" - Represents clear and all stained glass pane blocks.
+#   "stained_glass" - Represents all full stained glass blocks.
+#   "stained_glass_pane" - Represents all stained glass pane blocks.
+#   "command_blocks" - Represents all command block types.
 #
 ###############################################################################################################################################################################
 
@@ -34,7 +39,7 @@ immune_types:
 stones:
     stone: 0
     smooth_stone: 0.3
-    cobblestone: 0.03
+    cobblestone: 0.02
     mossy_cobblestone: 0.03
     granite: 0
     polished_granite: 0.2
@@ -59,11 +64,11 @@ stones:
     chiseled_deepslate: 0.2
     deepslate_tiles: 0.3
     cracked_deepslate_tiles: 0.25
-    sandstone: 0.05
+    sandstone: 0
     chiseled_sandstone: 0.1
     cut_sandstone: 0.2
     smooth_sandstone: 0.2
-    red_sandstone: 0.05
+    red_sandstone: 0
     chiseled_red_sandstone: 0.1
     cut_red_sandstone: 0.2
     smooth_red_sandstone: 0.2

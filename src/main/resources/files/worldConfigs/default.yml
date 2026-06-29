@@ -125,12 +125,16 @@ world:
 protection_settings:
     # This sub section controls settings for region protection plugins. The following region protection plugins are supported by DeadlyDisasters:
     #
-    #   - World Guard
+    #   - World Guard (Supports flags)
     #   - Core Protect (Blocks modified under the user "deadly-disasters")
     #   - Towny (Supports flags)
     #   - Grief Prevention
     #   - Lands
     #   - KingdomsX
+    #   - Field Zone
+    #   - Plot Squared
+    #   - Ultimate Clans
+    #   - FactionsUUID
     #
     # ONLY these plugins regions will be protected! If your plugin is not listed you can request it on the discord and when I have time I can add it. Also do keep in mind that 
     # for every one of these plugins you have, the performance may decline. This is because it has to run region checks through these plugins if they are on the server every time a 
@@ -142,24 +146,6 @@ protection_settings:
         allow_disaster_effects_in_regions: true
         # If the black plague should be automatically cured when an entity enters a protected region.
         cure_plague_in_regions: false
-
-###############################################################################################################################################################################
-#
-# REGENERATION
-#
-# This section has all the settings for the worlds regeneration after disasters end.
-#
-###############################################################################################################################################################################
-
-regeneration:
-    # If blocks should regenerate after disasters end or not. WARNING, disasters that happen while regeneration is disabled cannot be regenerated in the future!
-    enabled: true
-    # The delay in seconds after a disaster ends that blocks begin to regenerate.
-    regeneration_delay: 120.0
-    # If container blocks such as chests and barrels should drop the contents of their inventory on the ground during the disaster rather than regenerating them with the container later.
-    drop_container_items: false
-    # The blacklist is for block types that you want to NOT regenerate after disasters end. See the 'blocks.yml' config about preventing disasters from breaking certain blocks.
-    block_blacklist: []
 
 ###############################################################################################################################################################################
 #
@@ -188,11 +174,13 @@ disasters:
         # The start delay is the delay in seconds till the disaster begins after it is broadcasted to the world (If disaster broadcasts are off this will still delay the disasters start). 
         # Keep in mind that disasters started via commands will ignore the start delay!
         start_delay: 0.0
-        # The regen rate is the multiplier for how fast the world will regenerate the damage from the disaster. Each disaster has its own internal regen rate, this will just multiply that.
-        regen_rate: 1.0
         # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
         frequency: 1.0
-        # Blacklisted mob types are mob types that are unaffected by the disaster. Keep in mind that disasters which displace the land can affect these entities (e.g. Entity falling with Sinkhole or Earthquake).
+        # When true, every disaster automatically includes this global blacklisted_mob_types list in addition to its own.
+        # Set to false in a specific disaster's section to make that disaster ignore the global list entirely.
+        respect_global_mob_blacklist: true
+        # Mob types listed here are shared across all disasters (when respect_global_mob_blacklist is true).
+        # Add per-disaster exclusions under that disaster's own blacklisted_mob_types key instead.
         blacklisted_mob_types:
         - ender_dragon
         - wither
@@ -296,6 +284,9 @@ disasters:
             speed: 1.0
             # The radius from the outer edge of the geyser that blocks are damaged around.
             damage_radius: 2.0
+            # How many seconds the leftover boiling pool keeps bubbling (and scalding players) after the column subsides.
+            # The disaster is considered ongoing until this finishes; afterwards the pool is left for the regen system.
+            boiling_duration: 60
             # The minimum height on the Y block axis that this disaster can start at.
             minimum_height: -50
         #######################################################################################################################################################################
@@ -341,18 +332,38 @@ disasters:
             frequency: 0.3
         #######################################################################################################################################################################
         #
-        # Landslide / Avalanche
+        # Tsunami
         #
         #######################################################################################################################################################################
-        landslide:
+        tsunami:
+            # The minimum depth of water needed for a tsunami to occur above.
+            minimum_water_depth: 15
             # Size multiplier, this amplifies the size for all levels!
             size: 1.0
-            # The damage done to mobs that are hit by falling blocks from landslides.
-            damage: 4.0
-            # The max amount of falling blocks that can exist at a given time during a landslide. A lower value means that landslides will take longer to finish.
-            max_falling_blocks: 500
+            # The damage done to entities that are caught inside the tsunami. This scales with the level and is a multiplier for all levels.
+            damage_multiplier: 1.0
+            # Multiplier on the random debris spawn chance. Higher disaster levels already spawn debris more often; this scales that rate further.
+            debris_multiplier: 1.0
+            # The max amount of falling block debris that can exist at a given time during a tsunami.
+            max_falling_blocks: 200
+            # How many seconds per disaster level the wave water remains before dissolving (e.g. value of 5 means a level 5 tsunami's water persists for 25 seconds).
+            water_persist_seconds_per_level: 5.0
             # The minimum height on the Y block axis that this disaster can start at.
-            minimum_height: 70
+            minimum_height: 60
+            blacklisted_mob_types:
+            - drowned
+            - guardian
+            - elder_guardian
+            - axolotl
+            - salmon
+            - cod
+            - tropical_fish
+            - pufferfish
+            - turtle
+            - squid
+            - glow_squid
+            - dolphin
+            - nautilus
     ###########################################################################################################################################################################
     #
     # Weather Disasters
@@ -491,6 +502,7 @@ disasters:
             blacklisted_mob_types:
             - skeleton
             - husk
+            - stray
         #######################################################################################################################################################################
         #
         # Blizzard
@@ -560,49 +572,13 @@ disasters:
             maximum_meteors: 20
             # How long in seconds smoke will emit from fallen meteors and explosions.
             smoke_time: 15.0
-            # If regeneration is enabled on this disaster, this controls if meteors should decay with regeneration, or if they should remain buried in the ground after regeneration.
+            # If true, meteor blocks are placed through the disaster block handler so protection/resistance rules apply.
+            # If false, meteor blocks are embedded directly into the terrain and remain as debris.
             regenerate_meteors: true
             # The minimum height on the Y block axis that this disaster can start at.
             min_height: 55
             # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
             frequency: 0.6
-        #######################################################################################################################################################################
-        #
-        # Monsoon
-        #
-        #######################################################################################################################################################################
-        monsoon:
-            # The multiplier to control how fast entities lose oxygen ticks while in monsoon rainfall.
-            entity_drown_rate: 1.0
-            # If certain flammable dropped items should extinguish when exposed to monsoon rainfall.
-            extinguish_dropped_items: true
-            # Multiplier to control how many puddles spawn in monsoon rainfall.
-            puddle_spawn_rate: 1.0
-            # Multiplier to control how fast puddles dry up after monsoons end.
-            puddle_dry_rate: 1.0
-            # Multiplier for how many particles spawn when leaking through blocks (ex. planks, leaves, etc.)
-            water_leak_multiplier: 1.0
-            # Controls how many monsoon related mobs spawn near players in monsoons. By default drowned can spawn near players. If you are using UltimateContent then cursed divers can also spawn!
-            mob_spawn_multiplier: 1.0
-            # The block damage rate is a multiplier that controls how many blocks are damaged by monsoon rainfall.
-            block_damage_rate: 1.0
-            # Controls what effects are applied to vulnerable entities exposed to monsoon rainfall. Effects are applied every storm tick. You can add or remove any effect you wish with its in game name.
-            entity_effects:
-                slowness:
-                    ticks: 40
-                    level: 2
-            # Control block changes to blocks that are exposed to monsoon rainfall. The format is as follows: "BLOCK_MATERIAL: NEW_BLOCK_MATERIAL"
-            # Block changes are done at random, to control how many blocks get changed modify the setting "block_damage_rate" multiplier. Bukkit and custom tags can be used here too!
-            block_changes:
-                leaves: air
-                dirt: dirt_path
-                crops: air
-            # The minimum height on the Y block axis that this disaster can start at.
-            min_height: 55
-            # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
-            frequency: 0.6
-            blacklisted_mob_types:
-            - drowned
         #######################################################################################################################################################################
         #
         # Solar Storm
@@ -701,6 +677,63 @@ disasters:
             blacklisted_mob_types:
             - enderman
             - endermite
+        #######################################################################################################################################################################
+        #
+        # Hurricane
+        #
+        #######################################################################################################################################################################
+        hurricane:
+            # The force variable for the wind strength. This controls how hard gusts shove entities around.
+            wind_force: 0.07
+            # The strength of the cyclonic swirl that pushes entities tangentially around the storm center.
+            swirl_force: 0.04
+            # The minimum wind force for blocks to be ripped/shattered near exposed entities.
+            wind_damage_threshold: 0.09
+            # Multiplier for how many blocks get torn from shelters in the wind.
+            block_damage_rate: 1.0
+            # Chance (0.0-1.0) that a brittle block (see shatter_blocks) shatters rather than being torn into a falling block.
+            glass_shatter_chance: 1.0
+            # How exposed to the open sky a player must be (0.0 sealed - 1.0 fully open) before the wind and debris affect
+            # them. Below this they are considered sheltered and are completely safe; partial cover gives partial wind.
+            shelter_safe_threshold: 0.4
+            # How often lightning strikes within the storm. Strikes are weighted toward the center.
+            lightning_frequency: 1.0
+            # Controls how many drowned (and the occasional cursed diver escort) are swept in near exposed players.
+            mob_spawn_multiplier: 1.0
+            # Buffet damage dealt to heavily exposed entities in the inner bands. Set to 0 to disable direct damage.
+            damage: 1.0
+            # Controls how often that buffet damage is applied (higher = more frequent).
+            damage_multiplier: 1.0
+            # Multiplier for how often hurricane puddles are seeded and how many separate puddles may form.
+            puddle_spawn_rate: 1.0
+            # Multiplier for how quickly existing hurricane puddles spread outward.
+            puddle_grow_rate: 1.0
+            # Multiplier for how fast those puddles dry up once the storm ends.
+            puddle_dry_rate: 1.0
+            # Multiplier for how often the mini sweeping water waves form once the storm intensifies. 0 disables them.
+            wave_multiplier: 1.0
+            # The realistic calm "eye" at the dead center. When enabled the very center is calm and the violent eyewall
+            # ring just outside it becomes the worst conditions; when disabled the geometric center itself is the worst.
+            eye:
+                enabled: false
+                # Fraction of the radius (0.0-0.14) taken up by the calm eye when enabled.
+                radius_fraction: 0.07
+            # Effects applied to vulnerable entities heavily exposed to the hurricane.
+            entity_effects:
+                slowness:
+                    ticks: 40
+                    level: 1
+            # Brittle block types that shatter (with breaking particles + sound, no drop) instead of becoming falling blocks.
+            shatter_blocks:
+            - glass_blocks
+            - glass_panes
+            # The minimum Y axis level entities must be for the hurricane to affect them. This prevents false positives of
+            # players in large caves.
+            minimum_entity_Y_level: 50
+            # The minimum height on the Y block axis that this disaster can start at.
+            min_height: 55
+            blacklisted_mob_types:
+            - drowned
     ###########################################################################################################################################################################
     #
     # Mob Disasters
@@ -719,25 +752,25 @@ disasters:
             # If a boss bar should be displayed for nearby players. Without the boss bar, players will not have the dark fog effect. You can change the text in the language file.
             display_boss_bar: true
             # The minimum spawn distance from players that horde entities can spawn from. Do not set this value too high or the entities will just despawn immediately!
-            entity_spawn_distance: 30.0
+            entity_spawn_distance: 35.0
             # The rate at which entities spawn during the purge. This value scales with the level.
             entity_spawn_rate: 1.0
             # The max horde size controls how many horde entities can be spawned in at a single time during the horde for the level.
             max_horde_size:
-                level_1: 5
-                level_2: 7
-                level_3: 9
-                level_4: 11
-                level_5: 15
-                level_6: 25
+                level_1: 7
+                level_2: 12
+                level_3: 17
+                level_4: 23
+                level_5: 30
+                level_6: 40
             # The horde vanquish threshold is the amount of horde entities that must be slain for the corresponding level to end.
             horde_vanquish_threshold:
-                level_1: 8
-                level_2: 10
-                level_3: 15
-                level_4: 20
-                level_5: 28
-                level_6: 50
+                level_1: 10
+                level_2: 18
+                level_3: 25
+                level_4: 32
+                level_5: 40
+                level_6: 70
             # This section controls the entities that spawn in purges. You can easily add or remove any entities with their in game name as the "type" Also, if you are using UltimateContent, then you can also add any custom entity by using the "uc:" prefix!
             # There are custom settings for entities that you can add in each entity section, below are the listed settings that can be applied:
             #
@@ -817,6 +850,38 @@ disasters:
                   chance: 3.0
                 - type: "uc:zombie_knight"
                   chance: 4.0
+            # The anti-turtle "breach" system. When the target player seals themselves in (digs into a wall, bunkers
+            # straight down, or pillars up into a skybase) the purge sends miner-led squads that tunnel or pillar to
+            # them and flood the escort into their pocket. Staying sealed escalates the response, forcing the player to
+            # keep moving or fight. Requires UltimateContent for the tunneling undead miners (without it, only the
+            # escort/flyer pressure and escalation apply).
+            breach:
+                # Master toggle for the breach response.
+                enabled: true
+                # Seconds the player must be sealed/unreachable before a breach squad is sent.
+                trigger_seconds: 6
+                # Cooldown (seconds) between breach squad deployments.
+                cooldown_seconds: 12
+                # A horde mob within this many blocks of the player counts as "reaching" them (resets the unreachable timer).
+                reach_distance: 6.0
+                # Bounded enclosure scan limits (performance). Larger detects bigger sealed rooms but costs more.
+                scan_radius: 24
+                scan_cap: 1200
+                # Retention range (blocks) for a breach miner's assigned target so it won't abandon a deep dig. Keep this
+                # moderate; large values combined with many miners are expensive. The count is hard-capped by max_miners.
+                miner_retention_range: 64.0
+                # Hard cap on simultaneous breach miners for one purge (the primary lag guard).
+                max_miners: 4
+                # Base breach squad composition (scaled up by escalation, clamped to the *_max values).
+                miners_per_squad: 1
+                escort_size: 3
+                flyer_count: 2
+                # Escalation, applied per consecutive breach while the player stays sealed.
+                cap_bonus: 4
+                spawn_rate_multiplier: 1.5
+                miners_per_squad_max: 2
+                escort_size_max: 6
+                flyer_count_max: 4
             # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
             frequency: 0.3
             # Overridden from global disaster settings.

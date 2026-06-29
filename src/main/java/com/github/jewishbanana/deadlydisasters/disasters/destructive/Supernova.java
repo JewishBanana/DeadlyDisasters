@@ -297,9 +297,6 @@ public class Supernova extends Disaster {
 	protected String getConfigPath() {
 		return "disasters.destructive.supernova";
 	}
-	public double getRegenTickRate() {
-		return level * 2;
-	}
 	public Set<Environment> getBannedEnvironments() {
 		return EnumSet.of(Environment.NETHER);
 	}

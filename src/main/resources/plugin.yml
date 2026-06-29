@@ -4,11 +4,12 @@ author: JewishBanana
 main: ${mainClass}
 description: Adds deadly disasters to the game.
 api-version: 1.17
-softdepend: [WorldGuard, Towny, GriefPrevention, Lands, Kingdoms, CoreProtect, RealisticSeasons, UIFramework, UltimateContent]
+load: STARTUP
+softdepend: [WorldGuard, Towny, GriefPrevention, Lands, Kingdoms, FieldZone, PlotSquared, UltimateClans, Factions, CoreProtect, RealisticSeasons, UIFramework, UltimateContent]
 
 commands:
     disasters:
-        usage: /disasters <help|start|stop|regenerate|fastRegenerate|config|blacklist|timers>...
+        usage: /disasters <help|start|stop|config|blacklist|timers>...
         description: Universal command for the plugin. Use /disasters help <command>, for more information.
     towndisasters:
         usage: /towndisasters <on|off> [player]
@@ -21,12 +22,9 @@ permissions:
             deadlydisasters.help: true
             deadlydisasters.start: true
             deadlydisasters.stop: true
-            deadlydisasters.regenerate: true
-            deadlydisasters.fastRegenerate: true
             deadlydisasters.config: true
             deadlydisasters.blacklist: true
             deadlydisasters.timers: true
-            deadlydisasters.achievements: true
             deadlydisasters.towny: true
     deadlydisasters.help:
         description: Allows you to use the help command.
@@ -34,18 +32,11 @@ permissions:
         description: Allows you to start disasters via command.
     deadlydisasters.stop:
         description: Allows you to stop disasters via command.
-    deadlydisasters.regenerate:
-        description: Allows the use of the regenerate command.
-    deadlydisasters.fastRegenerate:
-        description: Allows the use of the fastRegenerate command.
     deadlydisasters.config:
         description: Allows the use of the config command.
     deadlydisasters.blacklist:
         description: Allows the use of the blacklist command.
     deadlydisasters.timers:
         description: Allows the use of the timers command.
-    deadlydisasters.achievements:
-        description: Allows the use of the achievements command.
-        default: true
     deadlydisasters.towny:
         description: Allows the use of the towndisasters command.

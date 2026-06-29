@@ -87,6 +87,29 @@ public class BlockUtils {
 				"CHAIN_COMMAND_BLOCK",
 				"REPEATING_COMMAND_BLOCK"
 				));
+		Set<String> stainedGlass = Set.of(
+				"WHITE_STAINED_GLASS", "ORANGE_STAINED_GLASS", "MAGENTA_STAINED_GLASS",
+				"LIGHT_BLUE_STAINED_GLASS", "YELLOW_STAINED_GLASS", "LIME_STAINED_GLASS",
+				"PINK_STAINED_GLASS", "GRAY_STAINED_GLASS", "LIGHT_GRAY_STAINED_GLASS",
+				"CYAN_STAINED_GLASS", "PURPLE_STAINED_GLASS", "BLUE_STAINED_GLASS",
+				"BROWN_STAINED_GLASS", "GREEN_STAINED_GLASS", "RED_STAINED_GLASS",
+				"BLACK_STAINED_GLASS");
+		Set<String> stainedGlassPanes = Set.of(
+				"WHITE_STAINED_GLASS_PANE", "ORANGE_STAINED_GLASS_PANE", "MAGENTA_STAINED_GLASS_PANE",
+				"LIGHT_BLUE_STAINED_GLASS_PANE", "YELLOW_STAINED_GLASS_PANE", "LIME_STAINED_GLASS_PANE",
+				"PINK_STAINED_GLASS_PANE", "GRAY_STAINED_GLASS_PANE", "LIGHT_GRAY_STAINED_GLASS_PANE",
+				"CYAN_STAINED_GLASS_PANE", "PURPLE_STAINED_GLASS_PANE", "BLUE_STAINED_GLASS_PANE",
+				"BROWN_STAINED_GLASS_PANE", "GREEN_STAINED_GLASS_PANE", "RED_STAINED_GLASS_PANE",
+				"BLACK_STAINED_GLASS_PANE");
+		createCategory.put("STAINED_GLASS", stainedGlass);
+		createCategory.put("STAINED_GLASS_PANE", stainedGlassPanes);
+		Set<String> glassBlocks = new HashSet<>(stainedGlass);
+		glassBlocks.add("GLASS");
+		glassBlocks.add("TINTED_GLASS");
+		createCategory.put("GLASS_BLOCKS", glassBlocks);
+		Set<String> glassPanes = new HashSet<>(stainedGlassPanes);
+		glassPanes.add("GLASS_PANE");
+		createCategory.put("GLASS_PANES", glassPanes);
 		
 		Map<String, Set<Material>> allCategories = new HashMap<>();
 		createCategory.forEach((k, v) -> {
@@ -206,7 +229,10 @@ public class BlockUtils {
 	    return doesBlockResist(block, ThreadLocalRandom.current());
 	}
 	public static boolean isBlockImmune(Block block) {
-		return disableResistances || resistances.getOrDefault(block.getType(), 0f) == 1f;
+		return isBlockImmune(block.getType());
+	}
+	public static boolean isBlockImmune(Material material) {
+		return disableResistances || resistances.getOrDefault(material, 0f) == 1f;
 	}
 	public static Block rayTraceForBlock(Location location, Vector direction, double maxDistance, Predicate<Block> conditions) {
 	    final float dx = (float) direction.getX();

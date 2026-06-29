@@ -30,6 +30,8 @@ public class DataUtils {
 		defaultDisasterConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(plugin.getResource("files/worldConfigs/default.yml")));
 		
 		List<String> ignoredSections = Arrays.asList(
+				// Global
+				"disasters.global.blacklisted_mob_types",
 				// Acid Storm
 				"disasters.weather.acid_storm.entity_effects",
 				"disasters.weather.acid_storm.block_changes",
@@ -40,10 +42,6 @@ public class DataUtils {
 				// Blizzard
 				"disasters.weather.blizzard.entity_effects",
 				"disasters.weather.blizzard.blacklisted_mob_types",
-				// Monsoon
-				"disasters.weather.monsoon.entity_effects",
-				"disasters.weather.monsoon.block_changes",
-				"disasters.weather.monsoon.blacklisted_mob_types",
 				// Solar Storm
 				"disasters.weather.solar_storm.entity_effects",
 				"disasters.weather.solar_storm.block_changes",
@@ -53,7 +51,13 @@ public class DataUtils {
 				"disasters.weather.soul_storm.blacklisted_mob_types",
 				// End Storm
 				"disasters.weather.end_storm.entity_effects",
-				"disasters.weather.end_storm.blacklisted_mob_types"
+				"disasters.weather.end_storm.blacklisted_mob_types",
+				// Tsunami
+				"disasters.destructive.tsunami.blacklisted_mob_types",
+				// Hurricane
+				"disasters.weather.hurricane.entity_effects",
+				"disasters.weather.hurricane.shatter_blocks",
+				"disasters.weather.hurricane.blacklisted_mob_types"
 				);
 		try {
 			File folder = new File(plugin.getDataFolder().getAbsolutePath(), "worldConfigs");
@@ -108,161 +112,6 @@ public class DataUtils {
 		folder.mkdirs();
 		switch (last != null ? last : "default") {
 		default:
-		case "1.0.2-BETA":
-			try {
-				plugin.getConfig().set("regeneration.force_regen_blocks_per_tick", null);
-				plugin.saveConfig();
-				plugin.reloadConfig();
-			} catch (Exception e) {
-				Utils.sendExceptionLog(e);
-			}
-			for (File f : folder.listFiles())
-				try {
-					FileConfiguration file = YamlConfiguration.loadConfiguration(f);
-					if (file.getInt("disasters.weather.acid_storm.entity_effects.poison.ticks") == 10)
-						file.set("disasters.weather.acid_storm.entity_effects.poison.ticks", 11);
-					file.save(f);
-				} catch (Exception e) {
-					Utils.sendExceptionLog(e);
-				}
-			try {
-				File blocksFile = new File(plugin.getDataFolder().getAbsolutePath(), "blocks.yml");
-				FileConfiguration blocksConfig = YamlConfiguration.loadConfiguration(blocksFile);
-				if (blocksConfig.getDouble("stones.polished_granite") == 0.3)
-					blocksConfig.set("stones.polished_granite", 0.2);
-				if (blocksConfig.getDouble("stones.polished_diorite") == 0.3)
-					blocksConfig.set("stones.polished_diorite", 0.2);
-				if (blocksConfig.getDouble("stones.polished_andesite") == 0.3)
-					blocksConfig.set("stones.polished_andesite", 0.2);
-				if (blocksConfig.getDouble("stones.dripstone_block") == 0.1)
-					blocksConfig.set("stones.dripstone_block", 0.03);
-				if (blocksConfig.getDouble("stones.stone_bricks") == 0.4)
-					blocksConfig.set("stones.stone_bricks", 0.25);
-				if (blocksConfig.getDouble("stones.mossy_stone_bricks") == 0.35)
-					blocksConfig.set("stones.mossy_stone_bricks", 0.2);
-				if (blocksConfig.getDouble("stones.cracked_stone_bricks") == 0.2)
-					blocksConfig.set("stones.cracked_stone_bricks", 0.15);
-				if (blocksConfig.getDouble("stones.chiseled_stone_bricks") == 0.2)
-					blocksConfig.set("stones.chiseled_stone_bricks", 0.15);
-				if (blocksConfig.getDouble("stones.deepslate_bricks") == 0.3)
-					blocksConfig.set("stones.deepslate_bricks", 0.25);
-				if (blocksConfig.getDouble("stones.deepslate_tiles") == 0.4)
-					blocksConfig.set("stones.deepslate_tiles", 0.3);
-				if (blocksConfig.getDouble("stones.cracked_deepslate_tiles") == 0.3)
-					blocksConfig.set("stones.cracked_deepslate_tiles", 0.25);
-				if (blocksConfig.getDouble("stones.sandstone") == 0.15)
-					blocksConfig.set("stones.sandstone", 0.05);
-				if (blocksConfig.getDouble("stones.red_sandstone") == 0.15)
-					blocksConfig.set("stones.red_sandstone", 0.05);
-				if (blocksConfig.getDouble("stones.bricks") == 0.45)
-					blocksConfig.set("stones.bricks", 0.3);
-				
-				if (blocksConfig.getDouble("woods.logs") == 0.15)
-					blocksConfig.set("woods.logs", 0.0);
-				if (blocksConfig.getDouble("woods.planks") == 0.25)
-					blocksConfig.set("woods.planks", 0.15);
-				if (blocksConfig.getDouble("woods.wooden_slabs") == 0.25)
-					blocksConfig.set("woods.wooden_slabs", 0.15);
-				if (blocksConfig.getDouble("woods.wooden_stairs") == 0.25)
-					blocksConfig.set("woods.wooden_stairs", 0.15);
-				if (blocksConfig.getDouble("woods.wooden_trapdoors") == 0.25)
-					blocksConfig.set("woods.wooden_trapdoors", 0.15);
-				if (blocksConfig.getDouble("woods.fences") == 0.2)
-					blocksConfig.set("woods.fences", 0.15);
-				if (blocksConfig.getDouble("woods.fence_gates") == 0.2)
-					blocksConfig.set("woods.fence_gates", 0.15);
-				
-				if (blocksConfig.getDouble("nether.basalt") == 0.15)
-					blocksConfig.set("nether.basalt", 0.05);
-				if (blocksConfig.getDouble("nether.polished_basalt") == 0.3)
-					blocksConfig.set("nether.polished_basalt", 0.1);
-				if (blocksConfig.getDouble("nether.smooth_basalt") == 0.3)
-					blocksConfig.set("nether.smooth_basalt", 0.1);
-				if (blocksConfig.getDouble("nether.nether_bricks") == 0.4)
-					blocksConfig.set("nether.nether_bricks", 0.25);
-				if (blocksConfig.getDouble("nether.cracked_nether_bricks") == 0.3)
-					blocksConfig.set("nether.cracked_nether_bricks", 0.2);
-				if (blocksConfig.getDouble("nether.chiseled_nether_bricks") == 0.3)
-					blocksConfig.set("nether.chiseled_nether_bricks", 0.2);
-				if (blocksConfig.getDouble("nether.red_nether_bricks") == 0.4)
-					blocksConfig.set("nether.red_nether_bricks", 0.25);
-				if (blocksConfig.getDouble("nether.magma_block") == 0.1)
-					blocksConfig.set("nether.magma_block", 0.02);
-				if (blocksConfig.getDouble("nether.blackstone") == 0.2)
-					blocksConfig.set("nether.blackstone", 0.05);
-				if (blocksConfig.getDouble("nether.gilded_blackstone") == 0.3)
-					blocksConfig.set("nether.gilded_blackstone", 0.05);
-				if (blocksConfig.getDouble("nether.polished_blackstone") == 0.45)
-					blocksConfig.set("nether.polished_blackstone", 0.2);
-				if (blocksConfig.getDouble("nether.chiseled_polished_blackstone") == 0.25)
-					blocksConfig.set("nether.chiseled_polished_blackstone", 0.15);
-				if (blocksConfig.getDouble("nether.polished_blackstone_bricks") == 0.45)
-					blocksConfig.set("nether.polished_blackstone_bricks", 0.275);
-				if (blocksConfig.getDouble("nether.cracked_polished_blackstone_bricks") == 0.25)
-					blocksConfig.set("nether.cracked_polished_blackstone_bricks", 0.2);
-				
-				if (blocksConfig.getDouble("end.end_stone") == 0.2)
-					blocksConfig.set("end.end_stone", 0.05);
-				if (blocksConfig.getDouble("end.end_stone_bricks") == 0.4)
-					blocksConfig.set("end.end_stone_bricks", 0.25);
-				if (blocksConfig.getDouble("end.purpur_block") == 0.4)
-					blocksConfig.set("end.purpur_block", 0.25);
-				if (blocksConfig.getDouble("end.purpur_pillar") == 0.4)
-					blocksConfig.set("end.purpur_pillar", 0.25);
-				
-				if (blocksConfig.getDouble("building_blocks.beds") == 0.25)
-					blocksConfig.set("building_blocks.beds", 0.03);
-				if (blocksConfig.getDouble("building_blocks.bone_block") == 0.3)
-					blocksConfig.set("building_blocks.bone_block", 0.02);
-				if (blocksConfig.getDouble("building_blocks.crafting_table") == 0.2)
-					blocksConfig.set("building_blocks.crafting_table", 0.03);
-				if (blocksConfig.getDouble("building_blocks.chest") == 0.2)
-					blocksConfig.set("building_blocks.chest", 0.03);
-				if (blocksConfig.getDouble("building_blocks.furnace") == 0.25)
-					blocksConfig.set("building_blocks.furnace", 0.05);
-				if (blocksConfig.getDouble("building_blocks.anvil") == 0.6)
-					blocksConfig.set("building_blocks.anvil", 0.2);
-				if (blocksConfig.getDouble("building_blocks.ender_chest") == 0.2)
-					blocksConfig.set("building_blocks.ender_chest", 0.1);
-				if (blocksConfig.getDouble("building_blocks.honeycomb_block") == 0.15)
-					blocksConfig.set("building_blocks.honeycomb_block", 0);
-				if (blocksConfig.getDouble("building_blocks.barrel") == 0.15)
-					blocksConfig.set("building_blocks.barrel", 0.03);
-				if (blocksConfig.getDouble("building_blocks.smoker") == 0.2)
-					blocksConfig.set("building_blocks.smoker", 0.05);
-				if (blocksConfig.getDouble("building_blocks.blast_furnace") == 0.3)
-					blocksConfig.set("building_blocks.blast_furnace", 0.05);
-				if (blocksConfig.getDouble("building_blocks.bookshelf") == 0.2)
-					blocksConfig.set("building_blocks.bookshelf", 0.03);
-				
-				blocksConfig.save(blocksFile);
-			} catch (Exception e) {
-				Utils.sendExceptionLog(e);
-			}
-		case "1.1.0-BETA":
-			for (File f : folder.listFiles())
-				try {
-					FileConfiguration file = YamlConfiguration.loadConfiguration(f);
-					List<String> list = file.getStringList("disasters.global.blacklisted_mob_types");
-					if (!list.isEmpty()) {
-						list.add("elder_guardian");
-						list.add("end_crystal");
-						list.add("item_frame");
-						file.set("disasters.global.blacklisted_mob_types", list);
-					}
-					file.save(f);
-				} catch (Exception e) {
-					Utils.sendExceptionLog(e);
-				}
-		case "1.1.2-BETA":
-			try {
-				File translationsFile = new File(plugin.getDataFolder().getAbsolutePath(), "language.yml");
-				FileConfiguration yaml = YamlConfiguration.loadConfiguration(translationsFile);
-				yaml.set("messages.commands.help.timers", "&6Usage: &d/disasters timers <reset|listworlds|listplayer> [world|player]\n&7This command will either list all worlds global disaster timer countdowns (countdown till next disaster in seconds), or players individual disaster timer countdowns. This can also be used to reset disaster countdowns in a world. This command will can be run for offline players.\n&c<reset | listworlds | listplayer> &8- &7To either list the worlds global timer countdowns, or players indiviudal countdowns, or reset the timers for a world.\n&3[<player>] &8- &7This argument is required if you have chosen the listplayer option. This will list the current individual disaster countdowns for this target player.");
-				yaml.save(translationsFile);
-			} catch (Exception e) {
-				Utils.sendExceptionLog(e);
-			}
 			break;
 		}
 		writeToDataFile(file -> file.set("stored_version", plugin.getDescription().getVersion()));

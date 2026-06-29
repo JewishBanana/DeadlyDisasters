@@ -8,6 +8,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 
 public class DisasterStartEvent extends Event implements Cancellable {
 	
@@ -26,6 +27,7 @@ public class DisasterStartEvent extends Event implements Cancellable {
 	public DisasterStartEvent(@NotNull Disaster disaster, @NotNull DisasterStartReason reason) {
 		this.disaster = disaster;
 		this.reason = reason;
+		this.isCancelled = DependencyUtils.isDisasterStartBlocked(disaster.getLocation());
 	}
 	public Disaster getDisaster() {
 		return disaster;

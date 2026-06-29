@@ -388,9 +388,6 @@ public class Sandstorm extends WeatherDisaster implements Listener, MobDisaster 
 	protected String getConfigPath() {
 		return "disasters.weather.sandstorm";
 	}
-	public double getRegenTickRate() {
-		return 0.01;
-	}
 	public Set<Environment> getBannedEnvironments() {
 		return EnumSet.of(Environment.NETHER, Environment.THE_END);
 	}

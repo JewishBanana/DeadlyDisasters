@@ -387,10 +387,6 @@ public class MeteorShower extends WeatherDisaster implements Listener {
 				if (temp == null || temp.equals(centerBlock))
 					continue;
 				Block tempBlock = temp.getLocation().getBlock();
-				if (getModifiedBlocks().contains(tempBlock)) {
-					temp.remove();
-					continue;
-				}
 				if (regenerateMeteors)
 					placeBlock(tempBlock, ((FallingBlock) temp).getBlockData(), true, true);
 				else

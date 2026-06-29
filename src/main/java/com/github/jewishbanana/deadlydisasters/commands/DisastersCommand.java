@@ -5,25 +5,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -31,26 +26,18 @@ import org.bukkit.scheduler.BukkitRunnable;
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.WorldWrapper;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
-import com.github.jewishbanana.deadlydisasters.disasters.Disaster.RegeneratingTask;
 import com.github.jewishbanana.deadlydisasters.disasters.DisasterRegistry;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent.DisasterStartReason;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStopEvent.DisasterStopReason;
-import com.github.jewishbanana.deadlydisasters.listeners.BlockRegenHandler;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
+import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class DisastersCommand implements CommandExecutor, TabCompleter {
 	
-	private static int regenBlocksPerTick;
-	private static int fastRegenBlocksPerTick;
-	public static void reload() {
-		regenBlocksPerTick = DataUtils.getMainConfigInt("regeneration.regen_blocks_per_tick");
-		fastRegenBlocksPerTick = DataUtils.getMainConfigInt("regeneration.fast_regen_blocks_per_tick");
-	}
-	
 	private final Main plugin;
-	private final String usage = Utils.convertString("&cUsage: /disasters <help|start|stop|regenerate|fastRegenerate|config|blacklist|timers>...");
+	private final String usage = Utils.convertString("&cUsage: /disasters <help|start|stop|config|blacklist|timers>...");
 	private final Map<String, ConfigSettingOption> configSettings = Map.of(
 			"targeting", 
 			new ConfigSettingOption(Set.of("DISABLED", "INDIVIDUAL", "GLOBAL"), container -> {
@@ -74,7 +61,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					}
 					container.wrapper.getConfig().set("world.minimum_time", value);
 					if (container.wrapper.maximumTime < value) {
-						container.wrapper.getConfig().set("maximum_time", value + 1);
+						container.wrapper.getConfig().set("world.maximum_time", value + 1);
 						container.sender.sendMessage(Utils.convertString("&eThe maximum time was adjusted to &b'"+(value + 1)+"' &efor world &d'"+container.wrapper.getConfigName()+"'&e!"));
 					}
 					return true;
@@ -92,7 +79,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					}
 					container.wrapper.getConfig().set("world.maximum_time", value);
 					if (container.wrapper.minimumTime > value) {
-						container.wrapper.getConfig().set("minimum_time", value - 1);
+						container.wrapper.getConfig().set("world.minimum_time", value - 1);
 						container.sender.sendMessage(Utils.convertString("&eThe minimum time was adjusted to &b'"+(value - 1)+"' &efor world &d'"+container.wrapper.getConfigName()+"'&e!"));
 					}
 					return true;
@@ -167,8 +154,6 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			switch (args[1].toLowerCase()) {
 			case "start" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.start")));
 			case "stop" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.stop")));
-			case "regenerate" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.regenerate")));
-			case "fastregenerate" -> sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.fastRegenerate")));
 			case "config" -> {
 				if (args.length < 3) {
 					sender.sendMessage(Utils.convertString(DataUtils.getLanguageString("messages.commands.help.config.config")));
@@ -265,7 +250,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				disaster.setLocation(adjustment);
 			DisasterStartEvent event = new DisasterStartEvent(disaster, DisasterStartReason.COMMAND);
 			Bukkit.getPluginManager().callEvent(event);
-			if (event.isCancelled()) {
+			if (event.isCancelled() || DependencyUtils.isDisasterStartBlocked(disaster.getLocation())) {
 				sender.sendMessage(Utils.convertString("&cThe disaster was halted from starting by a third-party plugin!"));
 				return true;
 			}
@@ -308,12 +293,6 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully stopped &a"+stopped+" &bdisaster(s)!"));
 			return true;
 		}
-		case "regenerate" -> {
-			return regenerationTask(args, sender, true);
-		}
-		case "fastregenerate" -> {
-			return regenerationTask(args, sender, false);
-		}
 		case "config" -> {
 			if (args.length == 1) {
 				sender.sendMessage(Utils.convertString("&cUsage: /disasters config <reload|set|enable|disable|setting|list>"));
@@ -328,7 +307,31 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			}
 			case "set" -> {
 				if (args.length < 4) {
-					sender.sendMessage(Utils.convertString("&cUsage: /disasters config set <world> <config>"));
+					sender.sendMessage(Utils.convertString("&cUsage: /disasters config set <world> <config|EASY|NORMAL|HARD|EXTREME>"));
+					return true;
+				}
+				if (WorldWrapper.PRESET_NAMES.contains(args[3].toUpperCase())) {
+					String presetName = args[3].toUpperCase();
+					World[] worlds = getWorldSelection(args[2], sender);
+					if (worlds == null) {
+						sender.sendMessage(Utils.convertString("&cThere is no such world '"+args[2]+"'!"));
+						return true;
+					}
+					if (worlds.length > 1) {
+						DataUtils.writeToDataFile(config -> {
+							Bukkit.getWorlds().forEach(world -> {
+								config.set("worlds."+world.getUID().toString()+".preset", presetName);
+							});
+						});
+						WorldWrapper.reload();
+						sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully set the disaster preset for all worlds to &d'"+presetName+"'&b!"));
+					} else {
+						DataUtils.writeToDataFile(config -> {
+							config.set("worlds."+worlds[0].getUID().toString()+".preset", presetName);
+						});
+						WorldWrapper.reload(WorldWrapper.getWorldWrapper(worlds[0]));
+						sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully set the disaster preset for world &a'"+worlds[0].getName()+"' &bto &d'"+presetName+"'&b!"));
+					}
 					return true;
 				}
 				File file = new File(plugin.getDataFolder().getAbsolutePath(), "worldConfigs/"+args[3]+".yml");
@@ -342,24 +345,28 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					return true;
 				}
 				if (worlds.length > 1) {
-					DataUtils.writeToDataFile(config -> {
-						Bukkit.getWorlds().forEach(world -> {
-							try {
-								config.set("worlds."+world.getUID().toString()+".config", args[3]);
-							} catch (Exception e) {
-								Utils.sendExceptionLog(e);
-							}
+						DataUtils.writeToDataFile(config -> {
+							Bukkit.getWorlds().forEach(world -> {
+								try {
+									config.set("worlds."+world.getUID().toString()+".config", args[3]);
+									config.set("worlds."+world.getUID().toString()+".preset", null);
+								} catch (Exception e) {
+									Utils.sendExceptionLog(e);
+								}
 						});
 					});
 					WorldWrapper.init();
+					WorldWrapper.reload();
 					sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully set the disaster config file for all worlds to &d'"+args[3]+"'&b!"));
 					return true;
 				} else {
 					try {
 						DataUtils.writeToDataFile(config -> {
 							config.set("worlds."+worlds[0].getUID().toString()+".config", args[3]);
+							config.set("worlds."+worlds[0].getUID().toString()+".preset", null);
 						});
 						WorldWrapper.initWorld(worlds[0]);
+						WorldWrapper.reload(WorldWrapper.getWorldWrapper(worlds[0]));
 						sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully set the disaster config file for world &a'"+worlds[0].getName()+"' &bto &d'"+args[3]+"'&b!"));
 					} catch (Exception e) {
 						Utils.sendExceptionLog(e);
@@ -679,7 +686,14 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			}
 			case "listplayer" -> {
 				if (args.length < 3) {
-					sender.sendMessage(Utils.convertString("&cUsage: /disasters timers listplayer <player>"));
+					StringBuilder builder = new StringBuilder(Utils.prefix+"&aOnline players and their current world timers listed:");
+					for (Player target : Bukkit.getServer().getOnlinePlayers()) {
+						World world = target.getWorld();
+						Map<UUID, Integer> worldMap = plugin.selector.playerTimers.get(world.getUID());
+						Integer timer = worldMap != null ? worldMap.get(target.getUniqueId()) : null;
+						builder.append("\n&3- &6"+target.getDisplayName()+" &7- &d"+world.getName()+" &7- &f&l" + (timer == null ? "&c&lN/A" : timer + " &7(seconds till disaster)"));
+					}
+					sender.sendMessage(Utils.convertString(builder.toString()));
 					return true;
 				}
 				Player target = getOnlinePlayer(args[2]);
@@ -709,82 +723,6 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			return true;
 		}
 		sender.sendMessage(usage);
-		return true;
-	}
-	private boolean regenerationTask(String[] args, CommandSender sender, boolean force) {
-		World[] worlds = null;
-		if (args.length > 1) {
-			worlds = getWorldSelection(args[1], sender);
-			if (worlds == null) {
-				sender.sendMessage(Utils.convertString("&cCould not find world '"+args[1]+"'!"));
-				return true;
-			}
-		}
-		Class<?> disasterClass = null;
-		if (args.length > 2) {
-			DisasterRegistry regenRegister = DisasterRegistry.getRegistry(args[2]);
-			if (regenRegister == null) {
-				sender.sendMessage(Utils.convertString("&cThere is no such disaster with the name '"+args[2]+"'!"));
-				return true;
-			}
-			disasterClass = regenRegister.getRegisteredClass();
-		}
-		sender.sendMessage(Utils.convertString(Utils.prefix+"&eStarting regeneration task..."));
-		final long startTime = System.currentTimeMillis();
-		final Set<Block> blocks = new LinkedHashSet<>();
-		Iterator<Entry<Disaster, RegeneratingTask>> regenIterator = Disaster.regeneratingDisasters.entrySet().iterator();
-		while (regenIterator.hasNext()) {
-			Entry<Disaster, RegeneratingTask> entry = regenIterator.next();
-			Disaster temp = entry.getKey();
-			if (worlds != null && !Stream.of(worlds).anyMatch(w -> w.equals(temp.getLocation().getWorld())))
-				continue;
-			if (disasterClass != null && !temp.getClass().equals(disasterClass))
-				continue;
-			entry.getValue().task.cancel();
-			blocks.addAll(entry.getValue().blocks);
-			blocks.addAll(temp.getModifiedBlocks());
-			regenIterator.remove();
-		}
-		final World[] finalWorlds = worlds;
-		new BukkitRunnable() {
-			private final Iterator<Block> iterator = blocks.iterator();
-			private int exceptions;
-			private final int blocksPerTick = force ? regenBlocksPerTick : fastRegenBlocksPerTick;
-			
-			@Override
-			public void run() {
-				int tick = 0;
-				while (++tick < blocksPerTick && iterator.hasNext())
-					try {
-						do {
-							if (BlockRegenHandler.restoreBlock(iterator.next(), force))
-								break;
-						} while (iterator.hasNext());
-					} catch (Exception e) {
-						Utils.sendExceptionLog(e);
-						++exceptions;
-					}
-				if (!iterator.hasNext()) {
-//					BlockRegenHandler.printMaps();
-					this.cancel();
-					final long elapsedTime = System.currentTimeMillis() - startTime;
-					final long gameTicks = (elapsedTime * 20) / 1000;
-					final long average = blocks.size() / Math.max(gameTicks, 1);
-					String completionMessage = Utils.convertString(Utils.prefix+"&aRegenerated all &d"+blocks.size()+" &adamaged blocks!"
-							+ (force ? "" : "\n&4&lNOTE: &eFast regeneration task may have left some small bugged spots in the world where physics did not update!")
-							+ "\n&3- &7&oTime: " + String.format("%02d", (int) (Math.round(elapsedTime / 1000 / 60)))+":"+String.format("%02d", (int) (Math.round(elapsedTime / 1000 % 60)))+":"+String.format("%02d", (int) (Math.round(elapsedTime / 10 % 100)))
-							+ "\n&3- World: " + (finalWorlds == null || finalWorlds.length > 1 ? "&a&lALL" : "&b" + finalWorlds[0].getName())
-							+ (args.length > 2 ? "\n&3- Disaster Type: &e" + args[2] : "")
-							+ (exceptions > 0 ? "\n&3- &cExceptions: " + exceptions + " &7(These are blocks that failed to regenerate. Check server console for errors!)" : "")
-							+ "\n&3- Stability: " + (gameTicks <= 1 || average >= blocksPerTick * 0.7 ? "&a" + average + '/' + blocksPerTick + " per tick (Good)" :
-								(average >= blocksPerTick * 0.3 ? "&e" + average + '/' + blocksPerTick + " per tick (Moderate)" :
-									"&c" + average + '/' + blocksPerTick + " per tick (Poor, consider lowering the force regen blocks per tick setting in the main config!)")));
-					sender.sendMessage(completionMessage);
-					if (!(sender instanceof ConsoleCommandSender))
-						Main.consoleSender.sendMessage(Utils.convertString(Utils.prefix+"&7&oLogged "+(force ? "" : "fast ")+"regeneration task completion. Details of task:\n") + completionMessage);
-				}
-			}
-		}.runTaskTimer(Main.getInstance(), 0, 1);
 		return true;
 	}
 	private Player getOnlinePlayer(String name) {
@@ -825,10 +763,6 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				list.add("start");
 			if (sender.hasPermission("deadlydisasters.stop"))
 				list.add("stop");
-			if (sender.hasPermission("deadlydisasters.regenerate"))
-				list.add("regenerate");
-			if (sender.hasPermission("deadlydisasters.fastRegenerate"))
-				list.add("fastRegenerate");
 			if (sender.hasPermission("deadlydisasters.config"))
 				list.add("config");
 			if (sender.hasPermission("deadlydisasters.blacklist"))
@@ -844,10 +778,6 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					list.add("start");
 				if (sender.hasPermission("deadlydisasters.stop"))
 					list.add("stop");
-				if (sender.hasPermission("deadlydisasters.regenerate"))
-					list.add("regenerate");
-				if (sender.hasPermission("deadlydisasters.fastRegenerate"))
-					list.add("fastRegenerate");
 				if (sender.hasPermission("deadlydisasters.config"))
 					list.add("config");
 				if (sender.hasPermission("deadlydisasters.blacklist"))
@@ -857,9 +787,6 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			} else if ((args[0].equalsIgnoreCase("start") && sender.hasPermission("deadlydisasters.start"))
 					|| (args[0].equalsIgnoreCase("stop") && sender.hasPermission("deadlydisasters.stop")))
 				list.addAll(DisasterRegistry.getRegisteredNames());
-			else if ((args[0].equalsIgnoreCase("regenerate") && sender.hasPermission("deadlydisasters.regenerate")) 
-					|| args[0].equalsIgnoreCase("fastRegenerate") && sender.hasPermission("deadlydisasters.fastRegenerate"))
-				list.addAll(Bukkit.getServer().getWorlds().stream().map(world -> world.getName()).collect(Collectors.toList()));
 			else if (args[0].equalsIgnoreCase("config") && sender.hasPermission("deadlydisasters.config"))
 				list.addAll(Arrays.asList("reload", "set", "enable", "disable", "setting", "list"));
 			else if (args[0].equalsIgnoreCase("blacklist") && sender.hasPermission("deadlydisasters.blacklist"))
@@ -877,9 +804,6 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				list.addAll(Arrays.asList("1", "2", "3", "4", "5", "6"));
 			else if (args[0].equalsIgnoreCase("stop") && sender.hasPermission("deadlydisasters.stop"))
 				list.addAll(Bukkit.getServer().getWorlds().stream().map(world -> world.getName()).collect(Collectors.toList()));
-			else if ((args[0].equalsIgnoreCase("regenerate") && sender.hasPermission("deadlydisasters.regenerate")) 
-					|| args[0].equalsIgnoreCase("fastRegenerate") && sender.hasPermission("deadlydisasters.fastRegenerate"))
-				list.addAll(DisasterRegistry.getRegisteredNames());
 			else if (args[0].equalsIgnoreCase("config") && sender.hasPermission("deadlydisasters.config")) {
 				if (args[1].equalsIgnoreCase("set")) {
 					list.addAll(Bukkit.getServer().getWorlds().stream().map(world -> world.getName()).collect(Collectors.toList()));
@@ -909,7 +833,8 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			if (args[0].equalsIgnoreCase("config") && sender.hasPermission("deadlydisasters.config")) {
 				if (args[1].equalsIgnoreCase("set"))
 					try {
-						File folder = new File(plugin.getDataFolder().getAbsolutePath(), "worldConfigs");
+						list.addAll(WorldWrapper.PRESET_NAMES);
+							File folder = new File(plugin.getDataFolder().getAbsolutePath(), "worldConfigs");
 						if (folder.exists())
 							for (File file : folder.listFiles())
 								list.add(file.getName().split("\\.")[0]);

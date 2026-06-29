@@ -46,7 +46,10 @@ public interface MobDisaster {
 			Entity entity = Bukkit.getEntity(uuid);
 			if (entity == null || !(entity instanceof Mob mob) || mob.getTarget() != null)
 				return;
-			mob.setTarget((LivingEntity) Bukkit.getEntity(entitiyTargets.get(entity.getUniqueId())));
+			UUID targetId = entitiyTargets.get(entity.getUniqueId());
+			if (targetId == null)
+				return;
+			mob.setTarget((LivingEntity) Bukkit.getEntity(targetId));
 		});
 	}
 	default void cleanEntities() {

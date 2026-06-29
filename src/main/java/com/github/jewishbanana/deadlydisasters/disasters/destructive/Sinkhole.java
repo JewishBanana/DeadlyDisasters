@@ -7,7 +7,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -31,7 +30,6 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
-import com.github.jewishbanana.deadlydisasters.events.DisasterStopEvent.DisasterStopReason;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.mojang.datafixers.util.Pair;
@@ -243,33 +241,6 @@ public class Sinkhole extends Disaster {
 	public void clean() {
 		super.clean();
 		removeDeathWatcher(300);
-	}
-	public void regenerateBlocks(DisasterStopReason reason) {
-		Set<Block> transfer = new LinkedHashSet<>(getModifiedBlocks());
-		modifiedOrder.forEach(block -> transfer.remove(block));
-		Set<Block> set = getModifiedBlocks();
-		set.clear();
-		set.addAll(transfer);
-		ArrayDeque<Block> rebuilt = new ArrayDeque<>(modifiedOrder.size());
-		Iterator<Block> iterator = modifiedOrder.iterator();
-		int cursor = 0;
-		for (Map.Entry<Integer, Block> entry : reinsertOrdering.entrySet()) {
-			while (cursor <= entry.getKey() && iterator.hasNext()) {
-				rebuilt.add(iterator.next());
-				++cursor;
-			}
-			rebuilt.add(entry.getValue());
-		}
-		while (iterator.hasNext())
-			rebuilt.add(iterator.next());
-		set.addAll(rebuilt);
-		if (!collapsingList.isEmpty()) {
-			Set<Block> blocks = new LinkedHashSet<>(collapsingList.stream().filter(cb -> cb.first != null && !cb.block.equals(cb.first)).map(cb -> cb.block).collect(Collectors.toSet()));
-			blocks.addAll(set);
-			set.clear();
-			set.addAll(blocks);
-		}
-		super.regenerateBlocks(reason);
 	}
 	private class CollapsingBlock {
 		

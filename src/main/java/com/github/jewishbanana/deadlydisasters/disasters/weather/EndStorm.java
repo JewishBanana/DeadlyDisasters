@@ -196,7 +196,12 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 					if (!riftCooldowns.containsKey(temp) && random.nextFloat() < mobSpawnRate) {
 						riftCooldowns.put(temp, random.nextInt(4, 8));
 						Mob mob = null;
-						switch (random.nextInt(DependencyUtils.isUltimateContentEnabled() ? 7 : 2)) {
+						boolean passive = false;
+						// Rare: a wild (tameable) baby end totem drifts harmlessly out of the rift instead of a hostile mob.
+						if (DependencyUtils.isUltimateContentEnabled() && random.nextInt(50) == 0) {
+							mob = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(temp, com.github.jewishbanana.ultimatecontent.entities.endentities.BabyEndTotem.class).getCastedEntity();
+							passive = true;
+						} else switch (random.nextInt(DependencyUtils.isUltimateContentEnabled() ? 7 : 2)) {
 						default:
 						case 0:
 							mob = world.spawn(temp, Endermite.class);
@@ -221,7 +226,7 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 							break;
 						}
 						if (mob != null) {
-							if (player != null && !EntityUtils.isPlayerImmune(player))
+							if (!passive && player != null && !EntityUtils.isPlayerImmune(player))
 								mob.setTarget(player);
 							addEntityToDisasterList(mob);
 						}
@@ -373,9 +378,6 @@ public class EndStorm extends WeatherDisaster implements MobDisaster {
 	}
 	protected String getConfigPath() {
 		return "disasters.weather.end_storm";
-	}
-	public double getRegenTickRate() {
-		return 0.01;
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return EnumSet.of(Environment.NORMAL, Environment.NETHER);

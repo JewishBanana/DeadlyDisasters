@@ -21,14 +21,17 @@
 #                    then this is the file to go to! This is also the file to translate to different languages, if you are looking for a language check the discord if someone 
 #                    has posted one. If you are translating yourself, please feel free to let me know and share it in the discord.
 #
-#   "data/" - This is a folder that should generally NOT be touched and is used to store data for the plugin such as timers, regen settings, etc.
+#   "blocks.yml" - This config is to modify the resistance certain block types have to disasters. This is by default populated to logical values where harder materials are
+#                  more resistive to being destroyed by disasters.
+#
+#   "data/" - This is a folder that should generally NOT be touched and is used to store data for the plugin such as timers, etc.
 #
 ###############################################################################################################################################################################
 #
 # Thank you for playing, I really do hope you enjoy the plugin! Feel free to reach out to me on the discord for any help you may need or to report bugs.
 #
 # Discord: https://discord.gg/MhXFj72VeN
-# Spigot Page: https://www.spigotmc.org/resources/deadlydisasters-pro.100918/
+# Spigot Page: https://www.spigotmc.org/resources/deadly-disasters.90806/
 # Source: (Available! Contact me in the discord for access)
 #
 ###############################################################################################################################################################################
@@ -42,19 +45,8 @@ general:
     check_for_update: true
     # If set to true then admins will receive a message about updates for the plugin upon joining the server if any are available.
     update_notify_admins: true
-    # If set to true then admins will be alerted when new content is added to the custom disaster catalog.
-    catalog_notify: true
     # Debug messages will send error info to the console for some errors. Turn this off if your console is getting spammed with errors.
     debug_messages: true
-regeneration:
-    # The amount of blocks regenerated per tick for the regeneration command.
-    regen_blocks_per_tick: 2000
-    # The amount of blocks regenerated per tick for the fast regeneration command.
-    fast_regen_blocks_per_tick: 10000
-    # This controls if data is saved to a database upon server stopping to persist regen data and allow it to be loaded next time the server is started. This can take a while!
-    save_regen_data: true
-    # This controls how many blocks per tick are loaded from saved regeneration data after server startup. Increase this number if you want regeneration data to load faster at the cost of TPS.
-    load_regen_data_throttle: 1000
 
 ###############################################################################################################################################################################
 #
@@ -85,14 +77,21 @@ items:
 ###############################################################################################################################################################################
 
 external:
-    # This setting controls of damaged blocks are logged to core protect, by default it is turned off. Why? Because logging every block change will decrease performance and 
-    # this should only be done if you are unsatisfied or concerned about the built-in disaster damage regeneration. If toggled on then all block damage will be done by the user "deadly-disasters"
+    # This setting controls if damaged blocks are logged to CoreProtect, by default it is turned off. Why? Because logging every block change will decrease performance and
+    # this should only be done if you want an audit trail or manual rollback support. If toggled on then all block damage will be done by the user "deadly-disasters"
     core_protect_damage_logging: false
     # This section is to enable or disable region protection from specific plugins. This is for if you are using multiple of them and want finer control. To disable region protection entirely, you can do so in the world disaster config file.
     region_protection_plugins:
+        # There are some available flags for world guard regions:
+        #  - "allow-disasters" defaulted to deny. This controls if disasters can spawn in the region and if players timers should tick down or not.
+        #  - "allow-disaster-damage" defaulted to deny. This controls if disasters can damage blocks within the region or not.
         world_guard: true
+        # There is a toggle option for towny regions allowing you to enable or disable disaster protection for specific regions. By default the region is protected.
         towny: true
         grief_prevention: true
         lands: true
         kingdoms: true
         field_zone: true
+        plot_squared: true
+        ultimate_clans: true
+        factions_uuid: true

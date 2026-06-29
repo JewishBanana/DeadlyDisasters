@@ -1,5 +1,7 @@
 package com.github.jewishbanana.deadlydisasters.listeners;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -87,22 +89,31 @@ public class PlayerListener implements Listener	{
 				builder.append("\n");
 			builder.append(line.replace("%world%", player.getWorld().getName())
 					.replace("%targeting%", wrapper.targetingMode == 0 ? "&c&l" + DataUtils.getLanguageString("messages.status.disabled") : wrapper.targetingMode == 1 ? "&e&l" + DataUtils.getLanguageString("messages.status.targetIndividual") : "&a&l" + DataUtils.getLanguageString("messages.status.targetGlobal"))
-					.replace("%lowsecond%", ""+wrapper.minimumTime)
-					.replace("%highsecond%", ""+wrapper.maximumTime)
-					.replace("%lowminute%", ""+(wrapper.minimumTime / 60.0))
-					.replace("%highminute%", ""+(wrapper.maximumTime / 60.0))
-					.replace("%lowhour%", ""+(wrapper.minimumTime / 60.0 / 60.0))
-					.replace("%highhour%", ""+(wrapper.maximumTime / 60.0 / 60.0))
-					.replace("%offset%", ""+wrapper.disasterOffset)
-					.replace("%level1%", ""+wrapper.probabilityTable[0])
-					.replace("%level2%", ""+wrapper.probabilityTable[1])
-					.replace("%level3%", ""+wrapper.probabilityTable[2])
-					.replace("%level4%", ""+wrapper.probabilityTable[3])
-					.replace("%level5%", ""+wrapper.probabilityTable[4])
-					.replace("%level6%", ""+wrapper.probabilityTable[5]));
+					.replace("%lowsecond%", formatForecastNumber(wrapper.minimumTime))
+					.replace("%highsecond%", formatForecastNumber(wrapper.maximumTime))
+					.replace("%lowminute%", formatForecastNumber(wrapper.minimumTime / 60.0))
+					.replace("%highminute%", formatForecastNumber(wrapper.maximumTime / 60.0))
+					.replace("%lowhour%", formatForecastNumber(wrapper.minimumTime / 60.0 / 60.0))
+					.replace("%highhour%", formatForecastNumber(wrapper.maximumTime / 60.0 / 60.0))
+					.replace("%offset%", formatForecastNumber(wrapper.disasterOffset))
+					.replace("%preset%", wrapper.getPresetDisplayName())
+					.replace("%level1%", formatForecastNumber(getLevelProbability(wrapper, 0)))
+					.replace("%level2%", formatForecastNumber(getLevelProbability(wrapper, 1)))
+					.replace("%level3%", formatForecastNumber(getLevelProbability(wrapper, 2)))
+					.replace("%level4%", formatForecastNumber(getLevelProbability(wrapper, 3)))
+					.replace("%level5%", formatForecastNumber(getLevelProbability(wrapper, 4)))
+					.replace("%level6%", formatForecastNumber(getLevelProbability(wrapper, 5))));
 		});
 		player.sendMessage(Utils.convertString(builder.toString()));
 		if (wrapper.getConfigBoolean("world.forecast.play_pling_sound"))
 			player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 1f);
+	}
+	private static float getLevelProbability(WorldWrapper wrapper, int index) {
+		if (wrapper.probabilityTable == null || wrapper.probabilityTable.length <= index)
+			return 0f;
+		return wrapper.probabilityTable[index];
+	}
+	private static String formatForecastNumber(double value) {
+		return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
 	}
 }

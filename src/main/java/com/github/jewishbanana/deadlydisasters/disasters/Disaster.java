@@ -1,12 +1,9 @@
 package com.github.jewishbanana.deadlydisasters.disasters;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +25,7 @@ import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
@@ -35,22 +33,23 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.WorldWrapper;
-import com.github.jewishbanana.deadlydisasters.disasters.weather.Monsoon;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent.DisasterStartReason;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStopEvent;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStopEvent.DisasterStopReason;
-import com.github.jewishbanana.deadlydisasters.listeners.BlockRegenHandler;
 import com.github.jewishbanana.deadlydisasters.listeners.DeathMessageHandler;
+import com.github.jewishbanana.deadlydisasters.listeners.EntitiesListener;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
+import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 import io.papermc.lib.PaperLib;
@@ -60,17 +59,14 @@ public abstract class Disaster {
 	protected static final Main plugin;
 	protected static final RandomGenerator random;
 	public static final List<Disaster> onGoingDisasters;
-	public static final Map<Disaster, RegeneratingTask> regeneratingDisasters;
 	static {
 		plugin = Main.getInstance();
 		random = RandomGenerator.of("SplittableRandom");
 		onGoingDisasters = new ArrayList<>();
-		regeneratingDisasters = new HashMap<>();
 	}
 	
 	private List<BukkitTask> tasks = new ArrayList<>();
 	private WorldWrapper worldLink;
-	private Set<Block> modifiedBlocks = new LinkedHashSet<>();
 	private float volume = 1f;
 	private boolean regionsProtected;
 	private boolean affectEntitiesInRegions;
@@ -101,7 +97,13 @@ public abstract class Disaster {
 			this.volume = (float) getConfigOverrideDouble("volume");
 			this.startDelayTicks = (int) (getConfigOverrideDouble("start_delay") * 20.0);
 			this.setLevel(Math.min(level, getConfigOverrideInt("max_level")));
-			List<String> list = getConfigOverrideStringList("blacklisted_mob_types");
+			List<String> list = new ArrayList<>(getConfigStringList("blacklisted_mob_types"));
+			// Merge the shared global blacklist when respect_global_mob_blacklist is true (default).
+			if (getConfigOverrideBoolean("respect_global_mob_blacklist")) {
+				for (String entry : worldLink.getConfigStringList("disasters.global.blacklisted_mob_types"))
+					if (!list.contains(entry))
+						list.add(entry);
+			}
 			Set<EntityType> types = new HashSet<>();
 			list.forEach(type -> {
 				try {
@@ -125,7 +127,7 @@ public abstract class Disaster {
 	public boolean canStart(DisasterStartReason reason) {
 		DisasterStartEvent event = new DisasterStartEvent(this, reason);
 		Bukkit.getPluginManager().callEvent(event);
-		return !event.isCancelled();
+		return !event.isCancelled() && !DependencyUtils.isDisasterStartBlocked(location);
 	}
 	public boolean canStart() {
 		return canStart(DisasterStartReason.NATURAL);
@@ -150,6 +152,23 @@ public abstract class Disaster {
 		}
 		worldLink.playDisasterStartSound(location, player, disasterRange);
 	}
+	public boolean softStart() {
+		if (getBannedEnvironments().contains(location.getWorld().getEnvironment())
+				|| (getFrequency() != 1f && getFrequency() > random.nextFloat()))
+			return false;
+		Location temp = findPossiblePosition(location);
+		if (temp == null)
+			return false;
+		setLocation(temp);
+		if (!canStart())
+			return false;
+		if (DependencyUtils.isRealisticSeasonsEnabled() && !DependencyUtils.isDisasterInSeason(getClass(), location.getWorld()))
+			return false;
+		init();
+		broadcastDisaster();
+		plugin.getServer().getScheduler().runTaskLater(plugin, () -> start(), startDelayTicks);
+		return true;
+	}
 	public void start() {
 		onGoingDisasters.add(this);
 //		Bukkit.broadcastMessage("disaster started");
@@ -162,8 +181,6 @@ public abstract class Disaster {
 		hasEnded = true;
 		clean();
 		onGoingDisasters.remove(this);
-		if (reason != DisasterStopReason.SERVER_CLOSING)
-			regenerateBlocks(reason);
 //		Bukkit.broadcastMessage("disaster ended");
 		return true;
 	}
@@ -179,16 +196,14 @@ public abstract class Disaster {
 		if ((regionsProtected && isBlockProtected(block)) 
 				|| (ignoreImmuneOnly ? BlockUtils.isBlockImmune(block) : BlockUtils.doesBlockResist(block, rng)))
 			return false;
-		if (BlockRegenHandler.removeBlock(block, this, withPhysics) != null);
-			modifiedBlocks.add(block);
+		block.setType(Material.AIR, withPhysics);
 		return true;
 	}
 	public boolean removeBlock(Block block, boolean ignoreImmuneOnly, boolean withPhysics) {
 		if ((regionsProtected && isBlockProtected(block)) 
 				|| (ignoreImmuneOnly ? BlockUtils.isBlockImmune(block) : BlockUtils.doesBlockResist(block)))
 			return false;
-		if (BlockRegenHandler.removeBlock(block, this, withPhysics) != null);
-			modifiedBlocks.add(block);
+		block.setType(Material.AIR, withPhysics);
 		return true;
 	}
 	public boolean removeBlock(Block block) {
@@ -198,8 +213,7 @@ public abstract class Disaster {
 		if ((regionsProtected && (ignoreImmuneOnly ? BlockUtils.isBlockImmune(block) : BlockUtils.doesBlockResist(block))) 
 				|| BlockUtils.doesBlockResist(block))
 			return false;
-		if (BlockRegenHandler.placeBlock(block, data, this, withPhysics) != null)
-			modifiedBlocks.add(block);
+		block.setBlockData(data, withPhysics);
 		return true;
 	}
 	public boolean placeBlock(Block block, Material material) {
@@ -218,21 +232,20 @@ public abstract class Disaster {
 				|| BlockUtils.doesBlockResist(from) 
 				|| BlockUtils.doesBlockResist(to))
 			return false;
-		BlockRegenHandler.moveBlock(from, to, this, withPhysics);
-		if (reverseRegenerationOrder()) {
-			modifiedBlocks.add(from);
-		    modifiedBlocks.add(to);
-		} else {
-			modifiedBlocks.add(to);
-		    modifiedBlocks.add(from);
-		}
+		BlockState fromState = from.getState();
+		to.setBlockData(fromState.getBlockData(), withPhysics);
+		if (fromState instanceof InventoryHolder fromHolder)
+			((InventoryHolder) to.getState()).getInventory().setContents(fromHolder.getInventory().getContents());
+		from.setType(Material.AIR, withPhysics);
 	    return true;
 	}
 	public boolean moveBlock(Block from, Block to) {
 		return moveBlock(from, to, true);
 	}
 	public FallingBlock createFallingBlock(Location location, BlockData data) {
-		final FallingBlock entity = BlockRegenHandler.createFallingBlock(location, data, this);
+		FallingBlock entity = location.getWorld().spawnFallingBlock(location, data);
+		EntityUtils.markFallingBlock(entity);
+		EntitiesListener.attachRemoveKey(entity);
 		if (entity != null)
 			fallingBlocks.add(entity.getUniqueId());
 		return entity;
@@ -241,9 +254,11 @@ public abstract class Disaster {
 		if ((regionsProtected && isBlockProtected(block)) 
 				|| BlockUtils.doesBlockResist(block))
 			return null;
-		FallingBlock entity = BlockRegenHandler.convertBlockIntoFallingBlock(block, this);
+		BlockState state = block.getState();
+		FallingBlock entity = block.getWorld().spawnFallingBlock(BlockUtils.getCenterOfBlock(block), state.getBlockData());
+		EntityUtils.markFallingBlock(entity);
+		EntitiesListener.attachRemoveKey(entity);
 		if (entity != null) {
-			modifiedBlocks.add(block);
 			fallingBlocks.add(entity.getUniqueId());
 		}
 		return entity;
@@ -254,84 +269,6 @@ public abstract class Disaster {
 	public boolean isEntityProtected(Entity entity) {
 		return blacklistedEntityTypes.contains(entity.getType())
 				|| (!affectEntitiesInRegions && DependencyUtils.isEntityProtected(entity));
-	}
-	public void regenerateBlocks(DisasterStopReason reason) {
-		if (modifiedBlocks.isEmpty())
-			return;
-		if (!worldLink.getConfigBoolean("regeneration.enabled")) {
-			modifiedBlocks.clear();
-			return;
-		}
-		List<Block> copiedSet = new ArrayList<>(modifiedBlocks);
-		if (reverseRegenerationOrder())
-			Collections.reverse(copiedSet);
-		if (reason != DisasterStopReason.SERVER_CLOSING) {
-//			BlockRegenHandler.printMaps();
-			final double regenRate = getRegenTickRate() * (getConfigPath() == null ? 1.0 : getConfigOverrideDouble("regen_rate"));
-			if (regenRate > 0)
-				regeneratingDisasters.put(this, this.new RegeneratingTask(this, copiedSet, regenRate, (int) (worldLink.getConfigDouble("regeneration.regeneration_delay") * 20)));
-			modifiedBlocks.clear();
-		} else {
-			modifiedBlocks.clear();
-			modifiedBlocks.addAll(copiedSet);
-		}
-	}
-	public void regenerateBlocks() {
-		regenerateBlocks(DisasterStopReason.CUSTOM);
-	}
-	public class RegeneratingTask {
-		
-		public BukkitTask task;
-		public List<Block> blocks;
-		
-		public RegeneratingTask(Disaster disaster, List<Block> blocks, double regenRate, int startDelay) {
-			this.blocks = blocks;
-			this.task = new BukkitRunnable() {
-				private double regenTicks;
-				private Iterator<Block> iterator = blocks.iterator();
-				private boolean clearFallingBlocks;
-				
-				@Override
-				public void run() {
-					if (!clearFallingBlocks) {
-						clearFallingBlocks = true;
-						disaster.fallingBlocks.forEach(uuid -> {
-							Entity entity = Bukkit.getEntity(uuid);
-							if (entity != null)
-								entity.remove();
-						});
-					}
-					regenTicks += regenRate;
-					while (regenTicks >= 1 && iterator.hasNext()) {
-						regenTicks -= 1;
-						try {
-							do {
-								Block block = iterator.next();
-								iterator.remove();
-								if (BlockRegenHandler.restoreBlock(block, true))
-									break;
-							} while (iterator.hasNext());
-						} catch (Exception e) {
-							Utils.sendExceptionLog(e);
-						}
-					}
-					if (!iterator.hasNext()) {
-						if (modifiedBlocks.isEmpty()) {
-							this.cancel();
-							regeneratingDisasters.remove(disaster);
-//							BlockRegenHandler.printMaps();
-							return;
-						}
-						blocks.addAll(modifiedBlocks);
-						modifiedBlocks.clear();
-						iterator = blocks.iterator();
-					}
-				}
-			}.runTaskTimer(plugin, startDelay, 1);
-		}
-		public RegeneratingTask(Disaster disaster, List<Block> blocks, int startDelay) {
-			this(disaster, blocks, getRegenTickRate() * (getConfigPath() == null ? 1.0 : getConfigOverrideDouble("regen_rate")), startDelay);
-		}
 	}
 	public void playSound(Location loc, Sound sound, SoundCategory category, float vol, float pitch) {
 		loc.getWorld().playSound(loc, sound, category, vol * volume, pitch);
@@ -433,14 +370,17 @@ public abstract class Disaster {
 	    void filter(Map<Entity, Location> foundEntities, List<Entity> entities, List<Player> players);
 	}
 	public void createAsyncEntityMonitor(Predicate<Entity> findConditions, EntityFilter filter) {
+		createAsyncEntityMonitor(disasterRange, findConditions, filter);
+	}
+	public void createAsyncEntityMonitor(double horizontalRange, Predicate<Entity> findConditions, EntityFilter filter) {
 		entitiesInMonitorArea = new ArrayList<>();
 		playersInMonitorArea = new ArrayList<>();
-		recurringAsyncEntityMonitor(findConditions, filter);
+		recurringAsyncEntityMonitor(horizontalRange, findConditions, filter);
 	}
-	private void recurringAsyncEntityMonitor(Predicate<Entity> findConditions, EntityFilter filter) {
+	private void recurringAsyncEntityMonitor(double horizontalRange, Predicate<Entity> findConditions, EntityFilter filter) {
 		final World world = location.getWorld();
 		final Map<Entity, Location> foundEntities = new HashMap<>();
-		for (Entity entity : world.getNearbyEntities(location, disasterRange, 193, disasterRange, findConditions))
+		for (Entity entity : world.getNearbyEntities(location, horizontalRange, 193, horizontalRange, findConditions))
 			foundEntities.put(entity, entity.getLocation());
 		final List<Player> players = new ArrayList<>(foundEntities.size());
 		new BukkitRunnable() {
@@ -456,7 +396,7 @@ public abstract class Disaster {
 						playersInMonitorArea.clear();
 						playersInMonitorArea.addAll(players);
 						if (!hasEnded())
-							recurringAsyncEntityMonitor(findConditions, filter);
+							recurringAsyncEntityMonitor(horizontalRange, findConditions, filter);
 					}
 				}.runTask(plugin);
 			}
@@ -488,6 +428,11 @@ public abstract class Disaster {
 		if (worldLink.getConfig().contains(getConfigPath()+'.'+path, true))
 			return getConfigInt(path);
 		return worldLink.getConfigInt("disasters.global."+path);
+	}
+	protected boolean getConfigOverrideBoolean(String path) {
+		if (worldLink.getConfig().contains(getConfigPath()+'.'+path, true))
+			return getConfigBoolean(path);
+		return worldLink.getConfigBoolean("disasters.global."+path);
 	}
 	protected double getConfigOverrideDouble(String path) {
 		if (worldLink.getConfig().contains(getConfigPath()+'.'+path, true))
@@ -533,12 +478,6 @@ public abstract class Disaster {
 	protected String getConfigPath() {
 		return null;
 	}
-	public double getRegenTickRate() {
-		return level * 0.05;
-	}
-	public boolean reverseRegenerationOrder() {
-		return true;
-	}
 	public String getBroadcastMessageConfigPath() {
 		return "messages.disaster_broadcasts.general.level_"+level;
 	}
@@ -555,9 +494,6 @@ public abstract class Disaster {
 		}
 		return null;
 	}
-	public Set<Block> getModifiedBlocks() {
-		return modifiedBlocks;
-	}
 	public double getFrequency() {
 		return getConfigPath() == null ? 1.0 : getConfigOverrideDouble("frequency");
 	}
@@ -566,6 +502,10 @@ public abstract class Disaster {
 	}
 	public Set<Environment> getBannedEnvironments() {
 		return Set.of();
+	}
+	protected void replaceFallingBlockUUID(UUID oldUUID, UUID newUUID) {
+		if (fallingBlocks.remove(oldUUID))
+			fallingBlocks.add(newUUID);
 	}
 	public static void stopAll(DisasterStopReason reason) {
 		List<Disaster> disasters = new ArrayList<>(onGoingDisasters);
@@ -581,6 +521,5 @@ public abstract class Disaster {
 		stopAll(DisasterStopReason.CUSTOM);
 	}
 	public static void cleanUpDisastersEffects() {
-		Monsoon.clearAllPuddles();
 	}
 }

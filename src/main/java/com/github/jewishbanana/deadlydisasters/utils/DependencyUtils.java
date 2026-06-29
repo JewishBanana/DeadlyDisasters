@@ -8,10 +8,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
 import org.apache.commons.io.FileUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -21,6 +23,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Drowned;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -29,6 +32,7 @@ import org.bukkit.plugin.PluginManager;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.commands.TownyDisasters;
+import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.disasters.DisasterRegistry;
 import com.github.jewishbanana.deadlydisasters.items.BasicCoatingBook;
 import com.github.jewishbanana.deadlydisasters.items.PlagueCure;
@@ -36,7 +40,6 @@ import com.github.jewishbanana.deadlydisasters.items.SplashPlagueCure;
 import com.github.jewishbanana.deadlydisasters.items.enchants.BasicCoating;
 import com.github.jewishbanana.deadlydisasters.listeners.LootGenerateListener;
 import com.github.jewishbanana.deadlydisasters.listeners.TownyListener;
-import com.github.jewishbanana.uiframework.UIFramework;
 
 public class DependencyUtils {
 
@@ -49,14 +52,15 @@ public class DependencyUtils {
 	private static boolean ultimateContent;
 	
 	private static Predicate<Location> regionCheck;
+	private static Predicate<Location> disasterStartCheck;
 	
 	private static com.palmergames.bukkit.towny.TownyAPI townyHook;
 	private static net.coreprotect.CoreProtectAPI cpHook;
 	private static final String cpUser = "Deadly-Disasters";
 	private static SeasonsHook seasonsHook;
 	
-	private static final String UIFrameworkVersion = "3.0.0";
-	private static final String UltimateContentVersion = "2.0.0";
+	private static final String UIFrameworkVersion = "3.1.4";
+	private static final String UltimateContentVersion = "2.3.0";
 	static {
 		boolean spigotCheck = false;
 		try {
@@ -81,7 +85,7 @@ public class DependencyUtils {
 				ultimateContent = true;
 		}
 		if (pm.isPluginEnabled("UIFramework")) {
-			if (!UIFramework.isVersionOrAbove(UIFrameworkVersion))
+			if (!com.github.jewishbanana.uiframework.UIFramework.isVersionOrAbove(UIFrameworkVersion))
 				Utils.sendConsoleMessage("&cERROR Cannot hook into UIFramework because UIFramework is out of date! Please update to at least &a"+UIFrameworkVersion+" &c(Current version installed is &b"+(plugin.getServer().getPluginManager().getPlugin("UIFramework").getDescription().getVersion())+"&c). The only effect this error will have is that all custom items related to DeadlyDisasters will be disabled. You can update UIFramework here:&6 https://www.spigotmc.org/resources/uiframework.110768/");
 			else {
 				uif = true;
@@ -101,17 +105,24 @@ public class DependencyUtils {
 		} else
 			Utils.sendConsoleMessage("&bThere is an optional dependency UIFramework, that adds some custom items to DeadlyDisasters such as the plague cure potion, basic coating enchant, and more! Get UIFramework here:&6 https://www.spigotmc.org/resources/uiframework.110768/");
 		
-		Predicate<Location> check = null;
+		Predicate<Location> damageCheck = null;
+		Predicate<Location> startCheck = null;
 		try {
-			if (pm.isPluginEnabled("WorldGuard")) {
+			if (pm.getPlugin("WorldGuard") != null) {
 				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.world_guard")) {
-					check = (check == null) ? loc -> isWGRegion(loc) : check.and(loc -> isWGRegion(loc));
+					registerWorldGuardFlags(plugin);
+					WorldGuardHook.initQueryCache();
+					damageCheck = appendRegionPredicate(damageCheck, WorldGuardHook::isDamageProtected);
+					startCheck = appendRegionPredicate(startCheck, WorldGuardHook::isDisasterStartBlocked);
 					plugin.getLogger().info("Successfully hooked into World Guard");
 				} else
 					plugin.getLogger().info("World Guard was detected, but region protection for this plugin is disabled in the main config.yml file. World Guard regions will NOT be protected!");
 			}
-		} catch (Exception e) {
-			Utils.sendExceptionLog(e);
+		} catch (Throwable e) {
+			if (e instanceof Exception exception)
+				Utils.sendExceptionLog(exception);
+			else
+				e.printStackTrace();
 			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eWorld Guard &cregions from this plugin will NOT be protected!");
 		}
 		try {
@@ -121,11 +132,10 @@ public class DependencyUtils {
 					TownyListener.registerTowns();
 					new TownyListener(plugin);
 					plugin.getCommand("towndisasters").setTabCompleter(new TownyDisasters(plugin));
-				    check = (check == null) ? 
-				            loc -> townyHook.getTownBlock(loc) != null &&
-				            		townyHook.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true) : 
-				            check.and(loc -> townyHook.getTownBlock(loc) != null &&
-				            		townyHook.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true));
+				    Predicate<Location> predicate = loc -> townyHook.getTownBlock(loc) != null &&
+						townyHook.getTownBlock(loc).getTownOrNull().getMetadata("DeadlyDisasters").getValue().equals(true);
+				    damageCheck = appendRegionPredicate(damageCheck, predicate);
+				    startCheck = appendRegionPredicate(startCheck, predicate);
 					plugin.getLogger().info("Successfully hooked into Towny");
 				} else
 					plugin.getLogger().info("Towny was detected, but region protection for this plugin is disabled in the main config.yml file. Towny regions will NOT be protected!");
@@ -138,9 +148,9 @@ public class DependencyUtils {
 			if (pm.isPluginEnabled("GriefPrevention")) {
 				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.grief_prevention")) {
 					me.ryanhamshire.GriefPrevention.DataStore api = me.ryanhamshire.GriefPrevention.GriefPrevention.instance.dataStore;
-					check = (check == null) ? 
-				            loc -> api.getClaimAt(loc, true, null) != null : 
-				            check.and(loc -> api.getClaimAt(loc, true, null) != null);
+					Predicate<Location> predicate = loc -> api.getClaimAt(loc, true, null) != null;
+					damageCheck = appendRegionPredicate(damageCheck, predicate);
+					startCheck = appendRegionPredicate(startCheck, predicate);
 					plugin.getLogger().info("Successfully hooked into Grief Prevention");
 				} else
 					plugin.getLogger().info("Grief Prevention was detected, but region protection for this plugin is disabled in the main config.yml file. Grief Prevention regions will NOT be protected!");
@@ -153,9 +163,9 @@ public class DependencyUtils {
 			if (pm.isPluginEnabled("Lands")) {
 				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.lands")) {
 					me.angeschossen.lands.api.LandsIntegration api = me.angeschossen.lands.api.LandsIntegration.of(plugin);
-				    check = (check == null) ? 
-				            loc -> api.getArea(loc) != null : 
-				            check.and(loc -> api.getArea(loc) != null);
+				    Predicate<Location> predicate = loc -> api.getArea(loc) != null;
+				    damageCheck = appendRegionPredicate(damageCheck, predicate);
+				    startCheck = appendRegionPredicate(startCheck, predicate);
 					plugin.getLogger().info("Successfully hooked into Lands");
 				} else
 					plugin.getLogger().info("Lands was detected, but region protection for this plugin is disabled in the main config.yml file. Lands regions will NOT be protected!");
@@ -167,9 +177,9 @@ public class DependencyUtils {
 		try {
 			if (pm.isPluginEnabled("Kingdoms")) {
 				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.kingdoms")) {
-					check = (check == null) ? 
-				            loc -> org.kingdoms.constants.land.Land.getLand(loc) != null : 
-				            check.and(loc -> org.kingdoms.constants.land.Land.getLand(loc) != null);
+					Predicate<Location> predicate = loc -> org.kingdoms.constants.land.Land.getLand(loc) != null;
+					damageCheck = appendRegionPredicate(damageCheck, predicate);
+					startCheck = appendRegionPredicate(startCheck, predicate);
 					plugin.getLogger().info("Successfully hooked into Kingdoms");
 				} else
 					plugin.getLogger().info("Kingdoms was detected, but region protection for this plugin is disabled in the main config.yml file. Kingdoms regions will NOT be protected!");
@@ -183,9 +193,9 @@ public class DependencyUtils {
 				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.field_zone")) {
 					kr.rtustudio.fieldzone.region.RegionFlag flag = kr.rtustudio.fieldzone.region.RegionFlag.create(plugin, "disasters");
 					kr.rtustudio.fieldzone.FieldZoneAPI.registerFlag(flag);
-					check = (check == null) ? 
-				            loc -> kr.rtustudio.fieldzone.FieldZoneAPI.hasFlag(loc, flag) == kr.rtustudio.fieldzone.region.FlagState.FALSE : 
-				            check.and(loc -> kr.rtustudio.fieldzone.FieldZoneAPI.hasFlag(loc, flag) == kr.rtustudio.fieldzone.region.FlagState.FALSE);
+					Predicate<Location> predicate = loc -> kr.rtustudio.fieldzone.FieldZoneAPI.hasFlag(loc, flag) == kr.rtustudio.fieldzone.region.FlagState.FALSE;
+					damageCheck = appendRegionPredicate(damageCheck, predicate);
+					startCheck = appendRegionPredicate(startCheck, predicate);
 					plugin.getLogger().info("Successfully hooked into FieldZone");
 				} else
 					plugin.getLogger().info("FieldZone was detected, but region protection for this plugin is disabled in the main config.yml file. FieldZone regions will NOT be protected!");
@@ -194,7 +204,58 @@ public class DependencyUtils {
 			Utils.sendExceptionLog(e);
 			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eFieldZone &cregions from this plugin will NOT be protected!");
 		}
-		regionCheck = (check == null) ? loc -> false : check;
+		try {
+			if (pm.isPluginEnabled("PlotSquared")) {
+				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.plot_squared")) {
+					Predicate<Location> predicate = loc -> com.plotsquared.core.plot.Plot.getPlot(com.plotsquared.bukkit.util.BukkitUtil.adapt(loc)) != null;
+					damageCheck = appendRegionPredicate(damageCheck, predicate);
+					startCheck = appendRegionPredicate(startCheck, predicate);
+					plugin.getLogger().info("Successfully hooked into PlotSquared");
+				} else
+					plugin.getLogger().info("PlotSquared was detected, but region protection for this plugin is disabled in the main config.yml file. PlotSquared regions will NOT be protected!");
+			}
+		} catch (Exception e) {
+			Utils.sendExceptionLog(e);
+			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &ePlotSquared &cregions from this plugin will NOT be protected!");
+		}
+		try {
+			if (pm.isPluginEnabled("UltimateClans")) {
+				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.ultimate_clans")) {
+					me.ulrich.clans.interfaces.UClans api = (me.ulrich.clans.interfaces.UClans) Bukkit.getPluginManager().getPlugin("UltimateClans");
+					Optional<me.ulrich.clans.interfaces.ClaimImplement> impl = api.getClaimAPI().getPreferentialOrFirstImplement();
+					if(impl.isPresent()) {
+						me.ulrich.clans.interfaces.ClaimImplement claimImpl = impl.get();
+						Predicate<Location> predicate = loc -> claimImpl.hasClaimLocation(loc);
+						damageCheck = appendRegionPredicate(damageCheck, predicate);
+						startCheck = appendRegionPredicate(startCheck, predicate);
+						plugin.getLogger().info("Successfully hooked into UltimateClans");
+					} else
+						plugin.getLogger().info("UltimateClans was detected, but an implementation could not be found. UltimateClans regions will NOT be protected!");
+				} else
+					plugin.getLogger().info("UltimateClans was detected, but region protection for this plugin is disabled in the main config.yml file. UltimateClans regions will NOT be protected!");
+			}
+		} catch (Exception e) {
+			Utils.sendExceptionLog(e);
+			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eUltimateClans &cregions from this plugin will NOT be protected!");
+		}
+		try {
+			if (pm.isPluginEnabled("Factions")) {
+				if (DataUtils.getMainConfigBoolean("external.region_protection_plugins.factions_uuid")) {
+					dev.kitteh.factions.Factions factions = dev.kitteh.factions.Factions.factions();
+					Predicate<Location> predicate = loc -> !factions.getAt(loc).isWilderness();
+					damageCheck = appendRegionPredicate(damageCheck, predicate);
+					startCheck = appendRegionPredicate(startCheck, predicate);
+					plugin.getLogger().info("Successfully hooked into FactionsUUID");
+				} else
+					plugin.getLogger().info("FactionsUUID was detected, but region protection for this plugin is disabled in the main config.yml file. FactionsUUID regions will NOT be protected!");
+			}
+		} catch (Exception e) {
+			Utils.sendExceptionLog(e);
+			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eFactionsUUID &cregions from this plugin will NOT be protected!");
+		}
+		
+		regionCheck = (damageCheck == null) ? loc -> false : damageCheck;
+		disasterStartCheck = (startCheck == null) ? loc -> false : startCheck;
 		
 		try {
 			Object coreProtect = getCoreProtect(plugin);
@@ -258,11 +319,35 @@ public class DependencyUtils {
 	public static boolean isUltimateContentEnabled() {
 		return ultimateContent;
 	}
+	public static void registerWorldGuardFlags(Plugin plugin) {
+		if (Bukkit.getPluginManager().getPlugin("WorldGuard") == null)
+			return;
+		try {
+			WorldGuardHook.registerFlags();
+		} catch (Throwable e) {
+			if (plugin != null)
+				plugin.getLogger().warning("Failed to register WorldGuard disaster flags ("+e.getClass().getSimpleName()+": "+e.getMessage()+"). WorldGuard regions will fall back to protecting disasters by default.");
+		}
+	}
+	public static void manipulateDrownedGoals(Drowned entity, boolean aggressive) {
+		if (ultimateContent)
+			com.github.jewishbanana.ultimatecontent.utils.EntityUtils.manipulateDrownedGoals(entity, aggressive);
+	}
 	public static boolean doesItemExist(String item) {
 		return uif && com.github.jewishbanana.uiframework.items.UIItemType.getItemType(item) != null;
 	}
 	public static com.github.jewishbanana.uiframework.items.UIItemType getItemType(String item) {
 		return com.github.jewishbanana.uiframework.items.UIItemType.getItemType(item);
+	}
+	/**
+	 * Resolves a UIFramework item id (e.g. an achievement reward such as {@code uc:voids_edge} or {@code dd:void_tear}) to an
+	 * ItemStack. Returns null when UIFramework is not installed or the id is not a registered item, so callers can fall back.
+	 */
+	public static ItemStack resolveUIItem(String id) {
+		if (!uif)
+			return null;
+		com.github.jewishbanana.uiframework.items.UIItemType type = com.github.jewishbanana.uiframework.items.UIItemType.getItemType(id);
+		return type != null ? type.getItem() : null;
 	}
 	public static int getBasicCoatingLevel(ItemStack item) {
 		return uifHook == null ? 0 : uifHook.basicCoating.getEnchantLevel(item);
@@ -270,15 +355,63 @@ public class DependencyUtils {
 	public static int getYetisBlessingLevel(ItemStack item) {
 		return ucHook == null ? 0 : ucHook.yetisblessing.getEnchantLevel(item);
 	}
-	private static boolean isWGRegion(Location location) {
-		com.sk89q.worldedit.util.Location loc = com.sk89q.worldedit.bukkit.BukkitAdapter.adapt(location);
-		com.sk89q.worldguard.protection.regions.RegionContainer container = com.sk89q.worldguard.WorldGuard.getInstance().getPlatform().getRegionContainer();
-		com.sk89q.worldguard.protection.regions.RegionQuery query = container.createQuery();
-		com.sk89q.worldguard.protection.ApplicableRegionSet set = query.getApplicableRegions(loc);
-		return set.size() != 0;
+	private static Predicate<Location> appendRegionPredicate(Predicate<Location> current, Predicate<Location> addition) {
+		return current == null ? addition : current.or(addition);
 	}
 	public static boolean isRegionProtected(Location location) {
-		return regionCheck.test(location);
+		return regionCheck != null && regionCheck.test(location);
+	}
+	public static boolean isDisasterStartBlocked(Location location) {
+		return disasterStartCheck != null && disasterStartCheck.test(location);
+	}
+	private static final class WorldGuardHook {
+		private static ThreadLocal<com.sk89q.worldguard.protection.regions.RegionQuery> query;
+		private static com.sk89q.worldguard.protection.flags.StateFlag allowDisastersFlag;
+		private static com.sk89q.worldguard.protection.flags.StateFlag allowDisasterDamageFlag;
+
+		private static void registerFlags() {
+			com.sk89q.worldguard.protection.flags.registry.FlagRegistry registry = com.sk89q.worldguard.WorldGuard.getInstance().getFlagRegistry();
+			allowDisastersFlag = registerStateFlag(registry, "allow-disasters");
+			allowDisasterDamageFlag = registerStateFlag(registry, "allow-disaster-damage");
+		}
+		private static com.sk89q.worldguard.protection.flags.StateFlag registerStateFlag(com.sk89q.worldguard.protection.flags.registry.FlagRegistry registry, String name) {
+			try {
+				com.sk89q.worldguard.protection.flags.StateFlag flag = new com.sk89q.worldguard.protection.flags.StateFlag(name, false);
+				registry.register(flag);
+				return flag;
+			} catch (com.sk89q.worldguard.protection.flags.registry.FlagConflictException e) {
+				com.sk89q.worldguard.protection.flags.Flag<?> existing = registry.get(name);
+				return (existing instanceof com.sk89q.worldguard.protection.flags.StateFlag flag) ? flag : null;
+			}
+		}
+		private static void initQueryCache() {
+			query = ThreadLocal.withInitial(() -> com.sk89q.worldguard.WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery());
+		}
+		private static com.sk89q.worldguard.protection.ApplicableRegionSet getRegions(Location location) {
+			if (location == null || location.getWorld() == null)
+				return null;
+			if (query == null)
+				initQueryCache();
+			return query.get().getApplicableRegions(com.sk89q.worldedit.bukkit.BukkitAdapter.adapt(location));
+		}
+		private static boolean isDamageProtected(Location location) {
+			com.sk89q.worldguard.protection.ApplicableRegionSet set = getRegions(location);
+			if (set == null)
+				return false;
+			if (allowDisasterDamageFlag == null)
+				return true;
+			com.sk89q.worldguard.protection.flags.StateFlag.State state = set.queryState(null, allowDisasterDamageFlag);
+			return state == com.sk89q.worldguard.protection.flags.StateFlag.State.DENY || (state == null && set.size() != 0);
+		}
+		private static boolean isDisasterStartBlocked(Location location) {
+			com.sk89q.worldguard.protection.ApplicableRegionSet set = getRegions(location);
+			if (set == null)
+				return false;
+			if (allowDisastersFlag == null)
+				return true;
+			com.sk89q.worldguard.protection.flags.StateFlag.State state = set.queryState(null, allowDisastersFlag);
+			return state == com.sk89q.worldguard.protection.flags.StateFlag.State.DENY || (state == null && set.size() != 0);
+		}
 	}
 	public static com.palmergames.bukkit.towny.TownyAPI getTownyAPI() {
 		return townyHook;
@@ -321,8 +454,8 @@ public class DependencyUtils {
 	public static Object getRealisticSeasonsRawAPI() {
 		return seasonsHook == null ? null : seasonsHook.seasonsAPI;
 	}
-	public static boolean isDisasterInSeason(DisasterRegistry registry, World world) {
-		Set<String> allowed = seasonsHook.seasonMap.get(registry);
+	public static boolean isDisasterInSeason(Class<? extends Disaster> disasterClass, World world) {
+		Set<String> allowed = seasonsHook.seasonMap.get(disasterClass);
 		if (allowed == null || allowed.isEmpty())
 			return false;
 		try {
@@ -367,11 +500,12 @@ public class DependencyUtils {
 	}
 	private static class SeasonsHook {
 		private final Object seasonsAPI;
-		private final Map<DisasterRegistry, Set<String>> seasonMap = new HashMap<>();
+		private final Map<Class<? extends Disaster>, Set<String>> seasonMap = new HashMap<>();
 		private final int blizzardTemperatureThreshold;
 		private final Method getPlayerTemperatureMethod;
 		private final Method getAirTemperatureMethod;
 		
+		@SuppressWarnings("unused")
 		public SeasonsHook(FileConfiguration config) throws Exception {
 			Class<?> apiClass = Class.forName("me.casperge.realisticseasons.api.SeasonsAPI");
             Method getInstance = apiClass.getMethod("getInstance");
@@ -415,7 +549,7 @@ public class DependencyUtils {
 		                else
 		                	Utils.sendConsoleMessage("&cERROR there is no such season &d'"+season+"' &cin the &b'seasons.yml' &cfile at disaster seasons section &edisasters."+disaster+"&c!");
 					}
-					seasonMap.computeIfAbsent(registry, set -> new HashSet<>()).addAll(seasons);
+					seasonMap.computeIfAbsent(registry.getRegisteredClass(), set -> new HashSet<>()).addAll(seasons);
 				});
 		}
 		private int getPlayerTemperature(Player player) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
@@ -424,6 +558,7 @@ public class DependencyUtils {
 		private int getLocationAirTemperature(Location location) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 			return (int) getAirTemperatureMethod.invoke(seasonsAPI, location);
 		}
+		@SuppressWarnings("unused")
 		private static FileConfiguration getSeasonsFile(Main plugin) throws Exception {
 			File file = new File(plugin.getDataFolder().getAbsolutePath(), "seasons.yml");
 			if (!file.exists()) {

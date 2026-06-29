@@ -486,6 +486,87 @@ public class Utils {
 	    }
 	    return true;
 	}
+	/**
+	 * Graded variant of {@link #isLocationExposedToOutdoorsOptimized}: instead of a boolean it returns how exposed a
+	 * location is, from {@code 0.0} (fully enclosed) to {@code 1.0} (fully open). Always runs every cast so callers can
+	 * scale effects by partial cover.
+	 */
+	public static float getOutdoorExposureScore(Location location, float testRange, int horizontalCasts) {
+	    final World world = location.getWorld();
+	    final float x = (float) location.getX();
+	    final float y = (float) location.getY();
+	    final float z = (float) location.getZ();
+	    final float angleStep = (float) (2 * Math.PI / horizontalCasts);
+	    final float invStepSize = 1.111f;
+	    final int maxSteps = (int) (testRange * invStepSize);
+	    final int accuracyThreshold = (int) (horizontalCasts * 3 * 2.17);
+	    int accuracy = 0;
+	    for (int i = 0; i < horizontalCasts; i++) {
+	        final float radians = i * angleStep;
+	        final float cosR = (float) Math.cos(radians);
+	        final float sinR = (float) Math.sin(radians);
+	        for (int j = 0; j < 3; j++) {
+	            final float angleY = -0.5f + (j * 0.5f);
+	            final float dx = (cosR + angleY) * 0.9f;
+	            final float dy = angleY * 0.9f;
+	            final float dz = (sinR + angleY) * 0.9f;
+	            float locX = x + dx;
+	            float locY = y + dy;
+	            float locZ = z + dz;
+	            boolean flag = false;
+	            int lastBlockX = Integer.MIN_VALUE;
+	            int lastBlockY = Integer.MIN_VALUE;
+	            int lastBlockZ = Integer.MIN_VALUE;
+	            for (int step = 0; step < maxSteps; step++) {
+	                final int blockX = (int) Math.floor(locX);
+	                final int blockY = (int) Math.floor(locY);
+	                final int blockZ = (int) Math.floor(locZ);
+	                if (blockX == lastBlockX && blockY == lastBlockY && blockZ == lastBlockZ) {
+	                    locX += dx;
+	                    locY += dy;
+	                    locZ += dz;
+	                    continue;
+	                }
+	                lastBlockX = blockX;
+	                lastBlockY = blockY;
+	                lastBlockZ = blockZ;
+	                final long blockKey = blockKey(blockX, blockY, blockZ);
+	                final boolean passable = passableCache.computeIfAbsent(blockKey,
+	                    k -> world.getBlockAt(blockX, blockY, blockZ).isPassable());
+	                if (!passable) {
+	                    long xzKey = xzKey(blockX, blockZ);
+	                    int highestY = highestBlockCache.computeIfAbsent(xzKey,
+	                        k -> world.getHighestBlockYAt(blockX, blockZ));
+	                    if (highestY != blockY)
+	                        accuracy++;
+	                    else
+	                        flag = true;
+	                    break;
+	                }
+	                locX += dx;
+	                locY += dy;
+	                locZ += dz;
+	            }
+	            if (!flag) {
+	                final int finalBlockX = (int) Math.floor(locX);
+	                final int finalBlockZ = (int) Math.floor(locZ);
+	                final int finalBlockY = (int) Math.floor(locY);
+	                final long xzKey = xzKey(finalBlockX, finalBlockZ);
+	                final int highestY = highestBlockCache.computeIfAbsent(xzKey,
+	                    k -> world.getHighestBlockYAt(finalBlockX, finalBlockZ));
+	                if (highestY > finalBlockY)
+	                    accuracy += 2;
+	            }
+	        }
+	    }
+	    return Math.max(0f, 1f - (accuracy / (float) accuracyThreshold));
+	}
+	public static float getOutdoorExposureScore(Location location, float testRange) {
+	    return getOutdoorExposureScore(location, testRange, 12);
+	}
+	public static float getOutdoorExposureScore(Location location) {
+	    return getOutdoorExposureScore(location, 12f, 12);
+	}
 	private static long blockKey(int x, int y, int z) {
 	    return ((long) x & 0x7FFFFFF) | (((long) z & 0x7FFFFFF) << 27) | (((long) y & 0xFFF) << 54);
 	}

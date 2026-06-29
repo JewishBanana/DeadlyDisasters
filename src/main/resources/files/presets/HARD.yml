@@ -1,0 +1,14 @@
+# The colored display name shown in world messages for this difficulty preset.
+display_name: "&c&lHARD"
+world:
+    minimum_time: 300
+    maximum_time: 1200
+    shared_disaster_radius: 50.0
+    disaster_offset: 10.0
+    level_probabilities:
+        level_1: 12.0
+        level_2: 20.0
+        level_3: 25.0
+        level_4: 19.0
+        level_5: 16.0
+        level_6: 8.0

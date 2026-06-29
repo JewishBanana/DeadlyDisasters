@@ -6,19 +6,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
-import com.github.jewishbanana.deadlydisasters.disasters.mob.Purge;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
@@ -78,14 +75,7 @@ public class DeathMessageHandler implements Listener {
 			return;
 		}
 	}
-	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-	public void onPlayerDamaged(EntityDamageByEntityEvent event) {
-		if (!(event.getEntity() instanceof Player player) || event.getFinalDamage() < player.getHealth())
-			return;
-		Entity damager = event.getDamager();
-		if (damager != null && damager.hasMetadata(Purge.purgeMobMetadata))
-			player.setMetadata("deaths.purge", plugin.getFixedMetadata());
-	}
+	// (The Purge tags "deaths.purge" on the player itself from its own per-disaster damage handler.)
 	public static void createWatcher(Disaster disaster, String languagePath, Function<PlayerDeathEvent, Boolean> function) {
 		watchers.add(new DeathWatcher(disaster, languagePath, function));
 	}

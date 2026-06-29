@@ -70,10 +70,3 @@ disasters:
     solar_storm:
     - SPRING
     - SUMMER
-    monsoon:
-    - SPRING
-    - SUMMER
-    infested_cave:
-    - ALL
-    landslide:
-    - ALL

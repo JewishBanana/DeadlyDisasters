@@ -10,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.WorldInitEvent;
+import org.bukkit.event.world.WorldUnloadEvent;
 
 import com.github.jewishbanana.deadlydisasters.Main;
 import com.github.jewishbanana.deadlydisasters.WorldWrapper;
@@ -31,6 +32,10 @@ public class WorldListener implements Listener {
 	public void onWorldInit(WorldInitEvent event) {
 		if (WorldWrapper.getWorldWrapper(event.getWorld()) == null)
 			WorldWrapper.initWorld(event.getWorld());
+	}
+	@EventHandler
+	public void onWorldUnload(WorldUnloadEvent event) {
+		WorldWrapper.removeWorld(event.getWorld());
 	}
 	@EventHandler
 	public void onChunkLoad(ChunkLoadEvent event) {

@@ -3,12 +3,14 @@ package com.github.jewishbanana.deadlydisasters.disasters.weather;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -19,6 +21,8 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +44,9 @@ public class ExtremeWinds extends WeatherDisaster {
 	private int minimumYLevel;
 	
 	private double currentForce;
+	private final Set<UUID> windCarriedPlayers = ConcurrentHashMap.newKeySet();
+	private final Map<UUID, Long> windFallDeathWindow = new ConcurrentHashMap<>();
+	private static final long WIND_FALL_DEATH_WINDOW_MS = 8000L;
 
 	public ExtremeWinds(@NotNull Location location, Player player, int level) {
 		super(location, player, level);
@@ -77,6 +84,7 @@ public class ExtremeWinds extends WeatherDisaster {
 			@Override
 			public void run() {
 				final Vector currentVelocity = direction.clone().multiply(currentForce);
+				final Set<UUID> carriedThisTick = new HashSet<>();
 				if (currentForce > 0) {
 					if (currentForce >= windBreakThreshold)
 						for (Player player : playersInMonitorArea) {
@@ -103,9 +111,12 @@ public class ExtremeWinds extends WeatherDisaster {
 							continue;
 						if (entity instanceof Player player && player.isFlying() && EntityUtils.isPlayerImmune(player))
 							continue;
+						if (entity instanceof Player player && currentVelocity.lengthSquared() > 1.0E-6)
+							carriedThisTick.add(player.getUniqueId());
 						entity.setVelocity(entity.getVelocity().add(currentVelocity));
 					}
 				}
+				updateWindFallDeathTracking(carriedThisTick);
 				if (increasing) {
 					currentForce += increment;
 					if (currentForce >= windForce) {
@@ -232,6 +243,23 @@ public class ExtremeWinds extends WeatherDisaster {
 			}
 		});
 	}
+	private void updateWindFallDeathTracking(Set<UUID> carriedThisTick) {
+		final long now = System.currentTimeMillis();
+		for (UUID uuid : windCarriedPlayers)
+			if (!carriedThisTick.contains(uuid))
+				windFallDeathWindow.put(uuid, now + WIND_FALL_DEATH_WINDOW_MS);
+		windCarriedPlayers.clear();
+		windCarriedPlayers.addAll(carriedThisTick);
+		windFallDeathWindow.entrySet().removeIf(entry -> entry.getValue() <= now);
+	}
+	public void clean() {
+		final long expiresAt = System.currentTimeMillis() + WIND_FALL_DEATH_WINDOW_MS;
+		windCarriedPlayers.forEach(uuid -> windFallDeathWindow.put(uuid, expiresAt));
+		windCarriedPlayers.clear();
+		super.clean();
+		addDeathWatcher("deaths.extreme_winds");
+		removeDeathWatcher((int) (WIND_FALL_DEATH_WINDOW_MS / 50L));
+	}
 	public void addPlayerToWeather(Player player) {
 		weatherPlayers.add(player.getUniqueId());
 	}
@@ -249,5 +277,22 @@ public class ExtremeWinds extends WeatherDisaster {
 	}
 	public String getBroadcastMessageConfigPath() {
 		return "messages.disaster_broadcasts.extreme_winds.level_"+level;
+	}
+	public Function<PlayerDeathEvent, Boolean> getDeathCheck() {
+		return event -> {
+			if (event.getEntity().getLastDamageCause() == null)
+				return false;
+			DamageCause cause = event.getEntity().getLastDamageCause().getCause();
+			if (cause != DamageCause.FALL)
+				return false;
+			Long expiresAt = windFallDeathWindow.get(event.getEntity().getUniqueId());
+			if (expiresAt == null)
+				return false;
+			if (expiresAt <= System.currentTimeMillis()) {
+				windFallDeathWindow.remove(event.getEntity().getUniqueId());
+				return false;
+			}
+			return true;
+		};
 	}
 }

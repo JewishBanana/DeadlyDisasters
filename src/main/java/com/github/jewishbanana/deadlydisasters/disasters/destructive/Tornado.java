@@ -352,7 +352,7 @@ public class Tornado extends Disaster {
 			if (cause != DamageCause.FALL && cause != DamageCause.FALLING_BLOCK)
 				return false;
 			Location loc = event.getEntity().getLocation();
-			if (loc.getY() > location.getY() - 40
+			if (loc.getY() < location.getY() - 40
 					|| !Utils.isLocationsWithinDistance(new Location(loc.getWorld(), loc.getX(), location.getY(), loc.getZ()), location, disasterRange * disasterRange))
 				return false;
 			return true;

@@ -30,8 +30,10 @@ public class LootGenerateListener implements Listener {
 		if (!(event.getInventoryHolder() instanceof Chest) || event.getLoot() == null)
 			return;
 		if (event.getLoot().stream().filter(Objects::nonNull).anyMatch(item -> item.getType() == Material.ENCHANTED_BOOK)
-				&& rand.nextFloat() < basicBookLootTableChance)
-			event.getLoot().add(com.github.jewishbanana.uiframework.items.UIItemType.getItemType(BasicCoatingBook.REGISTERED_KEY).getItem());
+				&& rand.nextFloat() < basicBookLootTableChance) {
+			com.github.jewishbanana.uiframework.items.UIItemType type = com.github.jewishbanana.uiframework.items.UIItemType.getItemType(BasicCoatingBook.REGISTERED_KEY);
+			event.getLoot().add(type.createNewInstance(type.getItem()).getItem());
+		}
 	}
 	public static void reload() {
 		basicBookLootTableChance = (float) DataUtils.getMainConfigDouble("items.basic_coating_book.loot_table_chance");

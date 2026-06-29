@@ -121,10 +121,6 @@ public class CaveIn extends Disaster {
 //			plugin.getLogger().info("count is "+count);
 //		});
 		Set<Block> blocks = new HashSet<>(BlockUtils.getBlocksInCircleRadius(location, (float) disasterRange));
-		if (blocks.isEmpty()) {
-			stop();
-			return;
-		}
 		scheduleTask(new BukkitRunnable() {
 			private final double rangeSq = disasterRange * disasterRange;
 			private final double noise = 0.6;
@@ -154,21 +150,7 @@ public class CaveIn extends Disaster {
 						    .sorted(Comparator
 						        .comparingDouble((CollapsingBlock cb) -> cb.distance))   // sort by Y first
 						    .collect(Collectors.toCollection(ArrayList::new));
-					final double excessSoundRange = level * 7.0;
-					final double soundRange = (disasterRange + excessSoundRange) * (disasterRange + excessSoundRange);
-					final double distanceSquared = disasterRange * disasterRange;
-					location.getWorld().getPlayers().forEach(player -> {
-						Location loc = player.getLocation();
-						if (!loc.getWorld().equals(location.getWorld()))
-							return;
-						double distance = loc.distanceSquared(location);
-						if (distance > soundRange)
-							return;
-						if (distance > distanceSquared)
-							playSound(player, loc.add(Utils.getVectorTowards(loc, location).multiply(7.0)), Sound.ENTITY_WITHER_BREAK_BLOCK, (float) ((0.0125 * (level * 2)) * (1.0 - ((1.0 / excessSoundRange) * (loc.distance(location) - disasterRange)))), 0.5f);
-						else
-							playSound(player, loc.subtract(0, 7, 0), Sound.ENTITY_WITHER_BREAK_BLOCK, (0.0125f * (level * 2)), 0.5f);
-					});
+					playSoundInLargeArea(location, Sound.ENTITY_WITHER_BREAK_BLOCK, 0.33f * level, 0.5f, disasterRange, level * 7.0, loc -> loc.subtract(0, 7, 0));
 					scheduleTask(new BukkitRunnable() {
 						private double distance = 1.0;
 						private double distanceSquared = 1.0;

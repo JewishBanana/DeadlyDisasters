@@ -1,0 +1,14 @@
+# The colored display name shown in world messages for this difficulty preset.
+display_name: "&4&lEXTREME"
+world:
+    minimum_time: 60
+    maximum_time: 300
+    shared_disaster_radius: 25.0
+    disaster_offset: 3.0
+    level_probabilities:
+        level_1: 0.0
+        level_2: 0.0
+        level_3: 23.0
+        level_4: 30.0
+        level_5: 27.0
+        level_6: 20.0
