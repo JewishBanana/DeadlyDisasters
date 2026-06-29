@@ -26,13 +26,13 @@ import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class WorldWrapper {
 
-	private static final Main plugin;
+	private static final DeadlyDisasters plugin;
 	private static final Map<World, WorldWrapper> worldLinks;
 	private static final float[] DEFAULT_PROBABILITY_TABLE = new float[] { 30f, 25f, 20f, 15f, 9f, 1f };
 	public static final Map<String, Set<DisasterRegistry>> disasterCategories;
 	public static final Set<String> PRESET_NAMES = Set.of("EASY", "NORMAL", "HARD", "EXTREME");
 	static {
-		plugin = Main.getInstance();
+		plugin = DeadlyDisasters.getInstance();
 		worldLinks = new ConcurrentHashMap<>();
 		
 		Map<String, Set<DisasterRegistry>> disasterCategory = new HashMap<>();
@@ -110,7 +110,7 @@ public class WorldWrapper {
 						link.configFile = file;
 						link.config = YamlConfiguration.loadConfiguration(file);
 					} else {
-						Main.consoleSender.sendMessage(Utils.convertString(Utils.prefix+"&cError while trying to find world config file &d'"+name+"' &cin the worldConfigs folder! Please create this config. Reverting to default world config for world &a'"+world.getName()+"'&c!"));
+						DeadlyDisasters.consoleSender.sendMessage(Utils.convertString(Utils.prefix+"&cError while trying to find world config file &d'"+name+"' &cin the worldConfigs folder! Please create this config. Reverting to default world config for world &a'"+world.getName()+"'&c!"));
 						file.getParentFile().mkdirs();
 						file.createNewFile();
 						FileUtils.copyInputStreamToFile(plugin.getResource("files/worldConfigs/default.yml"), file);

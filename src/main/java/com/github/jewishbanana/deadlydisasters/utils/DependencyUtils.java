@@ -30,7 +30,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.commands.TownyDisasters;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.disasters.DisasterRegistry;
@@ -61,6 +61,8 @@ public class DependencyUtils {
 	
 	private static final String UIFrameworkVersion = "3.1.4";
 	private static final String UltimateContentVersion = "2.3.0";
+	private static final String UIFrameworkLink = "https://www.spigotmc.org/resources/uiframework.110768/";
+	private static final String UltimateContentLink = "https://www.spigotmc.org/resources/ultimatecontent.118256/";
 	static {
 		boolean spigotCheck = false;
 		try {
@@ -76,17 +78,17 @@ public class DependencyUtils {
 		isPaper = paperCheck;
 	}
 	
-	public static void init(Main plugin) {
+	public static void init(DeadlyDisasters plugin) {
 		PluginManager pm = plugin.getServer().getPluginManager();
 		if (pm.isPluginEnabled("UltimateContent")) {
 			if (!isVersionOrAbove(plugin.getServer().getPluginManager().getPlugin("UltimateContent"), UltimateContentVersion))
-				Utils.sendConsoleMessage("&cERROR Cannot hook into UltimateContent because UltimateContent is out of date! Please update to at least &a"+UltimateContentVersion+" &c(Current version installed is &b"+(plugin.getServer().getPluginManager().getPlugin("UltimateContent").getDescription().getVersion())+"&c). The only effect this error will have is that all custom items related to DeadlyDisasters will be disabled. You can update UltimateContent here:&6 https://www.spigotmc.org/resources/ultimatecontent.118256/");
+				Utils.sendConsoleMessage(formatDependencyMessage("messages.internal.ultimatecontent_outdated", UltimateContentVersion, plugin.getServer().getPluginManager().getPlugin("UltimateContent").getDescription().getVersion(), UltimateContentLink));
 			else
 				ultimateContent = true;
 		}
 		if (pm.isPluginEnabled("UIFramework")) {
 			if (!com.github.jewishbanana.uiframework.UIFramework.isVersionOrAbove(UIFrameworkVersion))
-				Utils.sendConsoleMessage("&cERROR Cannot hook into UIFramework because UIFramework is out of date! Please update to at least &a"+UIFrameworkVersion+" &c(Current version installed is &b"+(plugin.getServer().getPluginManager().getPlugin("UIFramework").getDescription().getVersion())+"&c). The only effect this error will have is that all custom items related to DeadlyDisasters will be disabled. You can update UIFramework here:&6 https://www.spigotmc.org/resources/uiframework.110768/");
+				Utils.sendConsoleMessage(formatDependencyMessage("messages.internal.uiframework_outdated", UIFrameworkVersion, plugin.getServer().getPluginManager().getPlugin("UIFramework").getDescription().getVersion(), UIFrameworkLink));
 			else {
 				uif = true;
 				BasicCoating.register();
@@ -94,7 +96,7 @@ public class DependencyUtils {
 				if (ultimateContent)
 					ucHook = new UCHook();
 				else
-					Utils.sendConsoleMessage("&aThere is an optional dependency UltimateContent, that adds some really cool custom items to DeadlyDisasters such as custom swords, custom mob drops, custom enchants, and more! Get UltimateContent here:&6 https://www.spigotmc.org/resources/ultimatecontent.118256/");
+					Utils.sendConsoleMessage(formatDependencyMessage("messages.internal.ultimatecontent_optional", UltimateContentLink));
 				
 				BasicCoatingBook.register();
 				PlagueCure.register();
@@ -103,7 +105,7 @@ public class DependencyUtils {
 				new LootGenerateListener(plugin);
 			}
 		} else
-			Utils.sendConsoleMessage("&bThere is an optional dependency UIFramework, that adds some custom items to DeadlyDisasters such as the plague cure potion, basic coating enchant, and more! Get UIFramework here:&6 https://www.spigotmc.org/resources/uiframework.110768/");
+			Utils.sendConsoleMessage(formatDependencyMessage("messages.internal.uiframework_optional", UIFrameworkLink));
 		
 		Predicate<Location> damageCheck = null;
 		Predicate<Location> startCheck = null;
@@ -271,7 +273,7 @@ public class DependencyUtils {
 			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eCore Protect &cdestruction from disasters will NOT be logged to Core Protect!");
 		}
 	}
-	public static void reload(Main plugin) {
+	public static void reload(DeadlyDisasters plugin) {
 //		PluginManager pm = plugin.getServer().getPluginManager();
 //		try {
 //			if (pm.isPluginEnabled("RealisticSeasons")) {
@@ -287,6 +289,15 @@ public class DependencyUtils {
 //			Utils.sendExceptionLog(e);
 //			Utils.sendConsoleMessage("&cAn error has occurred while trying to hook into &eRealistic Seasons &cseasonal disaster settings will NOT take affect!");
 //		}
+	}
+	private static String formatDependencyMessage(String path, String link) {
+		String message = DataUtils.getLanguageString(path);
+		return message == null ? "" : message.replace("%link%", link);
+	}
+	private static String formatDependencyMessage(String path, String requiredVersion, String currentVersion, String link) {
+		return formatDependencyMessage(path, link)
+				.replace("%version%", requiredVersion)
+				.replace("%currentversion%", currentVersion);
 	}
 	public static boolean isVersionOrAbove(Plugin plugin, String toCheckFor) {
 		try {
@@ -437,7 +448,7 @@ public class DependencyUtils {
 	public static boolean isEntityProtected(Entity entity) {
 		return isRegionProtected(entity.getLocation());
 	}
-	private static net.coreprotect.CoreProtectAPI getCoreProtect(Main instance) {
+	private static net.coreprotect.CoreProtectAPI getCoreProtect(DeadlyDisasters instance) {
 		Plugin plugin = instance.getServer().getPluginManager().getPlugin("CoreProtect");
 		if (plugin == null || !plugin.isEnabled() || !(plugin instanceof net.coreprotect.CoreProtect))
 			return null;
@@ -559,7 +570,7 @@ public class DependencyUtils {
 			return (int) getAirTemperatureMethod.invoke(seasonsAPI, location);
 		}
 		@SuppressWarnings("unused")
-		private static FileConfiguration getSeasonsFile(Main plugin) throws Exception {
+		private static FileConfiguration getSeasonsFile(DeadlyDisasters plugin) throws Exception {
 			File file = new File(plugin.getDataFolder().getAbsolutePath(), "seasons.yml");
 			if (!file.exists()) {
 				file.getParentFile().mkdirs();

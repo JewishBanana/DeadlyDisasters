@@ -17,7 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.WorldWrapper;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
@@ -31,7 +31,7 @@ public class DisasterSelector {
 	public final Map<UUID, Map<UUID, Integer>> playerTimers = new ConcurrentHashMap<>();
 	public final Map<UUID, Integer> worldTimers = new ConcurrentHashMap<>();
 	
-	public DisasterSelector(Main plugin) {
+	public DisasterSelector(DeadlyDisasters plugin) {
 		this.random = Utils.getRandomGenerator();
 		FileConfiguration data = DataUtils.getDataFile();
 		ConfigurationSection section = data.getConfigurationSection("timers");

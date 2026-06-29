@@ -37,7 +37,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 
 public class Metrics {
 
@@ -50,7 +50,7 @@ public class Metrics {
 	public static Map<String, Integer> disasterDestroyedMap = new LinkedHashMap<>();
 	public static Map<String, Integer> disasterKillMap = new LinkedHashMap<>();
 	
-	public static void configureMetrics(Main plugin) {
+	public static void configureMetrics(DeadlyDisasters plugin) {
 		Metrics metrics = new Metrics(plugin, 16366);
 		
 //		List<Integer> disasterOccurredList = new ArrayList<>();
@@ -567,6 +567,7 @@ public class Metrics {
 				infoLogger.accept("Sent bStats metrics data: " + data.toString());
 			}
 			String url = String.format(REPORT_URL, platform);
+			@SuppressWarnings("deprecation")
 			HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
 			// Compress the data to save bandwidth
 			byte[] compressedData = compress(data.toString());

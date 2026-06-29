@@ -13,7 +13,7 @@ import org.bukkit.event.world.EntitiesUnloadEvent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.Blizzard;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 
@@ -21,10 +21,10 @@ public class EntitiesListener implements Listener {
 
 	private static NamespacedKey removeKey;
 	static {
-		removeKey = new NamespacedKey(Main.getInstance(), "ddrk");
+		removeKey = new NamespacedKey(DeadlyDisasters.getInstance(), "ddrk");
 	}
 	
-	public EntitiesListener(Main plugin) {
+	public EntitiesListener(DeadlyDisasters plugin) {
 		plugin.getServer().getWorlds().forEach(world -> world.getEntities().stream().forEach(entity -> {
 			PersistentDataContainer container = entity.getPersistentDataContainer();
 			if (container.has(removeKey, PersistentDataType.BYTE)) {

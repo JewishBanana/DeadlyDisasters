@@ -23,7 +23,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.WorldWrapper;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.disasters.DisasterRegistry;
@@ -36,7 +36,7 @@ import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class DisastersCommand implements CommandExecutor, TabCompleter {
 	
-	private final Main plugin;
+	private final DeadlyDisasters plugin;
 	private final String usage = Utils.convertString("&cUsage: /disasters <help|start|stop|config|blacklist|timers>...");
 	private final Map<String, ConfigSettingOption> configSettings = Map.of(
 			"targeting", 
@@ -128,7 +128,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				return false;
 			}));
 
-	public DisastersCommand(Main plugin) {
+	public DisastersCommand(DeadlyDisasters plugin) {
 		this.plugin = plugin;
 		
 		plugin.getCommand("disasters").setExecutor(this);

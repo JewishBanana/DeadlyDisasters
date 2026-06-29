@@ -58,22 +58,22 @@ world:
     # The minimum time is the time IN SECONDS that a disaster can happen. The way the count down works is when it is reset it will pick a random number between the minimum 
     # time and the maximum time. If you modify the times, you can reset everyones current timers via the command '/disasters timers reset [world]'
     
-    minimum_time: 120
+    minimum_time: 600
     
     # The maximum times is the time IN SECONDS that a disaster is guaranteed to happen. If this number is lower than the minimum time it will auto set to the minimum time.
     
-    maximum_time: 180
+    maximum_time: 1800
     
     # The disaster offset represents the maximum offset in blocks that the disaster can occur at from the player. When a disaster begins at a player, it will pick a random 
     # distance between 0, to the disaster offset, away from the players position on the X and Z axis. This gives some randomness to where the disaster starts near the player.
     
-    disaster_offset: 15.0
+    disaster_offset: 20.0
     
     # The shared disaster radius is the range in where if multiple players are present and a disaster occurs on one of them, all other players within this range of that disaster 
     # will also have their timers reset. If you are using the global timer this will also share disasters with players within this range of each other, this prevents disasters 
     # from cluttering together in places where many players are near each other. This value is distance in blocks.
     
-    shared_disaster_radius: 50.0
+    shared_disaster_radius: 75.0
     
     # The level probability table is the odds of each disaster level occurring when a disaster naturally occurs at a player. By default this is set to NORMAL difficulty odds.
     
@@ -81,9 +81,9 @@ world:
         level_1: 30.0
         level_2: 25.0
         level_3: 20.0
-        level_4: 15.0
+        level_4: 14.0
         level_5: 9.0
-        level_6: 1.0
+        level_6: 2.0
     
     # When a disaster starts if it should broadcast a message in the chat to all players in the world. The message varies depending on the disaster and can be found and modified in the translations file!
     broadcast_disasters: true

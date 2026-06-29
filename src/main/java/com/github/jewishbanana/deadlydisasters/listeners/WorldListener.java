@@ -12,7 +12,7 @@ import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.WorldWrapper;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.disasters.WeatherDisaster;
@@ -25,7 +25,7 @@ public class WorldListener implements Listener {
 		chunkListeners = new ConcurrentHashMap<>();
 	}
 	
-	public WorldListener(Main plugin) {
+	public WorldListener(DeadlyDisasters plugin) {
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 	}
 	@EventHandler

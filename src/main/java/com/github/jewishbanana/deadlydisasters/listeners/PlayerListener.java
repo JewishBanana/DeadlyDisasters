@@ -17,7 +17,7 @@ import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.WorldWrapper;
 import com.github.jewishbanana.deadlydisasters.disasters.mob.Purge;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
@@ -27,11 +27,11 @@ public class PlayerListener implements Listener	{
 	
 	public static String adminUpdateMessage;
 	
-	private final Main plugin;
+	private final DeadlyDisasters plugin;
 	private final Set<UUID> warnForKick = new HashSet<>();
 	private final Set<UUID> updateNotified = new HashSet<>();
 
-	public PlayerListener(Main plugin) {
+	public PlayerListener(DeadlyDisasters plugin) {
 		this.plugin = plugin;
 		
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);

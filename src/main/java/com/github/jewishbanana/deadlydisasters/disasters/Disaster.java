@@ -38,7 +38,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.WorldWrapper;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent.DisasterStartReason;
@@ -56,11 +56,11 @@ import io.papermc.lib.PaperLib;
 
 public abstract class Disaster {
 	
-	protected static final Main plugin;
+	protected static final DeadlyDisasters plugin;
 	protected static final RandomGenerator random;
 	public static final List<Disaster> onGoingDisasters;
 	static {
-		plugin = Main.getInstance();
+		plugin = DeadlyDisasters.getInstance();
 		random = RandomGenerator.of("SplittableRandom");
 		onGoingDisasters = new ArrayList<>();
 	}
@@ -140,7 +140,7 @@ public abstract class Disaster {
 					.replaceAll("%player%", player != null ? player.getDisplayName() : "")
 					.replaceAll("%level%", level+""));
 			location.getWorld().getPlayers().forEach(p -> p.sendMessage(message));
-			Main.consoleSender.sendMessage(message+Utils.convertString(" &d("+location.getWorld().getName()+')'));
+			DeadlyDisasters.consoleSender.sendMessage(message+Utils.convertString(" &d("+location.getWorld().getName()+')'));
 		}
 		if (worldLink.getConfigBoolean("world.disaster_tips")) {
 			String message = getDisasterTip();

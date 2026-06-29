@@ -13,7 +13,7 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 //import com.github.jewishbanana.deadlydisasters.disasters.BlackPlague;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
@@ -47,7 +47,7 @@ public class PlagueCure extends com.github.jewishbanana.uiframework.items.Generi
 	public static void register() {
 		com.github.jewishbanana.uiframework.items.UIItemType type = com.github.jewishbanana.uiframework.items.UIItemType.registerItem(REGISTERED_KEY, PlagueCure.class);
 		
-		ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(Main.getInstance(), "plague_cure_recipe"), type.getBuilder().getItem());
+		ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(DeadlyDisasters.getInstance(), "plague_cure_recipe"), type.getBuilder().getItem());
 		recipe.shape(" A ", "ABA", " A ");
 		recipe.setIngredient('A', Material.INK_SAC);
 		ItemStack waterBottle = new ItemStack(Material.POTION);
@@ -57,7 +57,7 @@ public class PlagueCure extends com.github.jewishbanana.uiframework.items.Generi
 		recipe.setIngredient('B', new RecipeChoice.ExactChoice(waterBottle));
 		type.registerRecipe(recipe);
 		
-		ShapedRecipe glowRecipe = new ShapedRecipe(new NamespacedKey(Main.getInstance(), "plague_cure_glow_recipe"), type.getBuilder().getItem());
+		ShapedRecipe glowRecipe = new ShapedRecipe(new NamespacedKey(DeadlyDisasters.getInstance(), "plague_cure_glow_recipe"), type.getBuilder().getItem());
 		glowRecipe.shape(" A ", "ABA", " A ");
 		glowRecipe.setIngredient('A', Material.GLOW_INK_SAC);
 		glowRecipe.setIngredient('B', new RecipeChoice.ExactChoice(waterBottle));

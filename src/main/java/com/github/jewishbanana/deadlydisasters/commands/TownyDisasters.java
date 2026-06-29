@@ -14,7 +14,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.palmergames.bukkit.towny.TownyMessaging;
@@ -29,9 +29,9 @@ import com.palmergames.bukkit.towny.object.metadata.BooleanDataField;
  */
 public class TownyDisasters implements CommandExecutor,TabCompleter {
 	
-	private Main plugin;
+	private DeadlyDisasters plugin;
 	
-	public TownyDisasters(Main plugin) {
+	public TownyDisasters(DeadlyDisasters plugin) {
 		this.plugin = plugin;
 		
 		plugin.getCommand("towndisasters").setExecutor(this);

@@ -22,6 +22,10 @@ messages:
         update_notify_console: "&aA new version of this plugin is available!\n&7- Current version: &c&l%version%\n&7- New version: &6&l%newversion%\n&bUpdate now at &d%webpage%"
         update_notify_player: "&aA new version of this plugin is available! Notify the server operator to update.\n&7- Current version: &c&l%version%\n&7- New version: &6&l%newversion%"
         flight_kick: "&cThis plugin works best when &d'allow-flight' &cis set to &atrue &cin the server-properties file!"
+        ultimatecontent_outdated: "&cERROR Cannot hook into UltimateContent because UltimateContent is out of date! Please update to at least &a%version% &c(Current version installed is &b%currentversion%&c). The only effect this error will have is that all custom mobs and items related to DeadlyDisasters will be disabled. You can update UltimateContent here:&6 %link%"
+        uiframework_outdated: "&cERROR Cannot hook into UIFramework because UIFramework is out of date! Please update to at least &a%version% &c(Current version installed is &b%currentversion%&c). The only effect this error will have is that all custom items related to DeadlyDisasters will be disabled. You can update UIFramework here:&6 %link%"
+        ultimatecontent_optional: "&aThere is an optional dependency &bUltimateContent&a, that adds some really cool custom items to DeadlyDisasters such as custom mobs, items, enchants, and more! Get UltimateContent here:&6 %link%"
+        uiframework_optional: "&bThere is an optional dependency UIFramework, that adds some custom items to DeadlyDisasters such as the plague cure potion, basic coating enchant, and more! Get UIFramework here:&6 %link%"
     commands:
         console_error_message: "&cUnable to execute command from console!"
         permission_error: "&cYou do not have permission to use that!"

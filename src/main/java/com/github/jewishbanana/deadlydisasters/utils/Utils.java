@@ -44,7 +44,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 
 public class Utils {
 	
@@ -59,7 +59,7 @@ public class Utils {
 	private static final Pattern hexPattern;
 	private static final Map<DyeColor, ChatColor> dyeChatMap;
 	static {
-		plugin = Main.getInstance();
+		plugin = DeadlyDisasters.getInstance();
 		random = RandomGenerator.of("SplittableRandom");
 		hexPattern = Pattern.compile("\\(hex:#[a-fA-F0-9]{6}\\)");
 		prefix = convertString("&a[DeadlyDisasters]: ");
@@ -730,10 +730,10 @@ public class Utils {
 		if (!sendErrors)
 			return;
 		exception.printStackTrace();
-		Main.consoleSender.sendMessage(prefix + Utils.convertString("&cAn error has occurred above this message. Please report the full error to the discord: &dhttps://discord.gg/MhXFj72VeN"));
+		DeadlyDisasters.consoleSender.sendMessage(prefix + Utils.convertString("&cAn error has occurred above this message. Please report the full error to the discord: &dhttps://discord.gg/MhXFj72VeN"));
 	}
 	public static void sendConsoleMessage(String message) {
-		Main.consoleSender.sendMessage(Utils.prefix + convertString(message));
+		DeadlyDisasters.consoleSender.sendMessage(Utils.prefix + convertString(message));
 	}
 	public static RandomGenerator getRandomGenerator() {
 		return random;

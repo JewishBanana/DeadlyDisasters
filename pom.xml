@@ -9,7 +9,7 @@
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<mainClass>${project.groupId}.deadlydisasters.Main</mainClass>
+		<mainClass>${project.groupId}.deadlydisasters.DeadlyDisasters</mainClass>
 	</properties>
 
 	<build>

@@ -47,7 +47,7 @@ import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
-public class Main extends JavaPlugin {
+public class DeadlyDisasters extends JavaPlugin {
 	
 	/*
 	 * TODO:
@@ -66,7 +66,7 @@ public class Main extends JavaPlugin {
 	public static ConsoleCommandSender consoleSender;
 	public static boolean isDisablingPlugin;
 	
-	private static Main instance;
+	private static DeadlyDisasters instance;
 	private static FixedMetadataValue fixedData;
 	
 	public DisasterSelector selector;
@@ -155,6 +155,7 @@ public class Main extends JavaPlugin {
 	public void checkForUpdates() {
 		getLogger().info("Checking for update...");
 		CompletableFuture.runAsync(new Runnable() {
+			@SuppressWarnings("deprecation")
 			@Override
 			public void run() {
 				URL checkURL;
@@ -184,7 +185,7 @@ public class Main extends JavaPlugin {
 			}
 		});
 	}
-	public static Main getInstance() {
+	public static DeadlyDisasters getInstance() {
 		return instance;
 	}
 	/** Seconds until the next disaster for {@code player} in their world, or {@code -1} if none. Bridge for UltimateContent's baby end totem warning. */

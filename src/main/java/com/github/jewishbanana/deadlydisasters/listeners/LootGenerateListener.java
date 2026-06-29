@@ -10,7 +10,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.LootGenerateEvent;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.items.BasicCoatingBook;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
@@ -20,7 +20,7 @@ public class LootGenerateListener implements Listener {
 	private RandomGenerator rand;
 	private static float basicBookLootTableChance;
 	
-	public LootGenerateListener(Main plugin) {
+	public LootGenerateListener(DeadlyDisasters plugin) {
 		this.rand = Utils.getRandomGenerator();
 		
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);

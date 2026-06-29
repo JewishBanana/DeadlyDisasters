@@ -16,7 +16,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.listeners.EntitiesListener;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
@@ -56,7 +56,7 @@ public interface MobDisaster {
 		Set<UUID> set = entitiesMap.get(this);
 		if (set == null)
 			return;
-		if (Main.isDisablingPlugin) {
+		if (DeadlyDisasters.isDisablingPlugin) {
 			set.forEach(uuid -> {
 				Entity entity = Bukkit.getEntity(uuid);
 				if (entity != null)

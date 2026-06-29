@@ -41,7 +41,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
 import com.github.jewishbanana.deadlydisasters.disasters.WeatherDisaster;
 import com.github.jewishbanana.deadlydisasters.listeners.EntitiesListener;
@@ -400,7 +400,7 @@ public class SolarStorm extends WeatherDisaster implements MobDisaster, Listener
 			if (entity != null)
 				entity.remove();
 		});
-		if (!Main.isDisablingPlugin)
+		if (!DeadlyDisasters.isDisablingPlugin)
 			new BukkitRunnable() {
 				private int tick;
 				private final Vector fireVelocity = direction.clone().multiply(0.6).setY(-2);

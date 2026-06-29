@@ -14,7 +14,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 
 public class DataUtils {
 	
@@ -25,7 +25,7 @@ public class DataUtils {
 	private static final File dataFile;
 	private static final FileConfiguration dataYaml;
 	static {
-		plugin = Main.getInstance();
+		plugin = DeadlyDisasters.getInstance();
 		defaultGeneralConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(plugin.getResource("config.yml")));
 		defaultDisasterConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(plugin.getResource("files/worldConfigs/default.yml")));
 		

@@ -3,7 +3,7 @@ package com.github.jewishbanana.deadlydisasters.listeners;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.palmergames.bukkit.towny.event.NewTownEvent;
 import com.palmergames.bukkit.towny.object.metadata.BooleanDataField;
@@ -16,7 +16,7 @@ import com.palmergames.bukkit.towny.object.metadata.BooleanDataField;
  */
 public class TownyListener implements Listener {
 	
-	public TownyListener(Main plugin) {
+	public TownyListener(DeadlyDisasters plugin) {
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 	}
 	@EventHandler

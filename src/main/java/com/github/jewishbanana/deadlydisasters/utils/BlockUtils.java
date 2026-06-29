@@ -28,7 +28,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 
 public class BlockUtils {
 	
@@ -125,7 +125,7 @@ public class BlockUtils {
 		customCategories = Map.copyOf(allCategories);
 	}
 
-	public static void reload(Main plugin) {
+	public static void reload(DeadlyDisasters plugin) {
 		try {
 			File file = new File(plugin.getDataFolder().getAbsolutePath(), "blocks.yml");
 			if (!file.exists()) {

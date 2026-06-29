@@ -25,15 +25,15 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 
 public class EntityUtils {
 	
-	private static final Main plugin;
+	private static final DeadlyDisasters plugin;
 	private static final FixedMetadataValue pluginMetadata;
 	private static final boolean isVersion192OrAbove;
 	static {
-		plugin = Main.getInstance();
+		plugin = DeadlyDisasters.getInstance();
 		pluginMetadata = plugin.getFixedMetadata();
 		isVersion192OrAbove = VersionUtils.isMCVersionOrAbove("1.19.2");
 	}

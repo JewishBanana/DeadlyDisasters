@@ -14,23 +14,23 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class DeathMessageHandler implements Listener {
 
-	private static final Main plugin;
+	private static final DeadlyDisasters plugin;
 	private static final Set<DeathWatcher> watchers;
 	static {
-		plugin = Main.getInstance();
+		plugin = DeadlyDisasters.getInstance();
 		watchers = new HashSet<>();
 	}
 	
 	private Map<String, String> deathMessages = new HashMap<>();
 	
-	public DeathMessageHandler(Main plugin) {
+	public DeathMessageHandler(DeadlyDisasters plugin) {
 		try {
 			for (String s : DataUtils.getLanguageConfig().getConfigurationSection("deaths").getKeys(false))
 				deathMessages.put("deaths."+s, Utils.convertString(DataUtils.getLanguageString("deaths."+s)));
@@ -80,7 +80,7 @@ public class DeathMessageHandler implements Listener {
 		watchers.add(new DeathWatcher(disaster, languagePath, function));
 	}
 	public static void removeDeathWatcher(Disaster disaster, int delayTicks) {
-		if (Main.isDisablingPlugin)
+		if (DeadlyDisasters.isDisablingPlugin)
 			return;
 		for (DeathWatcher watcher : watchers)
 			if (watcher.disaster.equals(disaster)) {

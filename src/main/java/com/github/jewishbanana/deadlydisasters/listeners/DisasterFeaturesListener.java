@@ -6,12 +6,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockGrowEvent;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.AcidStorm;
 
 public class DisasterFeaturesListener implements Listener {
 	
-	public DisasterFeaturesListener(Main plugin) {
+	public DisasterFeaturesListener(DeadlyDisasters plugin) {
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 	}
 	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

@@ -53,7 +53,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import com.github.jewishbanana.deadlydisasters.Main;
+import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.disasters.MobDisaster;
 import com.github.jewishbanana.deadlydisasters.disasters.WeatherDisaster;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
@@ -1026,7 +1026,7 @@ public class Hurricane extends WeatherDisaster implements MobDisaster, Listener 
 		});
 		waveBlocks.clear();
 		// Dry the puddles up after the storm — or wipe them at once if the plugin is shutting down.
-		if (Main.isDisablingPlugin) {
+		if (DeadlyDisasters.isDisablingPlugin) {
 			puddles.forEach(this::dryPuddle);
 			puddles.clear();
 			puddlePools.clear();
