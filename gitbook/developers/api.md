@@ -11,7 +11,7 @@ This section documents the current API structure used by the plugin. The guide i
 * [Listening For Disasters](api/listening-for-disasters.md)
 * [Starting And Stopping Disasters](api/starting-and-stopping.md)
 * [Creating Disasters](api/creating-disasters.md)
-* [Configuration And Language](api/configuration-and-language.md)
+* [Behavior Overrides](api/behavior-overrides.md)
 * [Protection And Helper APIs](api/protection-and-helpers.md)
 * [Weather Disasters](api/weather-disasters.md)
 * [Best Practices](api/best-practices.md)

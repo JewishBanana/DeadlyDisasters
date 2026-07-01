@@ -27,25 +27,29 @@ public final class AshStorm extends WeatherDisaster {
     }
 
     @Override
-    protected String getConfigPath() {
-        return "disasters.weather.ash_storm";
+    public String getDisplayName() {
+        return "Ash Storm";
     }
 }
 ```
 
-## Weather Config Fallbacks
+## Setting Storm Values
 
-Weather config can inherit from `disasters.weather.global_weather` before falling back to `disasters.global`.
+External custom weather disasters should set duration, range, scaling, and particle values directly in `init()` until a proper external config API is added.
 
-Common weather settings include:
+```java
+@Override
+public void init() {
+    super.init();
 
-| Setting | Purpose |
-| --- | --- |
-| `time.level_1` through `time.level_6` | Duration in seconds. |
-| `range.level_1` through `range.level_6` | Storm radius. |
-| `scaling.level_1` through `scaling.level_6` | Level based scaling factor. |
-| `particle_multiplier` | Particle intensity multiplier. |
-| `particle_render_distance` | Distance around each player for storm particles. |
+    this.time = 20 * 120;
+    this.disasterRange = 120.0;
+    this.disasterRangeSquared = disasterRange * disasterRange;
+    this.scale = 1.5f;
+    this.particleMultiplier = 1.0f;
+    this.particleRenderDistance = 15.0f;
+}
+```
 
 ## Useful Methods
 
@@ -55,8 +59,6 @@ isWithinStorm(block);
 addPlayerToWeather(player);
 removePlayerFromWeather(player);
 forceDownfallWeather();
-buildPotionEffects("entity_effects");
-buildBlockChanges("block_changes");
 ```
 
 Override `forceDownfallWeather()` and return `false` if your weather disaster should not force client-side rain.
@@ -68,4 +70,3 @@ Override `forceDownfallWeather()` and return `false` if your weather disaster sh
 The smoothing callback receives a `Pair<Player, Double>`. The double is the local storm intensity at that player's position, which lets you reduce particles, sounds, or movement at the outer edge.
 
 Only perform safe visual work from the async particle task. Schedule entity changes, block changes, sound playback, and spawning back onto the main thread.
-

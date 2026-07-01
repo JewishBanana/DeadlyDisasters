@@ -4,7 +4,7 @@ Most integrations use these classes.
 
 | Class | Purpose |
 | --- | --- |
-| `Disaster` | Base class for all disasters. Handles lifecycle, config helpers, block protection checks, death watchers, task cleanup, and shared utilities. |
+| `Disaster` | Base class for all disasters. Handles lifecycle, behavior overrides, block protection checks, death watchers, task cleanup, and shared utilities. |
 | `WeatherDisaster` | Base class for large storm style disasters. Adds storm range, duration, fake weather, smoothing area handling, particle task support, and chunk tracking. |
 | `DisasterRegistry` | Registry used to look up, create, and register disaster classes by name. |
 | `DisasterStartEvent` | Bukkit event fired before a disaster starts. This event can be cancelled. |
@@ -17,8 +17,8 @@ Most integrations use these classes.
 Important responsibilities:
 
 * Tracks the active disaster in `Disaster.onGoingDisasters`.
-* Stores the start location, world, target player, level, and world config wrapper.
-* Provides config helper methods such as `getConfigInt(...)` and `getConfigOverrideDouble(...)`.
+* Stores the start location, world, target player, and level.
+* Provides overridable methods such as `getFrequency()`, `getBannedEnvironments()`, and `getDeathCheck()`.
 * Provides region-safe block helper methods such as `removeBlock(...)`, `placeBlock(...)`, and `convertBlockIntoFallingBlock(...)`.
 * Provides death watcher helpers for custom death messages.
 * Cancels scheduled tasks during cleanup when they are registered with `scheduleTask(...)`.
@@ -34,7 +34,7 @@ It adds:
 * Smoothing behavior at the outer edge of storms.
 * Particle task helpers.
 * Storm chunk tracking.
-* Shared weather config fallback through `disasters.weather.global_weather`.
+* Shared weather behavior for storms that affect players across a wide radius.
 
 ## DisasterRegistry
 
@@ -73,4 +73,3 @@ solar_storm
 hurricane
 purge
 ```
-

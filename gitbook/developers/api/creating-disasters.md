@@ -72,8 +72,13 @@ public final class LightningBurst extends Disaster {
     }
 
     @Override
-    protected String getConfigPath() {
-        return "disasters.destructive.lightning_burst";
+    public String getDisplayName() {
+        return "Lightning Burst";
+    }
+
+    @Override
+    public double getFrequency() {
+        return 0.35;
     }
 
     @Override
@@ -125,12 +130,14 @@ The default `softStart()` flow:
 7. Broadcasts the disaster.
 8. Starts the disaster after the configured start delay.
 
+External custom disasters should usually override `getFrequency()` directly instead of relying on config-backed frequency values.
+
 ## Lifecycle
 
 A disaster normally follows this lifecycle:
 
-1. Constructor stores the initial location, player, level, world, and world config wrapper.
-2. `init()` reads config and prepares level scaled values.
+1. Constructor stores the initial location, player, level, and world.
+2. `init()` prepares level scaled values.
 3. `canStart()` validates start conditions and fires `DisasterStartEvent`.
 4. `broadcastDisaster()` sends messages, tips, and start sounds.
 5. `start()` begins the disaster and adds it to the active disaster list.
