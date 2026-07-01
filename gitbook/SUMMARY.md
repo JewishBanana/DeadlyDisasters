@@ -27,9 +27,13 @@
 ## Developers
 
 * [API](developers/api.md)
+  * [Setup](developers/api/setup.md)
+  * [Core Classes](developers/api/core-classes.md)
   * [Creating Disasters](developers/api/creating-disasters.md)
   * [Listening For Disasters](developers/api/listening-for-disasters.md)
-  * [Custom Items](developers/api/custom-items.md)
-  * [Custom Entities](developers/api/custom-entities-coming-soon.md)
-  * [Extra Features](developers/api/extra-features.md)
+  * [Starting And Stopping Disasters](developers/api/starting-and-stopping.md)
+  * [Configuration And Language](developers/api/configuration-and-language.md)
+  * [Protection And Helper APIs](developers/api/protection-and-helpers.md)
+  * [Weather Disasters](developers/api/weather-disasters.md)
+  * [Best Practices](developers/api/best-practices.md)
 * [Source](developers/source.md)
