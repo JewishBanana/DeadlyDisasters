@@ -45,7 +45,7 @@ public void onDisasterStart(DisasterStartEvent event) {
 }
 ```
 
-`DisasterStopEvent` is also cancellable. Only cancel stop events when you have a clear reason, because cancelled stop events can leave an active disaster running.
+`DisasterStopEvent` is also cancellable.
 
 ## Start Reasons
 

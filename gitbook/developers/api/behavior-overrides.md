@@ -49,7 +49,7 @@ public Location findPossiblePosition(Location initial) {
 }
 ```
 
-This is useful for disasters that must start on the surface, underground, near water, or at a specific Y range.
+This is useful for disasters that must start on the surface, underground, near water, or at a specific Y range. By default the initial location will be the player or world position the disaster was called to start at. For example, if a player is on a shore and the Tsunami disaster calls this method, it will check nearby chunks for an ocean surface and returns a random spot on the ocean surface or null if there is none.
 
 ## `canStart()`
 
