@@ -16,8 +16,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.WeatherType;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -32,6 +30,7 @@ import com.github.jewishbanana.deadlydisasters.listeners.WorldListener;
 import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 import com.mojang.datafixers.util.Pair;
 
 import io.papermc.lib.PaperLib;
@@ -255,7 +254,7 @@ public abstract class WeatherDisaster extends Disaster {
 			return List.of();
 		List<PotionEffect> set = new ArrayList<>();
 		for (String effect : section.getKeys(false)) {
-			PotionEffectType type = Registry.EFFECT.get(NamespacedKey.minecraft(effect));
+			PotionEffectType type = VersionUtils.getPotionEffectType(effect);
 			if (type == null) {
 				Utils.sendConsoleMessage("&eWARNING the potion effect &d'"+effect+"' &edoes not exist in the world disaster config &b'"+getWorldLink().getConfigName()+"' &eat the section &c'"+getConfigPath()+'.'+path+"'&e!");
 				continue;

@@ -9,7 +9,7 @@ softdepend: [WorldGuard, Towny, GriefPrevention, Lands, Kingdoms, FieldZone, Plo
 
 commands:
     disasters:
-        usage: /disasters <help|start|stop|config|blacklist|timers>...
+        usage: /disasters <help|start|stop|cure|config|blacklist|timers>...
         description: Universal command for the plugin. Use /disasters help <command>, for more information.
     towndisasters:
         usage: /towndisasters <on|off> [player]
@@ -22,6 +22,7 @@ permissions:
             deadlydisasters.help: true
             deadlydisasters.start: true
             deadlydisasters.stop: true
+            deadlydisasters.cure: true
             deadlydisasters.config: true
             deadlydisasters.blacklist: true
             deadlydisasters.timers: true
@@ -32,6 +33,8 @@ permissions:
         description: Allows you to start disasters via command.
     deadlydisasters.stop:
         description: Allows you to stop disasters via command.
+    deadlydisasters.cure:
+        description: Allows curing Black Plague infections via command.
     deadlydisasters.config:
         description: Allows the use of the config command.
     deadlydisasters.blacklist:

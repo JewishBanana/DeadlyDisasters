@@ -23,13 +23,19 @@
 #   "stained_glass" - Represents all full stained glass blocks.
 #   "stained_glass_pane" - Represents all stained glass pane blocks.
 #   "command_blocks" - Represents all command block types.
+#   "storage_blocks" - Represents all item storage blocks (chests, trapped chests, ender chests, barrels, all shulker boxes, hoppers, dispensers, droppers,
+#                      chiseled bookshelves and decorated pots).
+#   "tile_blocks" - Represents all functional tile blocks that hold items or a charge and perform an action, excluding the storage blocks above and pure workstations
+#                   like crafting tables or anvils (furnaces, smokers, blast furnaces, brewing stands, campfires, crafters, lecterns, jukeboxes, beacons,
+#                   respawn anchors, composters, cauldrons and beehives).
 #
 ###############################################################################################################################################################################
 
 # This is a special setting that makes all block types immune to disasters (Some people requested it).
 protect_all_blocks: false
 
-# This is a list of all immune block types (resistance value = 1.0). You could also manually set each type to 1.0, this list just keeps it organized.
+# This is a list of all immune block types (resistance value = 1.0). Entries here take priority over resistance values elsewhere in this file.
+# You could also manually set each type to 1.0; this list keeps fully protected blocks organized.
 immune_types:
 - bedrock
 - end_portal_frame

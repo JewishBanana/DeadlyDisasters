@@ -25,6 +25,7 @@ import com.github.jewishbanana.deadlydisasters.disasters.destructive.Supernova;
 import com.github.jewishbanana.deadlydisasters.disasters.destructive.Tornado;
 import com.github.jewishbanana.deadlydisasters.disasters.destructive.Tsunami;
 import com.github.jewishbanana.deadlydisasters.disasters.destructive.WaterGeyser;
+import com.github.jewishbanana.deadlydisasters.disasters.mob.BlackPlague;
 import com.github.jewishbanana.deadlydisasters.disasters.mob.Purge;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.AcidStorm;
 import com.github.jewishbanana.deadlydisasters.disasters.weather.Blizzard;
@@ -45,6 +46,7 @@ import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.ConfigUpdater;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
+import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class DeadlyDisasters extends JavaPlugin {
@@ -119,10 +121,12 @@ public class DeadlyDisasters extends JavaPlugin {
 		DisasterRegistry.registerDisaster("hurricane", Hurricane.class);
 
 		// Mob
+		DisasterRegistry.registerDisaster("black_plague", BlackPlague.class);
 		DisasterRegistry.registerDisaster("purge", Purge.class);
 	}
 	public void init() {
 		DataUtils.reload();
+		Metrics.configureMetrics(this);
 		
 		WorldWrapper.init();
 		DependencyUtils.init(this);
@@ -140,10 +144,13 @@ public class DeadlyDisasters extends JavaPlugin {
 	public void onDisable() {
 		isDisablingPlugin = true;
 		
+		BlackPlague.saveAllInfections();
 		MobDisaster.cleanAllEntities();
 		Disaster.cleanUpDisastersEffects();
 		
 		selector.saveData();
+		Disaster.flushMetricsData();
+		Metrics.saveData();
 	}
 	public void reload() {
 		DependencyUtils.reload(this);

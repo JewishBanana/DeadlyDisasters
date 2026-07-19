@@ -13,12 +13,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -32,12 +33,15 @@ import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
+import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
+import com.github.jewishbanana.deadlydisasters.disasters.DisasterRegistry;
 
 public class Metrics {
 
@@ -45,279 +49,185 @@ public class Metrics {
 
 	private final MetricsBase metricsBase;
 	
-	public static Map<String, Integer> disasterOccurredMap = new LinkedHashMap<>();
-	public static Map<String, Integer> disasterSpawnedMap = new LinkedHashMap<>();
-	public static Map<String, Integer> disasterDestroyedMap = new LinkedHashMap<>();
-	public static Map<String, Integer> disasterKillMap = new LinkedHashMap<>();
-	
-	public static void configureMetrics(DeadlyDisasters plugin) {
+	private static final String METRICS_PATH = "metrics";
+	private static final Map<String, Long> occurred = new ConcurrentHashMap<>();
+	private static final Map<String, Long> commandSpawned = new ConcurrentHashMap<>();
+	private static final Map<String, Long> blocksDestroyed = new ConcurrentHashMap<>();
+	private static final Map<String, Long> playersKilled = new ConcurrentHashMap<>();
+	private static boolean configured;
+
+	public static synchronized void configureMetrics(DeadlyDisasters plugin) {
+		if (configured)
+			return;
+		configured = true;
+		loadCounters("disasters_occurred", occurred);
+		loadCounters("disasters_spawned", commandSpawned);
+		loadCounters("blocks_destroyed", blocksDestroyed);
+		loadCounters("players_killed", playersKilled);
+		loadLegacyCounters("occurred", occurred, "custom", "sinkhole", "cavein", "tornado", "water_geyser", "black_plague", "acid_storm",
+				"extreme_winds", "soul_storm", "blizzard", "sandstorm", "earthquake", "tsunami", "meteor_shower", "end_storm", "supernova",
+				"hurricane", "purge", "solar_storm", "monsoon", "infested_cave", "landslide");
+		loadLegacyCounters("spawned", commandSpawned, "custom", "sinkhole", "cavein", "tornado", "water_geyser", "black_plague", "acid_storm",
+				"extreme_winds", "soul_storm", "blizzard", "sandstorm", "earthquake", "tsunami", "meteor_shower", "end_storm", "supernova",
+				"hurricane", "purge", "solar_storm", "monsoon", "infested_cave", "landslide");
+		loadLegacyCounters("destroyed", blocksDestroyed, "sinkhole", "cavein", "tornado", "water_geyser", "acid_storm", "extreme_winds",
+				"earthquake", "tsunami", "meteor_shower", "supernova", "hurricane", "solar_storm", "monsoon", "landslide");
+		loadLegacyCounters("killed", playersKilled, "sinkhole", "cavein", "tornado", "water_geyser", "black_plague", "acid_storm", "extreme_winds",
+				"soul_storm", "blizzard", "sandstorm", "earthquake", "tsunami", "meteor_shower", "end_storm", "supernova", "hurricane", "purge",
+				"solar_storm", "monsoon", "infested_cave", "landslide");
+
 		Metrics metrics = new Metrics(plugin, 16366);
-		
-//		List<Integer> disasterOccurredList = new ArrayList<>();
-//		if (!plugin.dataFile.contains("metrics.occurred")) {
-//			for (int i=0; i < 22; i++)
-//				disasterOccurredList.add(0);
-//			plugin.dataFile.set("metrics.occurred", disasterOccurredList);
-//			plugin.saveDataFile();
-//		} else {
-//			List<Integer> tempList = plugin.dataFile.getIntegerList("metrics.occurred");
-//			for (int i=0; i < 22; i++)
-//				if (i < tempList.size())
-//					disasterOccurredList.add(tempList.get(i));
-//				else
-//					disasterOccurredList.add(0);
-//		}
-//		disasterOccurredMap.put(Disaster.CUSTOM.getMetricsLabel(), disasterOccurredList.get(0));
-//		disasterOccurredMap.put(Disaster.SINKHOLE.getMetricsLabel(), disasterOccurredList.get(1));
-//		disasterOccurredMap.put(Disaster.CAVEIN.getMetricsLabel(), disasterOccurredList.get(2));
-//		disasterOccurredMap.put(Disaster.TORNADO.getMetricsLabel(), disasterOccurredList.get(3));
-//		disasterOccurredMap.put(Disaster.GEYSER.getMetricsLabel(), disasterOccurredList.get(4));
-//		disasterOccurredMap.put(Disaster.PLAGUE.getMetricsLabel(), disasterOccurredList.get(5));
-//		disasterOccurredMap.put(Disaster.ACIDSTORM.getMetricsLabel(), disasterOccurredList.get(6));
-//		disasterOccurredMap.put(Disaster.EXTREMEWINDS.getMetricsLabel(), disasterOccurredList.get(7));
-//		disasterOccurredMap.put(Disaster.SOULSTORM.getMetricsLabel(), disasterOccurredList.get(8));
-//		disasterOccurredMap.put(Disaster.BLIZZARD.getMetricsLabel(), disasterOccurredList.get(9));
-//		disasterOccurredMap.put(Disaster.SANDSTORM.getMetricsLabel(), disasterOccurredList.get(10));
-//		disasterOccurredMap.put(Disaster.EARTHQUAKE.getMetricsLabel(), disasterOccurredList.get(11));
-//		disasterOccurredMap.put(Disaster.TSUNAMI.getMetricsLabel(), disasterOccurredList.get(12));
-//		disasterOccurredMap.put(Disaster.METEORSHOWERS.getMetricsLabel(), disasterOccurredList.get(13));
-//		disasterOccurredMap.put(Disaster.ENDSTORM.getMetricsLabel(), disasterOccurredList.get(14));
-//		disasterOccurredMap.put(Disaster.SUPERNOVA.getMetricsLabel(), disasterOccurredList.get(15));
-//		disasterOccurredMap.put(Disaster.HURRICANE.getMetricsLabel(), disasterOccurredList.get(16));
-//		disasterOccurredMap.put(Disaster.PURGE.getMetricsLabel(), disasterOccurredList.get(17));
-//		disasterOccurredMap.put(Disaster.SOLARSTORM.getMetricsLabel(), disasterOccurredList.get(18));
-//		disasterOccurredMap.put(Disaster.MONSOON.getMetricsLabel(), disasterOccurredList.get(19));
-//		disasterOccurredMap.put(Disaster.INFESTEDCAVES.getMetricsLabel(), disasterOccurredList.get(20));
-//		disasterOccurredMap.put(Disaster.LANDSLIDE.getMetricsLabel(), disasterOccurredList.get(21));
-		
-		metrics.addCustomChart(new Metrics.AdvancedPie("disasters_occurred", new Callable<Map<String, Integer>>() {
-	        @Override
-	        public Map<String, Integer> call() throws Exception {
-	        	HashMap<String, Integer> map = new HashMap<>();
-	        	for (Map.Entry<String, Integer> entry : disasterOccurredMap.entrySet())
-	        		if (entry.getValue() > 0)
-	        			map.put(entry.getKey(), entry.getValue());
-	            return map;
-	        }
-	    }));
-		
-//		List<Integer> disasterSpawnedList = new ArrayList<>();
-//		if (!plugin.dataFile.contains("metrics.spawned")) {
-//			for (int i=0; i < 22; i++)
-//				disasterSpawnedList.add(0);
-//			plugin.dataFile.set("metrics.spawned", disasterSpawnedList);
-//			plugin.saveDataFile();
-//		} else {
-//			List<Integer> tempList = plugin.dataFile.getIntegerList("metrics.spawned");
-//			for (int i=0; i < 22; i++)
-//				if (i < tempList.size())
-//					disasterSpawnedList.add(tempList.get(i));
-//				else
-//					disasterSpawnedList.add(0);
-//		}
-//		disasterSpawnedMap.put(Disaster.CUSTOM.getMetricsLabel(), disasterSpawnedList.get(0));
-//		disasterSpawnedMap.put(Disaster.SINKHOLE.getMetricsLabel(), disasterSpawnedList.get(1));
-//		disasterSpawnedMap.put(Disaster.CAVEIN.getMetricsLabel(), disasterSpawnedList.get(2));
-//		disasterSpawnedMap.put(Disaster.TORNADO.getMetricsLabel(), disasterSpawnedList.get(3));
-//		disasterSpawnedMap.put(Disaster.GEYSER.getMetricsLabel(), disasterSpawnedList.get(4));
-//		disasterSpawnedMap.put(Disaster.PLAGUE.getMetricsLabel(), disasterSpawnedList.get(5));
-//		disasterSpawnedMap.put(Disaster.ACIDSTORM.getMetricsLabel(), disasterSpawnedList.get(6));
-//		disasterSpawnedMap.put(Disaster.EXTREMEWINDS.getMetricsLabel(), disasterSpawnedList.get(7));
-//		disasterSpawnedMap.put(Disaster.SOULSTORM.getMetricsLabel(), disasterSpawnedList.get(8));
-//		disasterSpawnedMap.put(Disaster.BLIZZARD.getMetricsLabel(), disasterSpawnedList.get(9));
-//		disasterSpawnedMap.put(Disaster.SANDSTORM.getMetricsLabel(), disasterSpawnedList.get(10));
-//		disasterSpawnedMap.put(Disaster.EARTHQUAKE.getMetricsLabel(), disasterSpawnedList.get(11));
-//		disasterSpawnedMap.put(Disaster.TSUNAMI.getMetricsLabel(), disasterSpawnedList.get(12));
-//		disasterSpawnedMap.put(Disaster.METEORSHOWERS.getMetricsLabel(), disasterSpawnedList.get(13));
-//		disasterSpawnedMap.put(Disaster.ENDSTORM.getMetricsLabel(), disasterSpawnedList.get(14));
-//		disasterSpawnedMap.put(Disaster.SUPERNOVA.getMetricsLabel(), disasterSpawnedList.get(15));
-//		disasterSpawnedMap.put(Disaster.HURRICANE.getMetricsLabel(), disasterSpawnedList.get(16));
-//		disasterSpawnedMap.put(Disaster.PURGE.getMetricsLabel(), disasterSpawnedList.get(17));
-//		disasterSpawnedMap.put(Disaster.SOLARSTORM.getMetricsLabel(), disasterSpawnedList.get(18));
-//		disasterSpawnedMap.put(Disaster.MONSOON.getMetricsLabel(), disasterSpawnedList.get(19));
-//		disasterSpawnedMap.put(Disaster.INFESTEDCAVES.getMetricsLabel(), disasterSpawnedList.get(20));
-//		disasterSpawnedMap.put(Disaster.LANDSLIDE.getMetricsLabel(), disasterSpawnedList.get(21));
-		
-		metrics.addCustomChart(new Metrics.AdvancedPie("disasters_spawned", new Callable<Map<String, Integer>>() {
-	        @Override
-	        public Map<String, Integer> call() throws Exception {
-	        	HashMap<String, Integer> map = new HashMap<>();
-	        	for (Map.Entry<String, Integer> entry : disasterSpawnedMap.entrySet())
-	        		if (entry.getValue() > 0)
-	        			map.put(entry.getKey(), entry.getValue());
-	            return map;
-	        }
-	    }));
-		
-//		metrics.addCustomChart(new Metrics.AdvancedPie("favored_disaster", new Callable<Map<String, Integer>>() {
-//	        @Override
-//	        public Map<String, Integer> call() throws Exception {
-//	        	Map<String, Integer> map = new HashMap<>();
-//	        	String favored = "Not Submitted";
-//	        	if (plugin.dataFile.contains("data.favored") && !plugin.dataFile.getString("data.favored").equals("null"))
-//	        		favored = plugin.dataFile.getString("data.favored");
-//	        	map.put(favored, 1);
-//	            return map;
-//	        }
-//	    }));
-//		
-//		metrics.addCustomChart(new Metrics.AdvancedPie("disliked_disaster", new Callable<Map<String, Integer>>() {
-//	        @Override
-//	        public Map<String, Integer> call() throws Exception {
-//	        	Map<String, Integer> map = new HashMap<>();
-//	        	String disliked = "Not Submitted";
-//	        	if (plugin.dataFile.contains("data.disliked") && !plugin.dataFile.getString("data.disliked").equals("null"))
-//	        		disliked = plugin.dataFile.getString("data.disliked");
-//	        	map.put(disliked, 1);
-//	            return map;
-//	        }
-//	    }));
-//		
-//		metrics.addCustomChart(new Metrics.AdvancedPie("disaster_difficulty_level", new Callable<Map<String, Integer>>() {
-//	        @Override
-//	        public Map<String, Integer> call() throws Exception {
-//	        	Map<String, Integer> map = new HashMap<>();
-//	        	map.put(WorldObject.findWorldObject(Bukkit.getWorld("world")).difficulty.toString(), 1);
-//	            return map;
-//	        }
-//	    }));
-		
-		metrics.addCustomChart(new Metrics.AdvancedPie("custom_disasters_installed", new Callable<Map<String, Integer>>() {
-	        @Override
-	        public Map<String, Integer> call() throws Exception {
-	        	Map<String, Integer> map = new HashMap<>();
-	        	int amount = new File(plugin.getDataFolder().getAbsolutePath(), "custom disasters").listFiles().length;
-	        	if (amount <= 1)
-	        		map.put("1", 1);
-	        	else if (amount == 2)
-	        		map.put("2", 1);
-	        	else if (amount == 3)
-	        		map.put("3", 1);
-	        	else if (amount == 4)
-	        		map.put("4", 1);
-	        	else if (amount == 5)
-	        		map.put("5", 1);
-	        	else if (amount > 5)
-	        		map.put("More Than 5", 1);
-	        	else if (amount > 10)
-	        		map.put("More Than 10", 1);
-	            return map;
-	        }
-	    }));
-		
-//		List<Integer> disasterDestroyedList = new ArrayList<>();
-//		if (!plugin.dataFile.contains("metrics.destroyed")) {
-//			for (int i=0; i < 14; i++)
-//				disasterDestroyedList.add(0);
-//			plugin.dataFile.set("metrics.destroyed", disasterDestroyedList);
-//			plugin.saveDataFile();
-//		} else {
-//			List<Integer> tempList = plugin.dataFile.getIntegerList("metrics.destroyed");
-//			for (int i=0; i < 14; i++)
-//				if (i < tempList.size())
-//					disasterDestroyedList.add(tempList.get(i));
-//				else
-//					disasterDestroyedList.add(0);
-//		}
-//		disasterDestroyedMap.put(Disaster.SINKHOLE.getMetricsLabel(), disasterDestroyedList.get(0));
-//		disasterDestroyedMap.put(Disaster.CAVEIN.getMetricsLabel(), disasterDestroyedList.get(1));
-//		disasterDestroyedMap.put(Disaster.TORNADO.getMetricsLabel(), disasterDestroyedList.get(2));
-//		disasterDestroyedMap.put(Disaster.GEYSER.getMetricsLabel(), disasterDestroyedList.get(3));
-//		disasterDestroyedMap.put(Disaster.ACIDSTORM.getMetricsLabel(), disasterDestroyedList.get(4));
-//		disasterDestroyedMap.put(Disaster.EXTREMEWINDS.getMetricsLabel(), disasterDestroyedList.get(5));
-//		disasterDestroyedMap.put(Disaster.EARTHQUAKE.getMetricsLabel(), disasterDestroyedList.get(6));
-//		disasterDestroyedMap.put(Disaster.TSUNAMI.getMetricsLabel(), disasterDestroyedList.get(7));
-//		disasterDestroyedMap.put(Disaster.METEORSHOWERS.getMetricsLabel(), disasterDestroyedList.get(8));
-//		disasterDestroyedMap.put(Disaster.SUPERNOVA.getMetricsLabel(), disasterDestroyedList.get(9));
-//		disasterDestroyedMap.put(Disaster.HURRICANE.getMetricsLabel(), disasterDestroyedList.get(10));
-//		disasterDestroyedMap.put(Disaster.SOLARSTORM.getMetricsLabel(), disasterDestroyedList.get(11));
-//		disasterDestroyedMap.put(Disaster.MONSOON.getMetricsLabel(), disasterDestroyedList.get(12));
-//		disasterDestroyedMap.put(Disaster.LANDSLIDE.getMetricsLabel(), disasterDestroyedList.get(13));
-		
-		metrics.addCustomChart(new Metrics.AdvancedPie("blocks_destroyed", new Callable<Map<String, Integer>>() {
-	        @Override
-	        public Map<String, Integer> call() throws Exception {
-	        	HashMap<String, Integer> map = new HashMap<>();
-	        	for (Map.Entry<String, Integer> entry : disasterDestroyedMap.entrySet())
-	        		if (entry.getValue() > 0)
-	        			map.put(entry.getKey(), entry.getValue());
-	            return map;
-	        }
-	    }));
-		
-//		List<Integer> disasterKillList = new ArrayList<>();
-//		if (!plugin.dataFile.contains("metrics.killed")) {
-//			for (int i=0; i < 21; i++)
-//				disasterKillList.add(0);
-//			plugin.dataFile.set("metrics.killed", disasterKillList);
-//			plugin.saveDataFile();
-//		} else {
-//			List<Integer> tempList = plugin.dataFile.getIntegerList("metrics.killed");
-//			for (int i=0; i < 21; i++)
-//				if (i < tempList.size())
-//					disasterKillList.add(tempList.get(i));
-//				else
-//					disasterKillList.add(0);
-//		}
-//		disasterKillMap.put(Disaster.SINKHOLE.getMetricsLabel(), disasterKillList.get(0));
-//		disasterKillMap.put(Disaster.CAVEIN.getMetricsLabel(), disasterKillList.get(1));
-//		disasterKillMap.put(Disaster.TORNADO.getMetricsLabel(), disasterKillList.get(2));
-//		disasterKillMap.put(Disaster.GEYSER.getMetricsLabel(), disasterKillList.get(3));
-//		disasterKillMap.put(Disaster.PLAGUE.getMetricsLabel(), disasterKillList.get(4));
-//		disasterKillMap.put(Disaster.ACIDSTORM.getMetricsLabel(), disasterKillList.get(5));
-//		disasterKillMap.put(Disaster.EXTREMEWINDS.getMetricsLabel(), disasterKillList.get(6));
-//		disasterKillMap.put(Disaster.SOULSTORM.getMetricsLabel(), disasterKillList.get(7));
-//		disasterKillMap.put(Disaster.BLIZZARD.getMetricsLabel(), disasterKillList.get(8));
-//		disasterKillMap.put(Disaster.SANDSTORM.getMetricsLabel(), disasterKillList.get(9));
-//		disasterKillMap.put(Disaster.EARTHQUAKE.getMetricsLabel(), disasterKillList.get(10));
-//		disasterKillMap.put(Disaster.TSUNAMI.getMetricsLabel(), disasterKillList.get(11));
-//		disasterKillMap.put(Disaster.METEORSHOWERS.getMetricsLabel(), disasterKillList.get(12));
-//		disasterKillMap.put(Disaster.ENDSTORM.getMetricsLabel(), disasterKillList.get(13));
-//		disasterKillMap.put(Disaster.SUPERNOVA.getMetricsLabel(), disasterKillList.get(14));
-//		disasterKillMap.put(Disaster.HURRICANE.getMetricsLabel(), disasterKillList.get(15));
-//		disasterKillMap.put(Disaster.PURGE.getMetricsLabel(), disasterKillList.get(16));
-//		disasterKillMap.put(Disaster.SOLARSTORM.getMetricsLabel(), disasterKillList.get(17));
-//		disasterKillMap.put(Disaster.MONSOON.getMetricsLabel(), disasterKillList.get(18));
-//		disasterKillMap.put(Disaster.INFESTEDCAVES.getMetricsLabel(), disasterKillList.get(19));
-//		disasterKillMap.put(Disaster.LANDSLIDE.getMetricsLabel(), disasterKillList.get(20));
-		
-		metrics.addCustomChart(new Metrics.AdvancedPie("players_killed", new Callable<Map<String, Integer>>() {
-	        @Override
-	        public Map<String, Integer> call() throws Exception {
-	        	HashMap<String, Integer> map = new HashMap<>();
-	        	for (Map.Entry<String, Integer> entry : disasterKillMap.entrySet())
-	        		if (entry.getValue() > 0)
-	        			map.put(entry.getKey(), entry.getValue());
-	            return map;
-	        }
-	    }));
+		metrics.addCustomChart(new AdvancedPie("disasters_occurred", () -> createChartSnapshot(occurred)));
+		metrics.addCustomChart(new AdvancedPie("disasters_spawned", () -> createChartSnapshot(commandSpawned)));
+		metrics.addCustomChart(new AdvancedPie("blocks_destroyed", () -> createChartSnapshot(blocksDestroyed)));
+		metrics.addCustomChart(new AdvancedPie("players_killed", () -> createChartSnapshot(playersKilled)));
+
+		// Historical charts intentionally remain disabled. Favored/disliked disasters, the global difficulty enum, and the
+		// custom-disaster installer are no longer features in the current disaster system.
+		// favored_disaster
+		// disliked_disaster
+		// disaster_difficulty_level
+		// custom_disasters_installed
 	}
-	
-//	public static void saveMetricsData(Main plugin) {
-//		List<Integer> intList = new ArrayList<>();
-//		for (Map.Entry<String, Integer> entry : disasterOccurredMap.entrySet())
-//			intList.add(entry.getValue());
-//		plugin.dataFile.set("metrics.occurred", intList);
-//		intList.clear();
-//		for (Map.Entry<String, Integer> entry : disasterSpawnedMap.entrySet())
-//			intList.add(entry.getValue());
-//		plugin.dataFile.set("metrics.spawned", intList);
-//		intList.clear();
-//		for (Map.Entry<String, Integer> entry : disasterDestroyedMap.entrySet())
-//			intList.add(entry.getValue());
-//		plugin.dataFile.set("metrics.destroyed", intList);
-//		intList.clear();
-//		for (Map.Entry<String, Integer> entry : disasterKillMap.entrySet())
-//			intList.add(entry.getValue());
-//		plugin.dataFile.set("metrics.killed", intList);
-//	}
-	
-	public static void incrementValue(Map<String, Integer> map, String value) {
-		map.replace(value, map.get(value) + 1);
+
+	public static void recordOccurred(Disaster disaster) {
+		increment(occurred, getDisasterId(disaster), 1);
 	}
-	
-	public static void incrementValue(Map<String, Integer> map, String value, int increment) {
-		map.replace(value, map.get(value) + increment);
+
+	public static void recordCommandSpawned(Disaster disaster) {
+		increment(commandSpawned, getDisasterId(disaster), 1);
+	}
+
+	public static void recordBlocksDestroyed(Disaster disaster, long amount) {
+		increment(blocksDestroyed, getDisasterId(disaster), amount);
+	}
+
+	public static void recordPlayerKilled(Disaster disaster) {
+		increment(playersKilled, getDisasterId(disaster), 1);
+	}
+
+	public static void recordPlayerKilled(String deathPath) {
+		String id = switch (deathPath) {
+		case "deaths.sinkhole" -> "sinkhole";
+		case "deaths.earthquake" -> "earthquake";
+		case "deaths.tornado" -> "tornado";
+		case "deaths.water_geyser" -> "water_geyser";
+		case "deaths.lava_geyser" -> "lava_geyser";
+		case "deaths.cavein" -> "cavein";
+		case "deaths.supernova" -> "supernova";
+		case "deaths.tsunami" -> "tsunami";
+		case "deaths.hurricane" -> "hurricane";
+		case "deaths.infested_cave" -> "infested_cave";
+		case "deaths.landslide", "deaths.avalanche" -> "landslide";
+		case "deaths.acid_storm" -> "acid_storm";
+		case "deaths.extreme_winds" -> "extreme_winds";
+		case "deaths.sandstorm" -> "sandstorm";
+		case "deaths.blizzard" -> "blizzard";
+		case "deaths.meteor", "deaths.exploding_meteor" -> "meteor_shower";
+		case "deaths.monsoon" -> "monsoon";
+		case "deaths.end_storm" -> "end_storm";
+		case "deaths.black_plague" -> "black_plague";
+		case "deaths.purge" -> "purge";
+		default -> null;
+		};
+		increment(playersKilled, id, 1);
+	}
+
+	public static void saveData() {
+		if (!configured)
+			return;
+		DataUtils.writeToDataFile(data -> {
+			writeCounters(data, "disasters_occurred", occurred);
+			writeCounters(data, "disasters_spawned", commandSpawned);
+			writeCounters(data, "blocks_destroyed", blocksDestroyed);
+			writeCounters(data, "players_killed", playersKilled);
+		});
+	}
+
+	private static void loadCounters(String name, Map<String, Long> destination) {
+		ConfigurationSection section = DataUtils.getDataFile().getConfigurationSection(METRICS_PATH + '.' + name);
+		if (section == null)
+			return;
+		for (String key : section.getKeys(false)) {
+			long value = section.getLong(key);
+			if (value > 0)
+				destination.put(key, value);
+		}
+	}
+
+	private static void loadLegacyCounters(String name, Map<String, Long> destination, String... ids) {
+		if (!destination.isEmpty())
+			return;
+		List<Integer> values = DataUtils.getDataFile().getIntegerList(METRICS_PATH + '.' + name);
+		for (int i = 0; i < values.size() && i < ids.length; i++)
+			if (values.get(i) > 0)
+				destination.put(ids[i], values.get(i).longValue());
+	}
+
+	private static void writeCounters(org.bukkit.configuration.file.FileConfiguration data, String name, Map<String, Long> source) {
+		String path = METRICS_PATH + '.' + name;
+		data.set(path, null);
+		for (Map.Entry<String, Long> entry : source.entrySet())
+			if (entry.getValue() > 0)
+				data.set(path + '.' + entry.getKey(), entry.getValue());
+	}
+
+	private static Map<String, Integer> createChartSnapshot(Map<String, Long> source) {
+		Map<String, Integer> snapshot = new HashMap<>();
+		for (Map.Entry<String, Long> entry : source.entrySet()) {
+			if (entry.getValue() <= 0)
+				continue;
+			String label = getMetricsLabel(entry.getKey());
+			int value = (int) Math.min(Integer.MAX_VALUE, entry.getValue());
+			snapshot.merge(label, value, Metrics::saturatedAdd);
+		}
+		return snapshot;
+	}
+
+	private static int saturatedAdd(int first, int second) {
+		long result = (long) first + second;
+		return (int) Math.min(Integer.MAX_VALUE, result);
+	}
+
+	private static void increment(Map<String, Long> map, String id, long amount) {
+		if (!configured || id == null || amount <= 0)
+			return;
+		map.merge(id, amount, (current, added) -> current > Long.MAX_VALUE - added ? Long.MAX_VALUE : current + added);
+	}
+
+	private static String getDisasterId(Disaster disaster) {
+		if (disaster == null)
+			return null;
+		DisasterRegistry registry = DisasterRegistry.getRegistry(disaster.getClass());
+		return registry == null ? null : registry.getRegisteredName();
+	}
+
+	private static String getMetricsLabel(String id) {
+		return switch (id) {
+		case "sinkhole" -> "SinkHole";
+		case "cavein" -> "Cave In";
+		case "tornado" -> "Tornado";
+		case "water_geyser", "lava_geyser" -> "Water Geyser / Lava Geyser";
+		case "black_plague" -> "Black Plague";
+		case "acid_storm" -> "Acid Storm";
+		case "extreme_winds" -> "Extreme Winds";
+		case "soul_storm" -> "Soul Storm";
+		case "blizzard" -> "Blizzard";
+		case "sandstorm" -> "Sandstorm";
+		case "earthquake" -> "Earthquake";
+		case "tsunami" -> "Tsunami";
+		case "meteor_shower" -> "Meteor Shower";
+		case "end_storm" -> "End Storm";
+		case "supernova" -> "Supernova";
+		case "hurricane" -> "Hurricane";
+		case "purge" -> "Purge";
+		case "solar_storm" -> "Solar Storm";
+		case "monsoon" -> "Monsoon";
+		case "infested_cave" -> "Infested Caves";
+		case "landslide" -> "Landslide / Avalanche";
+		case "custom" -> "Custom";
+		default -> id;
+		};
 	}
 
 	/**
@@ -562,12 +472,12 @@ public class Metrics {
 			});
 		}
 
+		@SuppressWarnings("deprecation")
 		private void sendData(JsonObjectBuilder.JsonObject data) throws Exception {
 			if (logSentData) {
 				infoLogger.accept("Sent bStats metrics data: " + data.toString());
 			}
 			String url = String.format(REPORT_URL, platform);
-			@SuppressWarnings("deprecation")
 			HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
 			// Compress the data to save bandwidth
 			byte[] compressedData = compress(data.toString());

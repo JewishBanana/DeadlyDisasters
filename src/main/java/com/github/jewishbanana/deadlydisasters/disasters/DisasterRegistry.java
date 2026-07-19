@@ -17,16 +17,18 @@ public class DisasterRegistry {
 		register = new HashMap<>();
 	}
 	
+	private final String registeredName;
 	private Class<? extends Disaster> registeredClass;
 	
-	private DisasterRegistry(Class<? extends Disaster> registeredClass) {
+	private DisasterRegistry(String registeredName, Class<? extends Disaster> registeredClass) {
+		this.registeredName = registeredName;
 		this.registeredClass = registeredClass;
 	}
 	public static void registerDisaster(String registeredName, Class<? extends Disaster> registeredClass) {
 		String reformatted = registeredName.toLowerCase();
 		if (register.containsKey(reformatted))
 			throw new IllegalArgumentException("There is already a registered disaster with the name '"+reformatted+"' registered names must be unique!");
-		DisasterRegistry registry = new DisasterRegistry(registeredClass);
+		DisasterRegistry registry = new DisasterRegistry(reformatted, registeredClass);
 		register.put(reformatted, registry);
 	}
 	public static DisasterRegistry getRegistry(String registeredName) {
@@ -60,5 +62,8 @@ public class DisasterRegistry {
 	}
 	public Class<? extends Disaster> getRegisteredClass() {
 		return registeredClass;
+	}
+	public String getRegisteredName() {
+		return registeredName;
 	}
 }

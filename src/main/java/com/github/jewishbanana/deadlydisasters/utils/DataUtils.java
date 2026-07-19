@@ -24,6 +24,7 @@ public class DataUtils {
 	private static FileConfiguration languageConfig;
 	private static final File dataFile;
 	private static final FileConfiguration dataYaml;
+	private static final String PLAGUE_RECIPE_MIGRATION = "migrations.plague_cure_brewing_recipes";
 	static {
 		plugin = DeadlyDisasters.getInstance();
 		defaultGeneralConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(plugin.getResource("config.yml")));
@@ -57,7 +58,9 @@ public class DataUtils {
 				// Hurricane
 				"disasters.weather.hurricane.entity_effects",
 				"disasters.weather.hurricane.shatter_blocks",
-				"disasters.weather.hurricane.blacklisted_mob_types"
+				"disasters.weather.hurricane.blacklisted_mob_types",
+				// Black Plague
+				"disasters.mob.black_plague.blacklisted_mob_types"
 				);
 		try {
 			File folder = new File(plugin.getDataFolder().getAbsolutePath(), "worldConfigs");
@@ -85,6 +88,8 @@ public class DataUtils {
 		}
 		dataYaml = YamlConfiguration.loadConfiguration(dataFile);
 		updateConfigChanges();
+		if (!dataYaml.getBoolean(PLAGUE_RECIPE_MIGRATION))
+			removeLegacyPlagueCureRecipes();
 	}
 
 	public static void reload() {
@@ -115,6 +120,35 @@ public class DataUtils {
 			break;
 		}
 		writeToDataFile(file -> file.set("stored_version", plugin.getDescription().getVersion()));
+	}
+	private static void removeLegacyPlagueCureRecipes() {
+		org.bukkit.plugin.Plugin uiFramework = plugin.getServer().getPluginManager().getPlugin("UIFramework");
+		if (uiFramework == null || !uiFramework.isEnabled())
+			return;
+		removeLegacyPlagueCureRecipes(uiFramework);
+		plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+			removeLegacyPlagueCureRecipes(uiFramework);
+			writeToDataFile(file -> file.set(PLAGUE_RECIPE_MIGRATION, true));
+		}, 2L);
+	}
+	private static void removeLegacyPlagueCureRecipes(org.bukkit.plugin.Plugin uiFramework) {
+		String[] recipeKeys = {"plague_cure_recipe", "plague_cure_glow_recipe"};
+		for (String key : recipeKeys) {
+			plugin.getServer().removeRecipe(new org.bukkit.NamespacedKey(uiFramework, key));
+			plugin.getServer().removeRecipe(new org.bukkit.NamespacedKey(plugin, key));
+			com.github.jewishbanana.uiframework.UIFramework.dataFile.set("item.dd:plague_cure.recipes."+key, null);
+		}
+		com.github.jewishbanana.uiframework.items.UIItemType type = com.github.jewishbanana.uiframework.items.UIItemType.getItemType("dd:plague_cure");
+		if (type != null)
+			type.getRecipes().removeIf(recipe -> recipe instanceof org.bukkit.inventory.ShapedRecipe
+					&& recipe instanceof org.bukkit.Keyed
+					&& ("plague_cure_recipe".equals(((org.bukkit.Keyed) recipe).getKey().getKey())
+							|| "plague_cure_glow_recipe".equals(((org.bukkit.Keyed) recipe).getKey().getKey())));
+		try {
+			com.github.jewishbanana.uiframework.UIFramework.dataFile.save(new File(uiFramework.getDataFolder(), "data.yml"));
+		} catch (IOException e) {
+			Utils.sendExceptionLog(e);
+		}
 	}
 	public static int getMainConfigInt(String path) {
 		try {

@@ -17,6 +17,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
+import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class DeathMessageHandler implements Listener {
@@ -43,15 +44,20 @@ public class DeathMessageHandler implements Listener {
 	@EventHandler
 	public void onDeath(PlayerDeathEvent event) {
 		Player player = event.getEntity();
+		boolean metricsRecorded = false;
 		for (DeathWatcher watcher : watchers)
 			if (watcher.function.apply(event)) {
 				player.setMetadata(watcher.languagePath, plugin.getFixedMetadata());
+				Metrics.recordPlayerKilled(watcher.disaster);
+				metricsRecorded = true;
 				break;
 			}
 		
 		for (Map.Entry<String, String> entry : deathMessages.entrySet()) {
 			if (!player.hasMetadata(entry.getKey()))
 				continue;
+			if (!metricsRecorded)
+				Metrics.recordPlayerKilled(entry.getKey());
 			String killer = "Unknown";
 			if (player.getLastDamageCause() != null && player.getLastDamageCause() instanceof EntityDamageByEntityEvent damageEvent) {
 				if (damageEvent.getDamager() != null) {

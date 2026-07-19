@@ -1,6 +1,7 @@
 package com.github.jewishbanana.deadlydisasters.utils;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -9,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Registry;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -168,6 +170,24 @@ public class VersionUtils {
 		} catch (NumberFormatException ex) {
 			throw new NumberFormatException("The version string you supplied '"+version+"' is not a valid version string! Format must be as follows: '1.2.3' or '1.2' or '1'!");
 		}
+	}
+	public static Sound getSound(String name) {
+		if (name == null)
+			return null;
+		try {
+			// Sound changed from an enum to a registry-backed interface. Field lookup avoids emitting an invokeinterface
+			// call to modern Sound.valueOf, which cannot link against the enum used by older servers.
+			return Sound.class.cast(Sound.class.getField(name.toUpperCase(Locale.ROOT)).get(null));
+		} catch (ReflectiveOperationException | ClassCastException exception) {
+			return null;
+		}
+	}
+	public static PotionEffectType getPotionEffectType(String name) {
+		if (name == null)
+			return null;
+		if (isMCVersionOrAbove("1.20.3"))
+			return Registry.EFFECT.get(NamespacedKey.minecraft(name.toLowerCase(Locale.ROOT)));
+		return PotionEffectType.getByName(name);
 	}
 	public static void spawnDragonBreathParticle(Location location, int count, double offX, double offY, double offZ, double speed, float data) {
 		location.getWorld().spawnParticle(Particle.DRAGON_BREATH, location, count, offX, offY, offZ, speed, legacyDragonParticles ? null : data);

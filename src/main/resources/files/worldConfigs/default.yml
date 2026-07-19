@@ -31,8 +31,8 @@ world:
     
     targeting: "INDIVIDUAL"
     
-    # The global disaster count setting is a special setting that will only apply if you have the 'targeting' setting above set to "GLOBAL" This just controls how many disasters 
-    # will occur when the global timer reaches 0. Only 1 disaster can spawn per player, so if you have a higher value set here then there are players on the server, this will 
+    # The global disaster count setting is a special setting that will only apply if you have the 'targeting' setting above set to "GLOBAL" This controls the maximum number of disasters
+    # that can occur when the global timer reaches 0. Only 1 disaster can spawn per player, so if you have a higher value set here then there are players on the server, this will
     # spawn just 1 disaster on each player in the server. If you have it set to 1, then only a single disaster will occur on 1 random player.
     
     global_disaster_count: 1
@@ -743,6 +743,197 @@ disasters:
     #
     ###########################################################################################################################################################################
     mob:
+        #######################################################################################################################################################################
+        #
+        # Black Plague
+        #
+        #######################################################################################################################################################################
+        black_plague:
+            # How long the plague actively follows the target player and seeds new nearby outbreaks.
+            duration_seconds:
+                level_1: 90
+                level_2: 120
+                level_3: 180
+                level_4: 240
+                level_5: 300
+                level_6: 420
+            # Warning phase before the first active outbreak pulse.
+            omen_seconds: 10
+            # If the wither-spawn omen sound should play around the target when the plague begins.
+            play_omen_sound: true
+            # How often the timed outbreak checks the target player's area and reinforces nearby infection pressure.
+            outbreak_pulse_seconds:
+                level_1: 12
+                level_2: 10
+                level_3: 8
+                level_4: 7
+                level_5: 6
+                level_6: 4
+            # Radius around the target player used by timed outbreak pulses.
+            outbreak_radius: 42.0
+            # Patient zero candidates are strongly limited to this vertical distance from the target player.
+            vertical_preference: 14.0
+            # Mobs selected as patient zero or pulse seeds must be at least this far from every non-immune player.
+            patient_zero_min_player_distance: 15.0
+            # Nearby infected pressure the timed outbreak tries to maintain while active.
+            nearby_infected_target:
+                level_1: 2
+                level_2: 3
+                level_3: 5
+                level_4: 7
+                level_5: 10
+                level_6: 16
+            # Maximum new patient-zero style infections a single outbreak pulse can add.
+            pulse_infections:
+                level_1: 1
+                level_2: 1
+                level_3: 2
+                level_4: 2
+                level_5: 3
+                level_6: 5
+            # Maximum infected entities at one time in the affected world for this outbreak.
+            max_infected_mobs:
+                level_1: 18
+                level_2: 28
+                level_3: 42
+                level_4: 60
+                level_5: 85
+                level_6: 140
+            # Percent chance that a newly infected mob starts as a carrier. Carriers have stronger particles and stronger spread pulses.
+            carrier_chance:
+                level_1: 5.0
+                level_2: 8.0
+                level_3: 12.0
+                level_4: 16.0
+                level_5: 22.0
+                level_6: 35.0
+            # How long an infection lasts before it becomes fatal.
+            infection_duration_seconds: 300
+            # Undead mobs do not suffer symptoms or die from plague; they carry it for this many seconds.
+            undead_carrier_seconds: 300
+            # Rare natural recovery chance when a non-player infected mob enters a new plague phase.
+            natural_recovery_chance:
+                level_1: 5.0
+                level_2: 3.5
+                level_3: 2.0
+                level_4: 1.0
+                level_5: 0.5
+                level_6: 0.0
+            # Percent chance that a hit from an infected entity or close-contact exposure infects the victim.
+            infection_transmission_chance:
+                level_1: 30.0
+                level_2: 40.0
+                level_3: 50.0
+                level_4: 60.0
+                level_5: 80.0
+                level_6: 100.0
+            # How often infected entities roll close-contact infection attempts.
+            proximity_spread_interval_seconds: 2
+            # Extra distance added around the infected entity's bounding box for close-contact exposure.
+            proximity_spread_margin: 1.0
+            # Damage dealt by passive mobs and villagers that become rabid when UltimateContent is installed.
+            rabid_damage: 4.0
+            # Infected mobs killed by the plague or combat release a final spread pulse.
+            corpse_burst:
+                enabled: true
+                radius: 3.5
+                chance:
+                    level_1: 12.6
+                    level_2: 15.3
+                    level_3: 18.0
+                    level_4: 21.6
+                    level_5: 26.1
+                    level_6: 36.0
+            # UltimateContent plague rats act as fast plague carriers that bite, disengage, and retarget.
+            plague_rats:
+                enabled: true
+                min_level: 1
+                # Plague rats spawned by this disaster are infected; bites use infection_transmission_chance above.
+                lifetime_seconds: 40
+                spawn_min_player_distance: 12.0
+                spawn_max_player_distance: 30.0
+                underground_spawn_min_player_distance: 12.0
+                underground_spawn_max_player_distance: 26.0
+                # Percent of ordinary pulse rats locked onto the disaster target player; the rest target nearby entities normally.
+                player_target_chance: 15.0
+                pulse_spawn_count:
+                    level_1: 1
+                    level_2: 1
+                    level_3: 2
+                    level_4: 2
+                    level_5: 3
+                    level_6: 5
+                # Larger swarms that spawn in all directions; part pressure the disaster player while the rest attack local entities.
+                player_swarms:
+                    # Percent of a scheduled swarm locked directly onto the disaster player. Other swarm rats target local entities.
+                    direct_target_percent: 15.0
+                    interval_seconds:
+                        level_1: 120
+                        level_2: 105
+                        level_3: 95
+                        level_4: 85
+                        level_5: 75
+                        level_6: 60
+                    min_count:
+                        level_1: 1
+                        level_2: 2
+                        level_3: 4
+                        level_4: 5
+                        level_5: 7
+                        level_6: 11
+                    max_count:
+                        level_1: 3
+                        level_2: 4
+                        level_3: 6
+                        level_4: 8
+                        level_5: 14
+                        level_6: 20
+                max_near_player:
+                    level_1: 2
+                    level_2: 3
+                    level_3: 5
+                    level_4: 6
+                    level_5: 9
+                    level_6: 14
+            # UltimateContent plague bats circle above a target, swoop once to bite, and retreat before choosing another target.
+            plague_bats:
+                enabled: true
+                min_level: 1
+                lifetime_seconds: 45
+                spawn_min_player_distance: 22.0
+                spawn_max_player_distance: 28.0
+                # Multiplies bat spawn chance, group size, and the nearby cap while the target is underground.
+                cave_spawn_multiplier: 2.0
+                # Percent of bats locked onto the disaster target player. Other bats target nearby entities normally.
+                player_target_chance: 15.0
+                # Percent chance for an outbreak pulse to spawn a bat group.
+                pulse_spawn_chance: 23.0
+                pulse_spawn_count:
+                    level_1: 1
+                    level_2: 1
+                    level_3: 2
+                    level_4: 2
+                    level_5: 3
+                    level_6: 4
+                max_near_player:
+                    level_1: 1
+                    level_2: 1
+                    level_3: 1
+                    level_4: 1
+                    level_5: 2
+                    level_6: 2
+            # If drinking vanilla milk cures plague. Plague Cure items always cure when UIFramework is installed.
+            milk_cures_plague: false
+            # Controls plague coughing sounds independently for each affected entity category.
+            player_coughing_sounds: true
+            villager_coughing_sounds: true
+            animal_coughing_sounds: true
+            # The disaster frequency affects how often a disaster can happen, it can be any value between 0.0 meaning it will never happen and 1.0 meaning it will always have a chance to happen.
+            frequency: 0.35
+            # Overridden from global disaster settings.
+            start_delay: 8.0
+            blacklisted_mob_types:
+            - armor_stand
         #######################################################################################################################################################################
         #
         # Purge

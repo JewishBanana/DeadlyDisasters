@@ -25,8 +25,11 @@ import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.Container;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.type.Chest;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -50,6 +53,7 @@ import com.github.jewishbanana.deadlydisasters.utils.BlockUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
+import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 import io.papermc.lib.PaperLib;
@@ -67,6 +71,8 @@ public abstract class Disaster {
 	
 	private List<BukkitTask> tasks = new ArrayList<>();
 	private WorldWrapper worldLink;
+	private long destroyedBlockCount;
+	private long reportedDestroyedBlocks;
 	private float volume = 1f;
 	private boolean regionsProtected;
 	private boolean affectEntitiesInRegions;
@@ -171,6 +177,7 @@ public abstract class Disaster {
 	}
 	public void start() {
 		onGoingDisasters.add(this);
+		Metrics.recordOccurred(this);
 //		Bukkit.broadcastMessage("disaster started");
 	}
 	public boolean stop(DisasterStopReason reason) {
@@ -181,6 +188,7 @@ public abstract class Disaster {
 		hasEnded = true;
 		clean();
 		onGoingDisasters.remove(this);
+		flushBlockMetrics();
 //		Bukkit.broadcastMessage("disaster ended");
 		return true;
 	}
@@ -193,18 +201,58 @@ public abstract class Disaster {
 			cast.cleanEntities();
 	}
 	public boolean removeBlock(Block block, boolean ignoreImmuneOnly, boolean withPhysics, ThreadLocalRandom rng) {
-		if ((regionsProtected && isBlockProtected(block)) 
+		if ((regionsProtected && isBlockProtected(block))
 				|| (ignoreImmuneOnly ? BlockUtils.isBlockImmune(block) : BlockUtils.doesBlockResist(block, rng)))
 			return false;
+		destroyedBlockCount++;
+		BlockData removedData = block.getBlockData();
 		block.setType(Material.AIR, withPhysics);
+		normalizeDetachedChestHalf(block, removedData);
 		return true;
 	}
 	public boolean removeBlock(Block block, boolean ignoreImmuneOnly, boolean withPhysics) {
-		if ((regionsProtected && isBlockProtected(block)) 
+		if ((regionsProtected && isBlockProtected(block))
 				|| (ignoreImmuneOnly ? BlockUtils.isBlockImmune(block) : BlockUtils.doesBlockResist(block)))
 			return false;
+		destroyedBlockCount++;
+		BlockData removedData = block.getBlockData();
 		block.setType(Material.AIR, withPhysics);
+		normalizeDetachedChestHalf(block, removedData);
 		return true;
+	}
+	/** The face through which a non-single chest half connects to its partner (mirrors vanilla's connected direction). */
+	private static BlockFace getChestConnectionFace(Chest chestData) {
+		boolean left = chestData.getType() == Chest.Type.LEFT;
+		switch (chestData.getFacing()) {
+		case NORTH: return left ? BlockFace.EAST : BlockFace.WEST;
+		case EAST: return left ? BlockFace.SOUTH : BlockFace.NORTH;
+		case SOUTH: return left ? BlockFace.WEST : BlockFace.EAST;
+		default: return left ? BlockFace.NORTH : BlockFace.SOUTH;
+		}
+	}
+	/** Returns the data with a double chest half converted into a single chest; all other data is returned untouched. */
+	private static BlockData normalizeChestData(BlockData data) {
+		if (data instanceof Chest chestData && chestData.getType() != Chest.Type.SINGLE) {
+			chestData = (Chest) chestData.clone();
+			chestData.setType(Chest.Type.SINGLE);
+			return chestData;
+		}
+		return data;
+	}
+	/**
+	 * After removing one half of a double chest the partner keeps its half-chest shape (a visual glitch whenever the
+	 * removal ran without physics) - convert it back into a normal single chest, keeping its contents.
+	 */
+	private static void normalizeDetachedChestHalf(Block removedBlock, BlockData removedData) {
+		if (!(removedData instanceof Chest chestData) || chestData.getType() == Chest.Type.SINGLE)
+			return;
+		Block other = removedBlock.getRelative(getChestConnectionFace(chestData));
+		Chest.Type complement = chestData.getType() == Chest.Type.LEFT ? Chest.Type.RIGHT : Chest.Type.LEFT;
+		if (other.getType() != removedData.getMaterial() || !(other.getBlockData() instanceof Chest otherChest)
+				|| otherChest.getType() != complement || otherChest.getFacing() != chestData.getFacing())
+			return;
+		otherChest.setType(Chest.Type.SINGLE);
+		other.setBlockData(otherChest, false);
 	}
 	public boolean removeBlock(Block block) {
 		return removeBlock(block, false, true);
@@ -233,10 +281,19 @@ public abstract class Disaster {
 				|| BlockUtils.doesBlockResist(to))
 			return false;
 		BlockState fromState = from.getState();
-		to.setBlockData(fromState.getBlockData(), withPhysics);
-		if (fromState instanceof InventoryHolder fromHolder)
+		to.setBlockData(normalizeChestData(fromState.getBlockData()), withPhysics);
+		// copy through the state snapshots - getInventory() on one half of a double chest is the combined 54 slot
+		// inventory of both halves, which reads the neighbor's items and overflows the single chest destination
+		if (fromState instanceof Container fromContainer && to.getState() instanceof Container toContainer) {
+			if (toContainer.getSnapshotInventory().getSize() >= fromContainer.getSnapshotInventory().getSize()) {
+				toContainer.getSnapshotInventory().setContents(fromContainer.getSnapshotInventory().getContents());
+				toContainer.update(true, false);
+			}
+		} else if (fromState instanceof InventoryHolder fromHolder)
 			((InventoryHolder) to.getState()).getInventory().setContents(fromHolder.getInventory().getContents());
 		from.setType(Material.AIR, withPhysics);
+		normalizeDetachedChestHalf(from, fromState.getBlockData());
+		destroyedBlockCount++;
 	    return true;
 	}
 	public boolean moveBlock(Block from, Block to) {
@@ -255,10 +312,11 @@ public abstract class Disaster {
 				|| BlockUtils.doesBlockResist(block))
 			return null;
 		BlockState state = block.getState();
-		FallingBlock entity = block.getWorld().spawnFallingBlock(BlockUtils.getCenterOfBlock(block), state.getBlockData());
+		FallingBlock entity = block.getWorld().spawnFallingBlock(BlockUtils.getCenterOfBlock(block), normalizeChestData(state.getBlockData()));
 		EntityUtils.markFallingBlock(entity);
 		EntitiesListener.attachRemoveKey(entity);
 		if (entity != null) {
+			destroyedBlockCount++;
 			fallingBlocks.add(entity.getUniqueId());
 		}
 		return entity;
@@ -267,8 +325,11 @@ public abstract class Disaster {
 		return DependencyUtils.isRegionProtected(block.getLocation());
 	}
 	public boolean isEntityProtected(Entity entity) {
-		return blacklistedEntityTypes.contains(entity.getType())
+		return isEntityTypeBlacklisted(entity)
 				|| (!affectEntitiesInRegions && DependencyUtils.isEntityProtected(entity));
+	}
+	protected boolean isEntityTypeBlacklisted(Entity entity) {
+		return entity != null && blacklistedEntityTypes != null && blacklistedEntityTypes.contains(entity.getType());
 	}
 	public void playSound(Location loc, Sound sound, SoundCategory category, float vol, float pitch) {
 		loc.getWorld().playSound(loc, sound, category, vol * volume, pitch);
@@ -497,6 +558,13 @@ public abstract class Disaster {
 	public double getFrequency() {
 		return getConfigPath() == null ? 1.0 : getConfigOverrideDouble("frequency");
 	}
+	private void flushBlockMetrics() {
+		long unreported = destroyedBlockCount - reportedDestroyedBlocks;
+		if (unreported <= 0)
+			return;
+		Metrics.recordBlocksDestroyed(this, unreported);
+		reportedDestroyedBlocks += unreported;
+	}
 	public Function<PlayerDeathEvent, Boolean> getDeathCheck() {
 		return null;
 	}
@@ -521,5 +589,9 @@ public abstract class Disaster {
 		stopAll(DisasterStopReason.CUSTOM);
 	}
 	public static void cleanUpDisastersEffects() {
+	}
+	public static void flushMetricsData() {
+		for (Disaster disaster : new ArrayList<>(onGoingDisasters))
+			disaster.flushBlockMetrics();
 	}
 }

@@ -82,24 +82,39 @@ public class BlockUtils {
 			    "WAXED_WEATHERED_CUT_COPPER_STAIRS",
 			    "WEATHERED_CUT_COPPER_STAIRS"
 			));
-		createCategory.put("COMMAND_BLOCKS", Set.of(
-				"COMMAND_BLOCK",
-				"CHAIN_COMMAND_BLOCK",
-				"REPEATING_COMMAND_BLOCK"
-				));
 		Set<String> stainedGlass = Set.of(
-				"WHITE_STAINED_GLASS", "ORANGE_STAINED_GLASS", "MAGENTA_STAINED_GLASS",
-				"LIGHT_BLUE_STAINED_GLASS", "YELLOW_STAINED_GLASS", "LIME_STAINED_GLASS",
-				"PINK_STAINED_GLASS", "GRAY_STAINED_GLASS", "LIGHT_GRAY_STAINED_GLASS",
-				"CYAN_STAINED_GLASS", "PURPLE_STAINED_GLASS", "BLUE_STAINED_GLASS",
-				"BROWN_STAINED_GLASS", "GREEN_STAINED_GLASS", "RED_STAINED_GLASS",
+				"WHITE_STAINED_GLASS",
+				"ORANGE_STAINED_GLASS",
+				"MAGENTA_STAINED_GLASS",
+				"LIGHT_BLUE_STAINED_GLASS",
+				"YELLOW_STAINED_GLASS",
+				"LIME_STAINED_GLASS",
+				"PINK_STAINED_GLASS",
+				"GRAY_STAINED_GLASS",
+				"LIGHT_GRAY_STAINED_GLASS",
+				"CYAN_STAINED_GLASS",
+				"PURPLE_STAINED_GLASS",
+				"BLUE_STAINED_GLASS",
+				"BROWN_STAINED_GLASS",
+				"GREEN_STAINED_GLASS",
+				"RED_STAINED_GLASS",
 				"BLACK_STAINED_GLASS");
 		Set<String> stainedGlassPanes = Set.of(
-				"WHITE_STAINED_GLASS_PANE", "ORANGE_STAINED_GLASS_PANE", "MAGENTA_STAINED_GLASS_PANE",
-				"LIGHT_BLUE_STAINED_GLASS_PANE", "YELLOW_STAINED_GLASS_PANE", "LIME_STAINED_GLASS_PANE",
-				"PINK_STAINED_GLASS_PANE", "GRAY_STAINED_GLASS_PANE", "LIGHT_GRAY_STAINED_GLASS_PANE",
-				"CYAN_STAINED_GLASS_PANE", "PURPLE_STAINED_GLASS_PANE", "BLUE_STAINED_GLASS_PANE",
-				"BROWN_STAINED_GLASS_PANE", "GREEN_STAINED_GLASS_PANE", "RED_STAINED_GLASS_PANE",
+				"WHITE_STAINED_GLASS_PANE",
+				"ORANGE_STAINED_GLASS_PANE",
+				"MAGENTA_STAINED_GLASS_PANE",
+				"LIGHT_BLUE_STAINED_GLASS_PANE",
+				"YELLOW_STAINED_GLASS_PANE",
+				"LIME_STAINED_GLASS_PANE",
+				"PINK_STAINED_GLASS_PANE",
+				"GRAY_STAINED_GLASS_PANE",
+				"LIGHT_GRAY_STAINED_GLASS_PANE",
+				"CYAN_STAINED_GLASS_PANE",
+				"PURPLE_STAINED_GLASS_PANE",
+				"BLUE_STAINED_GLASS_PANE",
+				"BROWN_STAINED_GLASS_PANE",
+				"GREEN_STAINED_GLASS_PANE",
+				"RED_STAINED_GLASS_PANE",
 				"BLACK_STAINED_GLASS_PANE");
 		createCategory.put("STAINED_GLASS", stainedGlass);
 		createCategory.put("STAINED_GLASS_PANE", stainedGlassPanes);
@@ -110,7 +125,63 @@ public class BlockUtils {
 		Set<String> glassPanes = new HashSet<>(stainedGlassPanes);
 		glassPanes.add("GLASS_PANE");
 		createCategory.put("GLASS_PANES", glassPanes);
-		
+		createCategory.put("COMMAND_BLOCKS", Set.of(
+				"COMMAND_BLOCK",
+				"CHAIN_COMMAND_BLOCK",
+				"REPEATING_COMMAND_BLOCK"
+				));
+		// blocks whose only purpose is item storage (materials missing on older versions are skipped below)
+		createCategory.put("STORAGE_BLOCKS", Set.of(
+				"CHEST",
+				"TRAPPED_CHEST",
+				"ENDER_CHEST",
+				"BARREL",
+				"SHULKER_BOX",
+				"WHITE_SHULKER_BOX",
+				"ORANGE_SHULKER_BOX",
+				"MAGENTA_SHULKER_BOX",
+				"LIGHT_BLUE_SHULKER_BOX",
+				"YELLOW_SHULKER_BOX",
+				"LIME_SHULKER_BOX",
+				"PINK_SHULKER_BOX",
+				"GRAY_SHULKER_BOX",
+				"LIGHT_GRAY_SHULKER_BOX",
+				"CYAN_SHULKER_BOX",
+				"PURPLE_SHULKER_BOX",
+				"BLUE_SHULKER_BOX",
+				"BROWN_SHULKER_BOX",
+				"GREEN_SHULKER_BOX",
+				"RED_SHULKER_BOX",
+				"BLACK_SHULKER_BOX",
+				"CHISELED_BOOKSHELF",
+				"DECORATED_POT",
+				"HOPPER",
+				"DISPENSER",
+				"DROPPER"
+				));
+		// functional non-storage tile blocks that hold items or a charge and perform an action on their own
+		// (excludes pure workstation blocks like crafting tables and anvils, and the storage_blocks above)
+		createCategory.put("TILE_BLOCKS", Set.of(
+				"FURNACE",
+				"BLAST_FURNACE",
+				"SMOKER",
+				"BREWING_STAND",
+				"CAMPFIRE",
+				"SOUL_CAMPFIRE",
+				"CRAFTER",
+				"LECTERN",
+				"JUKEBOX",
+				"BEACON",
+				"RESPAWN_ANCHOR",
+				"COMPOSTER",
+				"CAULDRON",
+				"WATER_CAULDRON",
+				"LAVA_CAULDRON",
+				"POWDER_SNOW_CAULDRON",
+				"BEEHIVE",
+				"BEE_NEST"
+				));
+
 		Map<String, Set<Material>> allCategories = new HashMap<>();
 		createCategory.forEach((k, v) -> {
 			Set<Material> materials = new HashSet<>();
@@ -150,6 +221,7 @@ public class BlockUtils {
 			}
 			Set<String> keys = config.getKeys(true).stream().filter(key -> !config.isConfigurationSection(key)).collect(Collectors.toSet());
 			Map<Material, Float> overrides = new HashMap<>();
+			Set<Material> immuneMaterials = EnumSet.noneOf(Material.class);
 			for (String path : keys)
 				switch (path.toUpperCase()) {
 				case "PROTECT_ALL_BLOCKS":
@@ -161,7 +233,7 @@ public class BlockUtils {
 							Utils.sendConsoleMessage("&cERROR no such block type or category named &e'"+category+"' &cin the &d'blocks.yml' &cfile in the &b'immune_types' &clist! This value will be omitted and not protected.");
 							return;
 						}
-						set.forEach(material -> resistances.put(material, 1f));
+						immuneMaterials.addAll(set);
 					});
 					break;
 				default:
@@ -189,6 +261,9 @@ public class BlockUtils {
 					break;
 				}
 			overrides.forEach((k, v) -> resistances.put(k, v));
+			// immune_types is an explicit protection list. Apply it last so a material's normal resistance entry cannot
+			// silently downgrade it (for example, building_blocks.barrel overriding an immune barrel with 0.03).
+			immuneMaterials.forEach(material -> resistances.put(material, 1f));
 		} catch (Exception exception) {
 			Utils.sendExceptionLog(exception);
 			Utils.sendConsoleMessage("&cERROR could not read the &eblocks.yml &cfile! Block resistances will not function until this is resolved!");

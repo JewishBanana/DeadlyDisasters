@@ -23,6 +23,7 @@ import org.bukkit.entity.Player;
 import com.github.jewishbanana.deadlydisasters.disasters.DisasterRegistry;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
+import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
 
 public class WorldWrapper {
 
@@ -59,6 +60,7 @@ public class WorldWrapper {
 				DisasterRegistry.getRegistry("hurricane")
 				));
 		disasterCategory.put("MOB_DISASTERS", Set.of(
+				DisasterRegistry.getRegistry("black_plague"),
 				DisasterRegistry.getRegistry("purge")
 				));
 		disasterCategories = Map.copyOf(disasterCategory);
@@ -141,7 +143,6 @@ public class WorldWrapper {
 			Utils.sendExceptionLog(e);
 		}
 	}
-	@SuppressWarnings("deprecation")
 	public static void reload(WorldWrapper wrapper) {
 		if (wrapper.configFile == null || !wrapper.configFile.exists()) {
 			initWorld(wrapper.world);
@@ -268,7 +269,9 @@ public class WorldWrapper {
 		String soundString = DataUtils.getConfigString(wrapper.config, wrapper.configName, "world.start_sound.sound", null);
 		if (soundString != null && !soundString.equalsIgnoreCase("NONE"))
 			try {
-				wrapper.startSound = Sound.valueOf(soundString.toUpperCase());
+				wrapper.startSound = VersionUtils.getSound(soundString);
+				if (wrapper.startSound == null)
+					throw new IllegalArgumentException();
 				wrapper.startVolume = (float) DataUtils.getConfigDouble(wrapper.config, wrapper.configName, "world.start_sound.volume", 1.0);
 				wrapper.startPitch = (float) DataUtils.getConfigDouble(wrapper.config, wrapper.configName, "world.start_sound.pitch", 1.0);
 				wrapper.soundTarget = DataUtils.getConfigString(wrapper.config, wrapper.configName, "world.start_sound.target", "ALL").toUpperCase();

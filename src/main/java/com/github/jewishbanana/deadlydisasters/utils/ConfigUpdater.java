@@ -39,6 +39,7 @@ public class ConfigUpdater {
         Preconditions.checkArgument(toUpdate.exists(), "The toUpdate file doesn't exist!");
 
         FileConfiguration defaultConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(plugin.getResource(resourceName), StandardCharsets.UTF_8));
+        normalizeSectionTypeChanges(defaultConfig, toUpdate);
         FileConfiguration currentConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(FileUtils.openInputStream(toUpdate), StandardCharsets.UTF_8));
         Map<String, String> comments = parseComments(plugin, resourceName, defaultConfig);
         Map<String, String> ignoredSectionsValues = parseIgnoredSections(toUpdate, comments, ignoredSections == null ? Collections.emptyList() : ignoredSections);
@@ -75,10 +76,13 @@ public class ConfigUpdater {
                    continue;
            }
            writeCommentIfExists(comments, writer, fullKey, indents);
+           Object defaultValue = defaultConfig.get(fullKey);
            Object currentValue = currentConfig.get(fullKey);
 
            if (currentValue == null)
-               currentValue = defaultConfig.get(fullKey);
+               currentValue = defaultValue;
+           else if ((defaultValue instanceof ConfigurationSection) != (currentValue instanceof ConfigurationSection))
+               currentValue = defaultValue;
 
            String[] splitFullKey = fullKey.split("[" + SEPARATOR + "]");
            String trailingKey = splitFullKey[splitFullKey.length - 1];
@@ -96,6 +100,56 @@ public class ConfigUpdater {
             writer.write(danglingComments);
         
         writer.close();
+    }
+
+    /**
+     * Repairs a scalar value at a path that is now a section in the bundled defaults. Older updater versions could leave
+     * the scalar in place and append the new child keys beneath it, producing invalid YAML before the next startup.
+     */
+    private static void normalizeSectionTypeChanges(FileConfiguration defaultConfig, File file) throws IOException {
+        List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
+        List<PathEntry> path = new ArrayList<>();
+        boolean changed = false;
+
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            String trimmed = line.trim();
+            if (trimmed.isEmpty() || trimmed.startsWith("#") || trimmed.startsWith("-"))
+                continue;
+
+            int colon = trimmed.indexOf(':');
+            if (colon <= 0)
+                continue;
+            int indent = line.length() - line.stripLeading().length();
+            while (!path.isEmpty() && path.get(path.size() - 1).indent >= indent)
+                path.remove(path.size() - 1);
+
+            String key = trimmed.substring(0, colon).trim();
+            StringBuilder fullPath = new StringBuilder();
+            for (PathEntry entry : path)
+                fullPath.append(entry.key).append(SEPARATOR);
+            fullPath.append(key);
+
+            String value = trimmed.substring(colon + 1).trim();
+            if (!value.isEmpty() && defaultConfig.isConfigurationSection(fullPath.toString())) {
+                lines.set(i, line.substring(0, line.indexOf(':') + 1));
+                changed = true;
+            }
+            path.add(new PathEntry(indent, key));
+        }
+
+        if (changed)
+            Files.write(file.toPath(), lines, StandardCharsets.UTF_8);
+    }
+
+    private static final class PathEntry {
+        private final int indent;
+        private final String key;
+
+        private PathEntry(int indent, String key) {
+            this.indent = indent;
+            this.key = key;
+        }
     }
 
     //Returns a map of key comment pairs. If a key doesn't have any comments it won't be included in the map.

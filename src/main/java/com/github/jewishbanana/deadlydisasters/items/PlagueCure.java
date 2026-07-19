@@ -8,13 +8,12 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
-import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
 
 import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
-//import com.github.jewishbanana.deadlydisasters.disasters.BlackPlague;
+import com.github.jewishbanana.deadlydisasters.disasters.mob.BlackPlague;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
@@ -28,10 +27,8 @@ public class PlagueCure extends com.github.jewishbanana.uiframework.items.Generi
 		super(item);
 	}
 	public boolean consumeItem(PlayerItemConsumeEvent event) {
-//		if (BlackPlague.time.containsKey(event.getPlayer().getUniqueId())) {
-//			BlackPlague.cureEntity(event.getPlayer());
-//			event.getPlayer().sendMessage(Utils.convertString(DataUtils.getConfigString("messages.disaster_broadcasts.plague.cure_message")));
-//		}
+		if (BlackPlague.isInfected(event.getPlayer()))
+			BlackPlague.cureEntity(event.getPlayer());
 		return true;
 	}
 	@Override
@@ -40,27 +37,19 @@ public class PlagueCure extends com.github.jewishbanana.uiframework.items.Generi
 		getType().setLore(DataUtils.getLanguageStringList("items.plague_cure.lore").stream().map(line -> Utils.convertString(line)).collect(Collectors.toList()));
 		return com.github.jewishbanana.uiframework.items.ItemBuilder.create(getType(), Material.POTION).accessMeta(e -> {
 			PotionMeta meta = (PotionMeta) e;
-			meta.setColor(Color.BLACK);
+			meta.setColor(Color.fromRGB(250, 250, 247));
 		}).addItemFlags(VersionUtils.getHideEffects()).assembleLore().setCustomModelData(100006).build();
 	}
 	@SuppressWarnings("deprecation")
 	public static void register() {
 		com.github.jewishbanana.uiframework.items.UIItemType type = com.github.jewishbanana.uiframework.items.UIItemType.registerItem(REGISTERED_KEY, PlagueCure.class);
 		
-		ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(DeadlyDisasters.getInstance(), "plague_cure_recipe"), type.getBuilder().getItem());
-		recipe.shape(" A ", "ABA", " A ");
-		recipe.setIngredient('A', Material.INK_SAC);
-		ItemStack waterBottle = new ItemStack(Material.POTION);
-		PotionMeta meta = (PotionMeta) waterBottle.getItemMeta();
-		meta.setBasePotionData(new PotionData(PotionType.WATER));
-		waterBottle.setItemMeta(meta);
-		recipe.setIngredient('B', new RecipeChoice.ExactChoice(waterBottle));
-		type.registerRecipe(recipe);
-		
-		ShapedRecipe glowRecipe = new ShapedRecipe(new NamespacedKey(DeadlyDisasters.getInstance(), "plague_cure_glow_recipe"), type.getBuilder().getItem());
-		glowRecipe.shape(" A ", "ABA", " A ");
-		glowRecipe.setIngredient('A', Material.GLOW_INK_SAC);
-		glowRecipe.setIngredient('B', new RecipeChoice.ExactChoice(waterBottle));
-		type.registerRecipe(glowRecipe);
+		ItemStack awkwardPotion = new ItemStack(Material.POTION);
+		PotionMeta meta = (PotionMeta) awkwardPotion.getItemMeta();
+		meta.setBasePotionData(new PotionData(PotionType.AWKWARD));
+		awkwardPotion.setItemMeta(meta);
+		type.registerRecipe(new com.github.jewishbanana.uiframework.utils.BrewingRecipe(
+				new NamespacedKey(DeadlyDisasters.getInstance(), "plague_cure_brewing_recipe"),
+				new RecipeChoice.ExactChoice(awkwardPotion), new RecipeChoice.MaterialChoice(Material.INK_SAC, Material.GLOW_INK_SAC), type.getBuilder().getItem()));
 	}
 }

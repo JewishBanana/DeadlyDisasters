@@ -27,17 +27,19 @@ import com.github.jewishbanana.deadlydisasters.DeadlyDisasters;
 import com.github.jewishbanana.deadlydisasters.WorldWrapper;
 import com.github.jewishbanana.deadlydisasters.disasters.Disaster;
 import com.github.jewishbanana.deadlydisasters.disasters.DisasterRegistry;
+import com.github.jewishbanana.deadlydisasters.disasters.mob.BlackPlague;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent.DisasterStartReason;
 import com.github.jewishbanana.deadlydisasters.events.DisasterStopEvent.DisasterStopReason;
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
+import com.github.jewishbanana.deadlydisasters.utils.Metrics;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 
 public class DisastersCommand implements CommandExecutor, TabCompleter {
 	
 	private final DeadlyDisasters plugin;
-	private final String usage = Utils.convertString("&cUsage: /disasters <help|start|stop|config|blacklist|timers>...");
+	private final String usage = Utils.convertString("&cUsage: /disasters <help|start|stop|cure|config|blacklist|timers>...");
 	private final Map<String, ConfigSettingOption> configSettings = Map.of(
 			"targeting", 
 			new ConfigSettingOption(Set.of("DISABLED", "INDIVIDUAL", "GLOBAL"), container -> {
@@ -132,6 +134,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 		this.plugin = plugin;
 		
 		plugin.getCommand("disasters").setExecutor(this);
+		plugin.getCommand("disasters").setTabCompleter(this);
 	}
 	@SuppressWarnings("deprecation")
 	@Override
@@ -256,6 +259,7 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			}
 			disaster.broadcastDisaster();
 			disaster.start();
+			Metrics.recordCommandSpawned(disaster);
 			return true;
 		}
 		case "stop" -> {
@@ -291,6 +295,29 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 					++stopped;
 			}
 			sender.sendMessage(Utils.convertString(Utils.prefix+"&bSuccessfully stopped &a"+stopped+" &bdisaster(s)!"));
+			return true;
+		}
+		case "cure" -> {
+			if (args.length < 2) {
+				sender.sendMessage(Utils.convertString("&cUsage: /disasters cure <player|ALL_ENTITIES>"));
+				return true;
+			}
+			if (args[1].equalsIgnoreCase("ALL_ENTITIES")) {
+				int cured = BlackPlague.cureAllEntities();
+				sender.sendMessage(Utils.convertString(Utils.prefix+"&bCured plague from &a"+cured+" &binfected entit"+(cured == 1 ? "y" : "ies")+"!"));
+				return true;
+			}
+			Player target = getOnlinePlayer(args[1]);
+			if (target == null) {
+				sender.sendMessage(Utils.convertString("&cCould not find online player '"+args[1]+"'!"));
+				return true;
+			}
+			if (!BlackPlague.isInfected(target)) {
+				sender.sendMessage(Utils.convertString(Utils.prefix+"&ePlayer &d'"+target.getName()+"' &eis not infected with the plague!"));
+				return true;
+			}
+			BlackPlague.cureEntity(target);
+			sender.sendMessage(Utils.convertString(Utils.prefix+"&bCured plague from player &a'"+target.getName()+"'&b!"));
 			return true;
 		}
 		case "config" -> {
@@ -763,6 +790,8 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 				list.add("start");
 			if (sender.hasPermission("deadlydisasters.stop"))
 				list.add("stop");
+			if (sender.hasPermission("deadlydisasters.cure"))
+				list.add("cure");
 			if (sender.hasPermission("deadlydisasters.config"))
 				list.add("config");
 			if (sender.hasPermission("deadlydisasters.blacklist"))
@@ -787,6 +816,10 @@ public class DisastersCommand implements CommandExecutor, TabCompleter {
 			} else if ((args[0].equalsIgnoreCase("start") && sender.hasPermission("deadlydisasters.start"))
 					|| (args[0].equalsIgnoreCase("stop") && sender.hasPermission("deadlydisasters.stop")))
 				list.addAll(DisasterRegistry.getRegisteredNames());
+			else if (args[0].equalsIgnoreCase("cure") && sender.hasPermission("deadlydisasters.cure")) {
+				list.add("ALL_ENTITIES");
+				list.addAll(Bukkit.getServer().getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList()));
+			}
 			else if (args[0].equalsIgnoreCase("config") && sender.hasPermission("deadlydisasters.config"))
 				list.addAll(Arrays.asList("reload", "set", "enable", "disable", "setting", "list"));
 			else if (args[0].equalsIgnoreCase("blacklist") && sender.hasPermission("deadlydisasters.blacklist"))

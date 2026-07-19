@@ -77,8 +77,8 @@ messages:
                 level_4: "&eA &every large &egroup of mobs have contracted the %disaster% &enear &6%player%"
                 level_5: "&eAn &cextremely large &egroup of mobs have contracted the %disaster% &enear &6%player%"
                 level_6: "(hex:#8f0000)The %disaster% (hex:#8f0000)is running rampant near &6%player%"
-            plague_catch: "You have caught the %disaster%"
-            cure_message: "You feel relief as you recover from the %disaster%!"
+            plague_catch: "&cYou have caught the %disaster%"
+            cure_message: "&aYou feel relief as you recover from the %disaster%!"
         purge:
             started:
                 level_1: "&cA &avery small &cHorde is assembling, &6%player% &cwill be purged..."
@@ -184,6 +184,14 @@ items:
         name: "&fSplash Plague Cure"
         lore:
         - "&eCures one from the black plague"
+    plague_potion:
+        name: "&8Plague Potion"
+        lore:
+        - "&cInflicts the black plague"
+    splash_plague_potion:
+        name: "&8Splash Plague Potion"
+        lore:
+        - "&cInflicts the black plague"
     basic_coating_book:
         name: "&7Basic Coating Book"
 enchants:

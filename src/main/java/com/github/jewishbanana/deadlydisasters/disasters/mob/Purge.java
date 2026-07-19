@@ -55,6 +55,7 @@ import com.github.jewishbanana.deadlydisasters.events.DisasterStartEvent.Disaste
 import com.github.jewishbanana.deadlydisasters.utils.DataUtils;
 import com.github.jewishbanana.deadlydisasters.utils.DependencyUtils;
 import com.github.jewishbanana.deadlydisasters.utils.EntityUtils;
+import com.github.jewishbanana.deadlydisasters.utils.UltimateContentUtils;
 import com.github.jewishbanana.deadlydisasters.utils.SpawnUtils;
 import com.github.jewishbanana.deadlydisasters.utils.Utils;
 import com.github.jewishbanana.deadlydisasters.utils.VersionUtils;
@@ -157,11 +158,8 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 			this.breachMinersMax = Math.max(breachMinersPerSquad, getConfigInt("breach.miners_per_squad_max"));
 			this.breachEscortMax = Math.max(breachEscortSize, getConfigInt("breach.escort_size_max"));
 			this.breachFlyerMax = Math.max(breachFlyerCount, getConfigInt("breach.flyer_count_max"));
-			if (DependencyUtils.isUltimateContentEnabled()) {
-				com.github.jewishbanana.uiframework.entities.UIEntityManager type = com.github.jewishbanana.uiframework.entities.UIEntityManager.getEntityType("uc:undead_miner");
-				if (type != null)
-					this.breachMinerClass = type.getEntityClass();
-			}
+			if (DependencyUtils.isUltimateContentEnabled())
+				this.breachMinerClass = UltimateContentUtils.getEntityClass("uc:undead_miner");
 		}
 	}
 	private static int secondsToSlowTicks(int seconds) {
@@ -318,7 +316,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 	 * player is eligible only when within {@link #SWAP_RADIUS_SQ} and closer than the primary. This means: (a) the horde
 	 * never idles on/attacks itself (it always has a player target), (b) when a helper player gets in among the horde the
 	 * nearby mobs swap onto and gang up on them ("aid"), and (c) once that helper runs far enough away the mobs revert to
-	 * the primary target. Breach miners are skipped — they're driven by their own dig loop toward the sealed player.
+	 * the primary target. Breach miners are skipped - they're driven by their own dig loop toward the sealed player.
 	 */
 	private void updatePurgeTargets(Player primary) {
 		Set<UUID> set = getAllEntities();
@@ -369,7 +367,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 				boolean underground = pLoc.getBlockY() + 2 < w.getHighestBlockYAt(pLoc.getBlockX(), pLoc.getBlockZ());
 				burrowed = !skybase && (sealed || underground);
 			} catch (Exception ignored) {
-				// a chunk unloaded mid-scan etc. — just leave the previous cached result and try again next tick
+				// a chunk unloaded mid-scan etc. - just leave the previous cached result and try again next tick
 			}
 			final boolean fSky = skybase, fBur = burrowed;
 			plugin.getServer().getScheduler().runTask(plugin, () -> {
@@ -420,7 +418,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 		boolean turtled = skybase || burrowed;
 		if (!turtled) {
 			// Open ground: never breach. Ease the timer/streak when the horde reaches them or they relocate across the
-			// surface (the reach-relief lives HERE only — for a turtled player a stray mob touching them must NOT reset
+			// surface (the reach-relief lives HERE only - for a turtled player a stray mob touching them must NOT reset
 			// the pressure, otherwise a single vex reaching a skybased player throttled the whole assault).
 			if ((hordeAlive && nearestSq <= breachReachDistanceSq) || moved) {
 				unreachableTicks = 0;
@@ -441,7 +439,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 		breachStreak = Math.min(breachStreak + 1, BREACH_STREAK_CAP);
 		breachCooldownTicks = breachCooldownReset;
 	}
-	/** Silently removes any tracked flyers (vex/phantom) — used when the player burrows, where flyers are useless. */
+	/** Silently removes any tracked flyers (vex/phantom) - used when the player burrows, where flyers are useless. */
 	private void removeFlyers(Set<UUID> set) {
 		if (set == null)
 			return;
@@ -507,8 +505,8 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 			int desired = Math.min(breachMinersPerSquad + breachStreak, breachMinersMax);
 			minerCount = Math.max(1, Math.min(desired, Math.max(1, breachMaxMiners - currentMiners)));
 		}
-		// Make room: if adding this squad would blow past the (escalated) horde cap, recycle the farthest stalled mobs —
-		// the pile stuck outside the seal / at the base of the pillar — so the miners and flyers can actually spawn instead
+		// Make room: if adding this squad would blow past the (escalated) horde cap, recycle the farthest stalled mobs -
+		// the pile stuck outside the seal / at the base of the pillar - so the miners and flyers can actually spawn instead
 		// of the breach silently failing because the cap is full (the player's reported "nothing else happens").
 		int wanted = minerCount + escort + flyers;
 		int effectiveMaxHorde = maxHordeSize + breachStreak * breachCapBonus;
@@ -518,7 +516,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 			evicted = evictForBreach(playerLoc, set, projected - effectiveMaxHorde);
 		final int fMinerCount = minerCount, fEscort = escort, fEvicted = evicted;
 		if (burrowed) {
-			// The cut-off origin (cave pocket / surface column) is a pure read-only block scan — run it off-thread, then
+			// The cut-off origin (cave pocket / surface column) is a pure read-only block scan - run it off-thread, then
 			// spawn the squad back on the main thread.
 			plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
 				Location origin = findBurrowOrigin(playerLoc, digDir);
@@ -552,7 +550,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 					registerPurgeMob(e, player);
 			}
 		}
-		// For a skybase the ground escort can barely reach, so the air is a real threat — but full waves piled too many
+		// For a skybase the ground escort can barely reach, so the air is a real threat - but full waves piled too many
 		// vexes on the player, so send only about a quarter of the computed wave.
 		int flyers = skybase ? Math.max(1, Math.min(breachFlyerCount + breachStreak + evicted + 3, breachFlyerMax + 10) / 4) : 0;
 		for (int i = 0; i < flyers; i++)
@@ -573,7 +571,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 	}
 	/**
 	 * Recycles this purge's mobs (miners and escort alike) that the tunnelling player has left far behind, so a fresh
-	 * cut-off squad can spawn ahead instead. Silent (pulled from the tracked set first → no vanquish-bar credit).
+	 * cut-off squad can spawn ahead instead. Silent (pulled from the tracked set first -> no vanquish-bar credit).
 	 */
 	private void pruneFarBreachForces(Location playerLoc, Set<UUID> set) {
 		if (set == null)
@@ -594,8 +592,8 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 	}
 	/**
 	 * Picks where to drop a burrow cut-off squad: a point {@link #BURROW_LEAD} blocks ahead of the player along their dig
-	 * direction (incl. the Y axis), then the nearest reachable spawn to that aim — a cave pocket near it, or the surface
-	 * column above it — whichever is closer to the player (less digging). Returns null only if nothing is spawnable.
+	 * direction (incl. the Y axis), then the nearest reachable spawn to that aim - a cave pocket near it, or the surface
+	 * column above it - whichever is closer to the player (less digging). Returns null only if nothing is spawnable.
 	 */
 	private Location findBurrowOrigin(Location playerLoc, Vector digDir) {
 		World world = playerLoc.getWorld();
@@ -634,7 +632,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 						continue; // need a solid floor to stand/spawn on
 					Location loc = new Location(world, x + 0.5, y, z + 0.5);
 					if (loc.distanceSquared(playerLoc) < 16)
-						continue; // too close (likely the player's own pocket) — the miner needs something to dig
+						continue; // too close (likely the player's own pocket) - the miner needs something to dig
 					double d = dx * dx + dy * dy + dz * dz;
 					if (d < bestSq) {
 						bestSq = d;
@@ -657,7 +655,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 	/**
 	 * Frees up to {@code count} horde-cap slots for a breach squad by removing the least-useful tracked mobs: those that
 	 * aren't breach miners or flyers and are farthest from the player (the pile that's stuck outside the seal or milling
-	 * at the base of the pillar, unable to reach the target anyway). These are removed <b>silently</b> — pulled from the
+	 * at the base of the pillar, unable to reach the target anyway). These are removed <b>silently</b> - pulled from the
 	 * tracked set first so the slow loop never sees them die, so the player earns NO vanquish-bar progress for the purge
 	 * recycling its own stalled mobs into a fresh breach force.
 	 */
@@ -673,7 +671,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 				continue;
 			candidates.add(e);
 		}
-		// Farthest from the player first — those are the ones that can't reach the sealed/elevated target.
+		// Farthest from the player first - those are the ones that can't reach the sealed/elevated target.
 		candidates.sort((a, b) -> Double.compare(b.getLocation().distanceSquared(playerLoc), a.getLocation().distanceSquared(playerLoc)));
 		int removed = 0;
 		for (Entity e : candidates) {
@@ -721,24 +719,18 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 		return SpawnUtils.canMonsterSpawn(spot, 2) ? spot : null;
 	}
 	/** Spawns one UltimateContent undead miner in breach mode. Returns false (no-op) if UltimateContent is absent or spawn fails. */
-	@SuppressWarnings("unchecked")
 	private boolean spawnBreachMiner(Location loc, Player player) {
 		if (breachMinerClass == null)
 			return false;
-		com.github.jewishbanana.uiframework.entities.CustomEntity<?> wrapper = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(loc, (Class<? extends com.github.jewishbanana.uiframework.entities.CustomEntity<?>>) breachMinerClass);
-		if (wrapper == null)
-			return false;
-		Entity e = wrapper.getEntity();
+		Entity e = UltimateContentUtils.spawnBreachMiner(loc, breachMinerClass, player, breachMinerRetention);
 		if (e == null)
 			return false;
-		if (wrapper instanceof com.github.jewishbanana.ultimatecontent.entities.darkentities.UndeadMiner miner)
-			miner.setBreachMode(player, breachMinerRetention);
 		breachMiners.add(e.getUniqueId());
 		registerPurgeMob(e, player);
 		return true;
 	}
 	/**
-	 * Spawns a flying assailant (phantom/vex) for an airborne player — out at distance and at the player's altitude (or a
+	 * Spawns a flying assailant (phantom/vex) for an airborne player - out at distance and at the player's altitude (or a
 	 * little higher), so it reads as flying in from afar to dive on the skybase rather than popping in beside the player.
 	 */
 	private void spawnFlyer(Player player, Location playerLoc) {
@@ -746,7 +738,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 		Vector off = Utils.getRandomizedVector(1f, 0f, 1f).multiply(18 + random.nextDouble() * 14);
 		Location loc = playerLoc.clone().add(off.getX(), 0, off.getZ());
 		loc.setY(playerLoc.getY() + random.nextDouble() * 6);
-		if (!loc.getBlock().isPassable()) // don't spawn inside terrain — lift it clear
+		if (!loc.getBlock().isPassable()) // don't spawn inside terrain - lift it clear
 			loc.add(0, 5, 0);
 		Entity e = world.spawnEntity(loc, random.nextBoolean() ? EntityType.PHANTOM : EntityType.VEX);
 		registerPurgeMob(e, player);
@@ -872,7 +864,7 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 	 * Earlier height-ring versions flickered depending on where you stood (e.g. on the central pillar block vs the platform
 	 * around it), because a ring sample could land on the build itself. Instead this flood-fills the connected walkable
 	 * surface the player is standing on (bounded by {@code radius}/{@code cap}): if that surface is <b>small</b> (doesn't
-	 * sprawl past the radius — so it's a built perch, not the ground) AND at least one of its edges drops away ≥5 blocks
+	 * sprawl past the radius - so it's a built perch, not the ground) AND at least one of its edges drops away >=5 blocks
 	 * into air (so it's actually up high), it's a skybase. Standing anywhere on the same platform gives the same answer.
 	 */
 	private boolean isSkybase(Location playerLoc) {
@@ -979,19 +971,9 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 		private Entity spawnEntity(Location location) {
 			Entity entity = null;
 			if (isUCType) {
-				com.github.jewishbanana.uiframework.entities.CustomEntity<?> customEntity = com.github.jewishbanana.uiframework.entities.UIEntityManager.spawnEntity(location, (Class<? extends com.github.jewishbanana.uiframework.entities.CustomEntity<?>>) entityClass);
-				if (customEntity == null)
-					return null;
-				entity = customEntity.getEntity();
+				entity = UltimateContentUtils.spawnEntity(location, entityClass);
 				if (entity == null)
 					return null;
-				com.github.jewishbanana.uiframework.events.CustomEntitySpawnEvent event = new com.github.jewishbanana.uiframework.events.CustomEntitySpawnEvent(location, entity, customEntity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM);
-				Bukkit.getPluginManager().callEvent(event);
-				if (event.isCancelled()) {
-					com.github.jewishbanana.uiframework.entities.UIEntityManager.removeEntity(entity.getUniqueId());
-					removeEntityAndVehicle(entity);
-					return null;
-				}
 				if (entity instanceof LivingEntity living) {
 					if (health != 0) {
 						living.getAttribute(VersionUtils.getMaxHealthAttribute()).setBaseValue(health);
@@ -1057,13 +1039,13 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 			} catch (IllegalArgumentException ex) {
 				if (typeString.toLowerCase().startsWith("uc:")) {
 					if (DependencyUtils.isUltimateContentEnabled()) {
-						com.github.jewishbanana.uiframework.entities.UIEntityManager manager = com.github.jewishbanana.uiframework.entities.UIEntityManager.getEntityType(typeString.toLowerCase());
-						if (manager == null) {
+						Class<?> entityClass = UltimateContentUtils.getEntityClass(typeString.toLowerCase());
+						if (entityClass == null) {
 							Utils.sendConsoleMessage("&eWARNING the entity type &d'"+typeString+"' &efor a Purge entity entry does not exist in the world disaster config &b'"+disaster.getWorldLink().getConfigName()+"' &eat the section &cdisasters.mob.purge.entity_spawns&e!");
 							Utils.sendConsoleMessage("&eWARNING a Purge entity entry was improperly entered and must be fixed in the world disaster config &b'"+disaster.getWorldLink().getConfigName()+"' &eat the section &cdisasters.mob.purge.entity_spawns&e!");
 							return null;
 						}
-						container.entityClass = manager.getEntityClass();
+						container.entityClass = entityClass;
 						container.isUCType = true;
 					} else
 						return null;
@@ -1181,9 +1163,9 @@ public class Purge extends Disaster implements MobDisaster, Listener {
 		}
 		private static ItemStack createEquipmentItemStack(String item) {
 			if (DependencyUtils.isUltimateContentEnabled()) {
-				com.github.jewishbanana.uiframework.items.UIItemType itemType = com.github.jewishbanana.uiframework.items.UIItemType.getItemType(item);
-				if (itemType != null)
-					return itemType.getItem();
+				ItemStack customItem = UltimateContentUtils.getItem(item);
+				if (customItem != null)
+					return customItem;
 			}
 			Material material = Material.getMaterial(item.toUpperCase());
 			return material == null ? null : new ItemStack(material);

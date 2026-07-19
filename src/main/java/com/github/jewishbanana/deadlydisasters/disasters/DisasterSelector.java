@@ -104,15 +104,17 @@ public class DisasterSelector {
 							plugin.getServer().getScheduler().runTask(plugin, () -> {
 								List<Player> players = world.getPlayers();
 								Collections.shuffle(players);
-								int disasterCount = wrapper.getConfigInt("world.global_disaster_count");
-								for (Player player : players)
-									if (isEligibleNaturalTarget(player, wrapper) && selectDisaster(player, wrapper)) {
-										if (--disasterCount > 0)
-											continue;
-										worldTimers.replace(worldID, random.nextInt(wrapper.minimumTime, wrapper.maximumTime + 1));
-										return;
-									}
-								worldTimers.replace(worldID, 10);
+								int maximumDisasters = Math.max(0, wrapper.getConfigInt("world.global_disaster_count"));
+								int startedDisasters = 0;
+								for (Player player : players) {
+									if (startedDisasters >= maximumDisasters)
+										break;
+									if (isEligibleNaturalTarget(player, wrapper) && selectDisaster(player, wrapper))
+										startedDisasters++;
+								}
+								worldTimers.replace(worldID, startedDisasters > 0 || maximumDisasters == 0
+										? random.nextInt(wrapper.minimumTime, wrapper.maximumTime + 1)
+										: 10);
 							});
 						}
 						break;
